@@ -39,7 +39,8 @@ Forked from [usetrmnl/plugins](https://github.com/usetrmnl/plugins), `lib/calend
   week-view now indicator, `dayHeaders`), the colour options (`colorize_events`,
   `palette_colors`, `adaptiveEventStroke`), because HA calendars have no colours, and the
   RSVP filter (`ignore_based_on_acceptance?`), because HA doesn't expose attendees.
-- **Added**: optional per-calendar labels, and a line above the grid naming any
-  calendar that failed to load.
+- **Added**: optional per-calendar labels, a line above the grid naming any
+  calendar that failed to load, and the 1-/2-bit grey handling setting (adapted
+  styles, or LaraPaper's `image-dither` switch for Floyd–Steinberg dithering).
 - **Settings**: exposed as custom fields (`settings.yml`) and read from
   `trmnl.plugin_settings.custom_fields_values`.

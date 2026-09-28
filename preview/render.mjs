@@ -4,6 +4,11 @@
 //   node render.mjs                         sample events → out/preview.png
 //   HA_URL=http://ha:8123 HA_TOKEN=... HA_CALENDARS=calendar.family,calendar.work node render.mjs
 //   node render.mjs --set first_day=0 --set time_format=am/pm --device og
+//   node render.mjs --device og --set dither_greys=yes      1-bit, dithered greys
+//
+// Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
+// reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
+// 1-/2-bit only when the page contains <img class="image-dither">. --raw skips this.
 //
 // The TRMNL framework CSS is loaded from trmnl.com when reachable; FullCalendar is
 // served from node_modules so the preview works offline.
@@ -21,17 +26,20 @@ const outDir = path.join(here, 'out');
 const DEVICES = {
   x: { width: 1040, height: 780, scale: 1.8, variant: 'v2', depth: '4bit' },
   og: { width: 800, height: 480, scale: 1, variant: 'og', depth: '1bit' },
+  og2: { width: 800, height: 480, scale: 1, variant: 'og', depth: '2bit' },
 };
 
 const args = process.argv.slice(2);
 const overrides = {};
 let deviceName = 'x';
+let raw = false;
 let dataFile = null;
 let out = path.join(outDir, 'preview.png');
 let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--set') { const [k, ...v] = args[++i].split('='); overrides[k] = v.join('='); }
   else if (args[i] === '--device') deviceName = args[++i];
+  else if (args[i] === '--raw') raw = true;
   else if (args[i] === '--data') dataFile = args[++i];
   else if (args[i] === '--out') out = path.resolve(args[++i]);
   else if (args[i] === '--tz') timeZone = args[++i];
@@ -168,6 +176,46 @@ page.on('pageerror', (e) => console.error(`[browser] ${e.message}`));
 await page.setContent(html, { waitUntil: 'load', timeout: 20000 }).catch(() => {});
 await page.waitForSelector('.trmnl-calendar[data-initialized]', { timeout: 10000 });
 await page.waitForTimeout(300);
-await page.screenshot({ path: out });
+const shot = await page.screenshot();
+if (raw) {
+  fs.writeFileSync(out, shot);
+} else {
+  const bits = parseInt(device.depth, 10);
+  const dither = bits > 2 || /<img\b[^>]*\bclass\s*=\s*(["'])(?:[^"']*\s)?image--?dither(?:\s[^"']*)?\1/i.test(html);
+  const png = await page.evaluate(async ({ src, bits, dither }) => {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const im = ctx.getImageData(0, 0, img.width, img.height);
+    const d = im.data, w = img.width, h = img.height;
+    const levels = (1 << bits) - 1;
+    const grey = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) grey[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        const v = Math.round(Math.min(255, Math.max(0, grey[i])) / 255 * levels) * 255 / levels;
+        const err = grey[i] - v;
+        grey[i] = v;
+        if (!dither) continue;
+        if (x + 1 < w) grey[i + 1] += err * 7 / 16;
+        if (y + 1 < h) {
+          if (x > 0) grey[i + w - 1] += err * 3 / 16;
+          grey[i + w] += err * 5 / 16;
+          if (x + 1 < w) grey[i + w + 1] += err * 1 / 16;
+        }
+      }
+    }
+    for (let i = 0; i < w * h; i++) { d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = grey[i]; d[i * 4 + 3] = 255; }
+    ctx.putImageData(im, 0, 0);
+    return canvas.toDataURL('image/png').split(',')[1];
+  }, { src: `data:image/png;base64,${shot.toString('base64')}`, bits, dither });
+  fs.writeFileSync(out, Buffer.from(png, 'base64'));
+  console.log(`${device.depth}${dither ? ', dithered' : ''}`);
+}
 await browser.close();
 console.log(`wrote ${path.relative(process.cwd(), out)}`);

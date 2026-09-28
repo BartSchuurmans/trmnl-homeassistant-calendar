@@ -13,8 +13,16 @@
 {% assign locale = s.locale | default: "en" | strip %}
 
 <div class="view view--full">
+  {% if s.dither_greys == "yes" %}
+    {% comment %}
+      LaraPaper only dithers 1-/2-bit output when the page has an img with class
+      "image-dither" (ImageGenerationService::markupContainsDitherImage). This hidden
+      pixel is that switch; 4-bit output is dithered regardless.
+    {% endcomment %}
+    <img class="image-dither" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" alt="" style="display:none">
+  {% endif %}
   <div id="calendar-full-month"
-       class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends == 'no' %} no-weekend-shading{% endif %}"
+       class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends == 'no' %} no-weekend-shading{% endif %}{% if s.dither_greys == 'yes' %} dither-greys{% endif %}"
        data-events="{{ data | json | escape }}"
        data-calendar-config='{
          "timeZoneName": {{ time_zone | json | escape }},

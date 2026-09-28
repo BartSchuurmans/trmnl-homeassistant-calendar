@@ -11,6 +11,9 @@ for what was carried over and what changed.
 
 ![preview](docs/preview.png)
 
+<sub>1-bit, adapted styles vs dithered:</sub><br>
+<img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
+
 ```
 Home Assistant ──/api/calendars/<entity>──▶ LaraPaper (polls every 15 min)
                                                │ renders plugin/src/*.liquid
@@ -97,6 +100,7 @@ place and keeps your settings.
 | Show past events | yes | Earlier days of the current week |
 | Highlight today, Shade weekends | yes | |
 | Show month title, week numbers | no | |
+| Greys on 1-bit / 2-bit screens | Adapt styles | `Adapt` swaps greys for a pixel pattern and solid black text. `Dither` keeps the greys and has LaraPaper Floyd–Steinberg dither the whole screen. The TRMNL X (4-bit) is always dithered, so this only matters for 1-bit and 2-bit devices |
 | Locale | `en` | Day/month names, e.g. `nl`, `de` |
 | Ignore events containing / titled exactly | – | Same filters as upstream |
 
@@ -109,12 +113,13 @@ rows taller, so fewer fit.
 cd preview && npm install
 node render.mjs                                   # sample events → out/preview.png
 node render.mjs --set display_event_end=no --set locale=nl
+node render.mjs --device og --set dither_greys=yes    # 1-bit, dithered greys
 HA_URL=http://homeassistant.local:8123 HA_TOKEN=... \
   HA_CALENDARS=calendar.family,calendar.work node render.mjs   # your real calendars
 ```
 
 Options: `--set key=value` (any custom field), `--tz Europe/Amsterdam`,
-`--device og` (800×480), `--data payload.json`, `--out file.png`. It needs a Chromium;
+`--device og` / `og2` (800×480, 1-bit / 2-bit), `--raw` (skip the grey-level reduction), `--data payload.json`, `--out file.png`. It needs a Chromium;
 set `CHROMIUM_PATH` if Playwright can't find one. The preview renders with
 [liquidjs](https://liquidjs.com) and without the TRMNL framework CSS when trmnl.com
 isn't reachable, so small differences from LaraPaper's output are possible.
@@ -127,4 +132,7 @@ isn't reachable, so small differences from LaraPaper's output are possible.
 - FullCalendar and (for non-English locales) its locale bundle load from jsDelivr
   when the screen renders, so the LaraPaper container needs internet access. It
   also loads the TRMNL framework CSS from trmnl.com.
+- Like LaraPaper, the preview reduces the screenshot to the device's grey levels. 4-bit
+  is always dithered. 1-bit and 2-bit are dithered only when the page contains
+  `<img class="image-dither">`, which is what the `Dither` setting adds.
 - The token only goes into the request header. It is not written into the rendered page.

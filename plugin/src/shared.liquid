@@ -80,7 +80,11 @@
   .trmnl-calendar .fc-day-past .fc-daygrid-day-number { color: var(--trmnl-muted); }
   .trmnl-calendar.highlight-today .fc-day-today .fc-daygrid-day-number { background: #000; color: #fff; }
   .trmnl-calendar .trmnl-month-label {
-    padding-top: 2px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 0 0 4px;
     font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
@@ -105,6 +109,24 @@
     font-size: 11px;
     font-weight: 700;
   }
+
+  /* 1-/2-bit without dithering: LaraPaper snaps each pixel to the nearest level, so
+     the light weekend grey would vanish and muted text would turn black anyway. Use a
+     sparse pixel pattern and solid text instead. With "dither-greys" the greys stay
+     and LaraPaper dithers the whole screen. */
+  .screen--1bit .trmnl-calendar:not(.dither-greys),
+  .screen--2bit .trmnl-calendar:not(.dither-greys) {
+    --trmnl-weekend-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='1' height='1'/%3E%3Crect x='2' y='2' width='1' height='1'/%3E%3C/svg%3E") 0 0 / 4px 4px;
+    --trmnl-muted: #000;
+  }
+
+  /* patterned or dithered weekend cells make small text hard to read: back it with white */
+  .screen--1bit .trmnl-calendar .fc-daygrid-day-number,
+  .screen--2bit .trmnl-calendar .fc-daygrid-day-number,
+  .screen--1bit .trmnl-calendar .trmnl-month-label,
+  .screen--2bit .trmnl-calendar .trmnl-month-label,
+  .screen--1bit .trmnl-calendar .fc-daygrid-dot-event,
+  .screen--2bit .trmnl-calendar .fc-daygrid-dot-event { background: #fff; }
 
   .trmnl-calendar-error { padding: 4px 6px; font-size: 13px; font-weight: 700; }
 </style>
