@@ -91,7 +91,8 @@ place and keeps your settings.
 
 | Setting | Default | Notes |
 |---|---|---|
-| Calendar labels | – | Optional short label per calendar, shown as `Label: Title` |
+| Calendar prefixes | – | Text shown before each event title, per calendar (e.g. `W:`) |
+| Calendar colors | – | Event background per calendar: a TRMNL color name (`black`, `gray-10` … `gray-75`, `red`, `blue-40`, …) or a hex color |
 | Time zone | LaraPaper user time zone | Events are converted to this zone before rendering |
 | Week starts on | Monday | |
 | Advance | Weekly | `Daily` starts the grid at today instead of the start of the week |
@@ -105,7 +106,29 @@ place and keeps your settings.
 | Ignore events containing / titled exactly | – | Same filters as upstream |
 
 The grid shows as many whole weeks (4–6) as fit, like upstream: busy weeks make
-rows taller, so fewer fit.
+rows taller, so fewer fit. In a very busy month the 4th week can be cut off.
+
+### Multiple calendars
+
+List several entities under **Calendar entities**. **Calendar prefixes** and
+**Calendar colors** are matched to them by position: the first prefix/color goes with
+the first entity, and so on. Use `-` for a calendar that should have none. For example:
+
+| Calendar entities | Calendar prefixes | Calendar colors |
+|---|---|---|
+| `calendar.family` | `-` | `gray-65` |
+| `calendar.work` | `W:` | `black` |
+
+- **Prefix**: shown before the title, followed by a space (`W: Standup`).
+- **Color**: fills every event of that calendar, timed ones included, instead of a dot.
+  Text turns black or white depending on how light the color is.
+  - Color names use the framework's classes: solid greys on the TRMNL X (hues fall back
+    to a grey), dither patterns with outlined text on 1-/2-bit screens, and real
+    colors on color panels.
+  - Hex colors are painted as-is. Without dithering, a 1-bit screen snaps them to black
+    or white.
+- Events without a calendar color keep the default look: black all-day blocks and
+  dotted timed events. So give the other calendars a grey if they need to stand out.
 
 ## TRMNL framework
 

@@ -100,7 +100,20 @@
   .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { overflow: hidden; text-overflow: ellipsis; }
   .trmnl-calendar .fc-daygrid-day-events { margin-bottom: calc(2px * var(--cal-u)); }
   .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; }
+  /* calendar colours: the fill comes from bg--* (or inline hex); keep a black outline so
+     light colours still read as a block */
+  .trmnl-calendar .fc-daygrid-event.trmnl-event--colored {
+    border: var(--cal-line) solid var(--black);
+    background: transparent;
+    overflow: hidden;
+  }
+  .trmnl-calendar .fc-daygrid-event.trmnl-event--colored .fc-event-main { height: 100%; }
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-main-frame { align-items: baseline; }
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-time { flex-shrink: 0; margin-right: calc(3px * var(--cal-u)); }
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-title { overflow: hidden; text-overflow: ellipsis; }
   .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; }
+  /* the week number sits top-left of the week's first cell; keep a month label clear of it */
+  .trmnl-calendar .fc-daygrid-day-frame:has(.fc-daygrid-week-number) .trmnl-month-label { padding-left: 2.6em; }
 
   /* "Dither" setting: skip the framework's per-depth greys (patterns on 1-/2-bit) and
      paint the raw palette greys; LaraPaper then dithers the whole screen. */
@@ -127,6 +140,26 @@
   window.trmnlHaCalendar = (function() {
     function splitList(value) {
       return String(value || '').split(',').map(function(v) { return v.trim(); }).filter(Boolean);
+    }
+
+    // Per-calendar lists (prefixes, colours) line up with the calendar entities by
+    // position; "-" leaves a calendar without a value.
+    function splitAligned(value) {
+      return splitList(value).map(function(v) { return v === '-' ? '' : v; });
+    }
+
+    // A calendar colour is a framework palette token (black, white, gray-10..gray-75,
+    // red, blue-40, ...), painted with its bg--* class so every screen gets its own
+    // rendering (solid grey on 4-bit, dither pattern on 1-/2-bit, ink on colour panels),
+    // or a hex colour, painted as-is.
+    var HUES = 'red|orange|yellow|lime|green|cyan|blue|violet|purple|pink';
+    var TOKEN = new RegExp('^(black|white|gray-(10|15|20|25|30|35|40|45|50|55|60|65|70|75)|(' + HUES + ')(-(10|15|20|25|30|35|40|45|50|55|60|65|70|75))?)$');
+    var HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+    function parseColor(value) {
+      var v = String(value || '').trim().toLowerCase().replace(/^bg--/, '');
+      if (TOKEN.test(v)) return { token: v };
+      if (HEX.test(v)) return { hex: v };
+      return null;
     }
 
     // LaraPaper stores one polled URL as its JSON (a bare list becomes { data: [...] }, and
@@ -176,18 +209,20 @@
         cfg.ignoredPhrasesExactMatch.indexOf(description.trim()) !== -1;
     }
 
-    function toEvent(ev, label, cfg) {
+    function toEvent(ev, prefix, color, cfg) {
       if (!ev || !ev.start) return null;
       var allDay = !!ev.start.date && !ev.start.dateTime;
       var start = allDay ? ev.start.date : wallClock(ev.start.dateTime, cfg.timeZoneName);
       var end = null;
       if (ev.end) end = allDay ? (ev.end.date || null) : (ev.end.dateTime ? wallClock(ev.end.dateTime, cfg.timeZoneName) : null);
       return {
-        title: (label ? label + ': ' : '') + ev.summary,
+        title: (prefix ? prefix + ' ' : '') + ev.summary,
         start: start,
         end: end,
         allDay: allDay,
-        extendedProps: { summary: ev.summary, description: ev.description || '', location: ev.location || '' }
+        // coloured calendars fill every event, timed ones included, instead of a dot
+        display: color ? 'block' : 'auto',
+        extendedProps: { summary: ev.summary, description: ev.description || '', location: ev.location || '', color: color }
       };
     }
 
@@ -203,7 +238,7 @@
           // private events without details have no summary; upstream calls them 'Busy'
           raw.summary = raw.summary || 'Busy';
           if (isIgnored(raw, cfg)) return;
-          var ev = toEvent(raw, cfg.calendarLabels[i], cfg);
+          var ev = toEvent(raw, cfg.calendarPrefixes[i], parseColor(cfg.calendarColors[i]), cfg);
           if (!ev) return;
 
           if (!cfg.includePastEvents) {
@@ -223,14 +258,17 @@
       return { events: events, errors: errors };
     }
 
-    return { splitList: splitList, wallClock: wallClock, buildEvents: buildEvents };
+    return { splitList: splitList, splitAligned: splitAligned, wallClock: wallClock, buildEvents: buildEvents };
   })();
 
   // The framework scales the whole screen with `transform: scale(var(--pixel-ratio))`
   // (1.8 on the TRMNL X, which it lays out at 1040x780). FullCalendar sizes its grid from
   // getBoundingClientRect(), which includes that transform, and writes the numbers back
   // as CSS lengths, so the grid came out 1.8x too big. Inside a calendar, report rects in
-  // the calendar's own untransformed CSS pixels; everywhere else nothing changes.
+  // the calendar's own CSS pixels; everywhere else nothing changes.
+  // Sizes come from offsetWidth/offsetHeight (layout sizes, which don't depend on where
+  // the element sits): transformed rect sizes shift by a pixel with sub-pixel position,
+  // and FullCalendar, which positions events by their measured heights, then never settles.
   (function() {
     if (Element.prototype.trmnlUnscaledRects) return;
     var rawRect = Element.prototype.getBoundingClientRect;
@@ -239,11 +277,21 @@
       var root = this.closest ? this.closest('.trmnl-calendar') : null;
       if (!root || !root.offsetWidth) return rect;
       var scale = (root === this ? rect : rawRect.call(root)).width / root.offsetWidth;
-      if (!scale || Math.abs(scale - 1) < 0.001) return rect;
-      return new DOMRect(rect.x / scale, rect.y / scale, rect.width / scale, rect.height / scale);
+      if (!scale || Math.abs(scale - 1) < 0.01) return rect;
+      var width = this.offsetWidth !== undefined ? this.offsetWidth : rect.width / scale;
+      var height = this.offsetHeight !== undefined ? this.offsetHeight : rect.height / scale;
+      return new DOMRect(Math.round(rect.x / scale), Math.round(rect.y / scale), width, height);
     };
     Element.prototype.trmnlUnscaledRects = true;
   })();
+
+  function isDark(color) {
+    var m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(color).trim());
+    if (!m) return true;
+    var h = m[1].length === 3 ? m[1].replace(/./g, '$&$&') : m[1];
+    var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
+  }
 
   // Shared initializer: bootstrap any .trmnl-calendar element with data-calendar-config JSON
   window.trmnlInitCalendars = function(root) {
@@ -259,7 +307,8 @@
         var nowDate = ha.nowUtc ? new Date(ha.nowUtc * 1000) : new Date();
         ha.today = window.trmnlHaCalendar.wallClock(nowDate, ha.timeZoneName).slice(0, 10);
         ha.calendarEntities = window.trmnlHaCalendar.splitList(ha.calendarEntities);
-        ha.calendarLabels = window.trmnlHaCalendar.splitList(ha.calendarLabels);
+        ha.calendarPrefixes = window.trmnlHaCalendar.splitAligned(ha.calendarPrefixes);
+        ha.calendarColors = window.trmnlHaCalendar.splitAligned(ha.calendarColors);
         ha.ignoredPhrases = window.trmnlHaCalendar.splitList(ha.ignoredPhrases);
         ha.ignoredPhrasesExactMatch = window.trmnlHaCalendar.splitList(ha.ignoredPhrasesExactMatch);
         var built = window.trmnlHaCalendar.buildEvents(payload, ha);
@@ -299,7 +348,33 @@
         // The "Dither" setting paints raw greys in CSS instead (see .dither-greys).
         var textSmall = function() { return ['text--small']; };
         baseOpts.dayHeaderClassNames = textSmall;
-        baseOpts.eventClassNames = textSmall;
+        baseOpts.eventClassNames = function(arg) {
+          var color = arg.event.extendedProps.color;
+          if (!color) return ['text--small'];
+          return ['text--small', 'trmnl-event--colored'];
+        };
+        // Text on a calendar colour: black or white by lightness on screens that print
+        // greys solid; on 1-/2-bit the fill is a dither pattern, so black text with the
+        // framework's contrast outline (text-stroke), like upstream's adaptiveEventStroke.
+        baseOpts.eventDidMount = function(info) {
+          var color = info.event.extendedProps.color;
+          if (!color) return;
+          var screen = node.closest('.screen') || document.documentElement;
+          var styles = getComputedStyle(screen);
+          var raw = color.hex || styles.getPropertyValue('--' + color.token).trim();
+          // FullCalendar paints the event's own background, which wins over bg--* in the
+          // cascade, so the colour goes on the inner .fc-event-main that fills it.
+          var main = info.el.querySelector('.fc-event-main') || info.el;
+          if (color.hex || ha.ditherGreys) {
+            main.style.backgroundColor = raw; // dither mode: raw colour, LaraPaper dithers it
+          } else {
+            main.classList.add('bg--' + color.token);
+          }
+          var depth = parseInt(styles.getPropertyValue('--framework-bit-depth'), 10) || 4;
+          var patterned = depth <= 2 && !ha.ditherGreys && color.token && color.token !== 'black' && color.token !== 'white';
+          main.style.color = patterned || !isDark(raw) ? 'var(--black)' : 'var(--white)';
+          if (patterned) main.classList.add('text-stroke', 'text-stroke--small');
+        };
         baseOpts.moreLinkClassNames = textSmall;
         baseOpts.weekNumberClassNames = textSmall;
         baseOpts.dayCellClassNames = function(arg) {

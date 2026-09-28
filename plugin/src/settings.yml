@@ -36,8 +36,13 @@ custom_fields:
     placeholder: calendar.family
   - keyname: calendar_labels
     field_type: multi_string
-    name: Calendar labels
-    description: Optional short labels, in the same order as the calendar entities. Shown before the event title when set.
+    name: Calendar prefixes
+    description: Optional text shown before each event title, one per calendar in the same order as the entities (e.g. W:, Kids). Use - for a calendar without one.
+    optional: true
+  - keyname: calendar_colors
+    field_type: multi_string
+    name: Calendar colors
+    description: Optional event background, one per calendar in the same order as the entities. A TRMNL color name (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
     optional: true
   - keyname: time_zone
     field_type: time_zone

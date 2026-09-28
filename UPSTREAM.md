@@ -41,10 +41,14 @@ Forked from [usetrmnl/plugins](https://github.com/usetrmnl/plugins), `lib/calend
 - **Title bar**: the framework's `title_bar` with the visible date range replaces
   FullCalendar's `headerToolbar` (`month_header`).
 - **Removed**: time-grid helpers (`trmnlAllDaySlotAuto`, `trmnlSlotBoundsAuto`, the
-  week-view now indicator, `dayHeaders`), the colour options (`colorize_events`,
-  `palette_colors`, `adaptiveEventStroke`), because HA calendars have no colours, and the
+  week-view now indicator, `dayHeaders`), the Google colour options (`colorize_events`,
+  `palette_colors`), replaced by per-calendar colours, and the
   RSVP filter (`ignore_based_on_acceptance?`), because HA doesn't expose attendees.
-- **Added**: optional per-calendar labels, a line above the grid naming any
+- **Colors**: upstream colours events from Google's calendar/event colours
+  (`colorize_events`). HA has none, so each calendar gets a configured colour. Framework
+  colour names go through `bg--*` classes; on 1-/2-bit screens the text gets
+  `text-stroke`, like upstream's `adaptiveEventStroke`.
+- **Added**: optional per-calendar prefixes, a line above the grid naming any
   calendar that failed to load, and the 1-/2-bit grey handling setting (adapted
   styles, or LaraPaper's `image-dither` switch for Floyd–Steinberg dithering).
 - **Settings**: exposed as custom fields (`settings.yml`) and read from
