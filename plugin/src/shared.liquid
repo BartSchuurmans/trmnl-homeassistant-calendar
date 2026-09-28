@@ -14,22 +14,26 @@
 {% endif %}
 
 <style>
+  /* Fonts, text sizes and greys come from the TRMNL framework: the JS below puts
+     text--* and bg--gray-* classes on FullCalendar's elements, which gives Inter at
+     the device's scale on the TRMNL X and pixel fonts plus dither patterns on 1-/2-bit
+     screens. This sheet only shapes FullCalendar's grid; sizes follow --ui-scale. */
   .trmnl-calendar {
-    height: 100%;
+    --cal-u: var(--ui-scale, 1);
+    --cal-line: max(1px, round(down, calc(var(--cal-u) * 1.4px), 1px)); /* 1px, 2px on the X */
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-height: 0;
     width: 100%;
-    color: #000;
-    font-size: 15px;
-    line-height: 1.2;
-    --fc-border-color: #000;
-    --fc-page-bg-color: #fff;
+    color: var(--black);
+    --fc-border-color: var(--black);
+    --fc-page-bg-color: var(--white);
     --fc-neutral-bg-color: transparent;
     --fc-today-bg-color: transparent;
-    --fc-event-bg-color: #000;
-    --fc-event-border-color: #000;
-    --fc-event-text-color: #fff;
-    --fc-small-font-size: 0.85em;
-    --trmnl-weekend-bg: #e6e6e6;
-    --trmnl-muted: #6b6b6b;
+    --fc-event-bg-color: var(--black);
+    --fc-event-border-color: var(--black);
+    --fc-event-text-color: var(--white);
+    --fc-small-font-size: 1em;
   }
 
   /* e-ink: no scrollbars, no hover states, no links */
@@ -38,21 +42,15 @@
   .trmnl-calendar .fc-event:hover,
   .trmnl-calendar .fc-daygrid-dot-event:hover { background: none; }
 
-  /* month title (month_header) */
-  .trmnl-calendar .fc-header-toolbar.fc-toolbar { margin-bottom: 6px; }
-  .trmnl-calendar .fc-toolbar-title { font-size: 22px; font-weight: 700; }
-
   /* grid */
-  .trmnl-calendar .fc-scrollgrid { border-width: 0; }
+  .trmnl-calendar th, .trmnl-calendar td { border: var(--cal-line) solid var(--black); }
+  .trmnl-calendar .fc-scrollgrid,
   .trmnl-calendar .fc-scrollgrid-section > * { border-width: 0; }
-  .trmnl-calendar th, .trmnl-calendar td { border-color: #000; }
-  .trmnl-calendar .fc-col-header-cell { border-width: 0 0 2px 0; }
+  .trmnl-calendar .fc-col-header-cell { border-width: 0 0 calc(var(--cal-line) * 2) 0; }
   .trmnl-calendar .fc-col-header-cell-cushion {
     display: block;
-    padding: 2px 6px 4px;
-    font-size: 13px;
+    padding: calc(2px * var(--cal-u)) calc(6px * var(--cal-u)) calc(4px * var(--cal-u));
     font-weight: 700;
-    letter-spacing: 0.04em;
     text-align: left;
     text-transform: uppercase;
   }
@@ -62,73 +60,64 @@
   .trmnl-calendar .fc-daygrid-body td:last-child,
   .trmnl-calendar .fc-col-header-cell:last-child { border-right-width: 0; }
 
-  .trmnl-calendar:not(.no-weekend-shading) .fc-daygrid-day.fc-day-sat,
-  .trmnl-calendar:not(.no-weekend-shading) .fc-daygrid-day.fc-day-sun { background: var(--trmnl-weekend-bg); }
-
   /* day number, right aligned; month label sits left of the number on the 1st */
   .trmnl-calendar .fc-daygrid-day-top { align-items: center; }
   .trmnl-calendar .fc-daygrid-day-top.trmnl-has-month-label { flex-direction: row; justify-content: flex-end; }
-  .trmnl-calendar .fc-daygrid-day-number {
-    margin: 3px 4px 1px;
-    padding: 1px 6px;
+  .trmnl-calendar .fc-daygrid-day-number { padding: calc(3px * var(--cal-u)) calc(4px * var(--cal-u)) calc(1px * var(--cal-u)); }
+  .trmnl-calendar .trmnl-day-number {
+    display: inline-block;
     min-width: 1.5em;
+    padding: 0 0.3em;
     border-radius: 999px;
-    font-size: 17px;
     font-weight: 700;
     text-align: center;
   }
-  .trmnl-calendar .fc-day-past .fc-daygrid-day-number { color: var(--trmnl-muted); }
-  .trmnl-calendar.highlight-today .fc-day-today .fc-daygrid-day-number { background: #000; color: #fff; }
+  .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number { background: var(--black); color: var(--white); }
   .trmnl-calendar .trmnl-month-label {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding: 2px 0 0 4px;
-    font-size: 13px;
+    padding-left: calc(4px * var(--cal-u));
     font-weight: 700;
     text-transform: uppercase;
   }
 
   /* events */
-  .trmnl-calendar .fc-daygrid-event { margin-top: 1px; font-size: 13px; line-height: 1.25; }
-  .trmnl-calendar .fc-daygrid-block-event { border-radius: 3px; }
-  .trmnl-calendar .fc-daygrid-block-event .fc-event-main { padding: 0 3px; }
+  .trmnl-calendar .fc-daygrid-event { margin-top: calc(1px * var(--cal-u)); }
+  .trmnl-calendar .fc-daygrid-block-event { border-radius: calc(3px * var(--cal-u)); }
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-main { padding: calc(1px * var(--cal-u)) calc(3px * var(--cal-u)); }
   .trmnl-calendar .fc-daygrid-block-event .fc-event-time { font-weight: 400; }
-  .trmnl-calendar .fc-event-title { font-weight: 600; }
-  .trmnl-calendar .fc-daygrid-dot-event { padding: 0; color: #000; }
-  .trmnl-calendar .fc-daygrid-event-dot { margin: 0 3px 0 2px; border-width: 4px; border-color: #000; }
-  .trmnl-calendar .fc-daygrid-dot-event .fc-event-time { margin-right: 3px; font-weight: 400; }
+  .trmnl-calendar .fc-event-title { font-weight: 700; }
+  .trmnl-calendar .fc-daygrid-dot-event { padding: 0; color: var(--black); }
+  .trmnl-calendar .fc-daygrid-event-dot {
+    margin: 0 calc(3px * var(--cal-u)) 0 calc(2px * var(--cal-u));
+    border-width: calc(4px * var(--cal-u));
+    border-color: var(--black);
+    border-radius: 50%;
+  }
+  .trmnl-calendar .fc-daygrid-dot-event .fc-event-time { margin-right: calc(3px * var(--cal-u)); font-weight: 400; }
   .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { overflow: hidden; text-overflow: ellipsis; }
-  .trmnl-calendar .fc-daygrid-day-events { margin-bottom: 2px; }
-  .trmnl-calendar .fc-daygrid-more-link { font-size: 12px; font-weight: 700; }
+  .trmnl-calendar .fc-daygrid-day-events { margin-bottom: calc(2px * var(--cal-u)); }
+  .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; }
+  .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; }
 
-  .trmnl-calendar .fc-daygrid-week-number {
-    background: none;
-    color: var(--trmnl-muted);
-    font-size: 11px;
-    font-weight: 700;
-  }
-
-  /* 1-/2-bit without dithering: LaraPaper snaps each pixel to the nearest level, so
-     the light weekend grey would vanish and muted text would turn black anyway. Use a
-     sparse pixel pattern and solid text instead. With "dither-greys" the greys stay
-     and LaraPaper dithers the whole screen. */
-  .screen--1bit .trmnl-calendar:not(.dither-greys),
-  .screen--2bit .trmnl-calendar:not(.dither-greys) {
-    --trmnl-weekend-bg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='1' height='1'/%3E%3Crect x='2' y='2' width='1' height='1'/%3E%3C/svg%3E") 0 0 / 4px 4px;
-    --trmnl-muted: #000;
-  }
+  /* "Dither" setting: skip the framework's per-depth greys (patterns on 1-/2-bit) and
+     paint the raw palette greys; LaraPaper then dithers the whole screen. */
+  .trmnl-calendar.dither-greys.shade-weekends .fc-daygrid-day.fc-day-sat,
+  .trmnl-calendar.dither-greys.shade-weekends .fc-daygrid-day.fc-day-sun { background: var(--gray-75); }
+  .trmnl-calendar.dither-greys .trmnl-day-number.is-past,
+  .trmnl-calendar.dither-greys .fc-daygrid-week-number { color: var(--gray-30); }
 
   /* patterned or dithered weekend cells make small text hard to read: back it with white */
-  .screen--1bit .trmnl-calendar .fc-daygrid-day-number,
-  .screen--2bit .trmnl-calendar .fc-daygrid-day-number,
+  .screen--1bit .trmnl-calendar .trmnl-day-number,
+  .screen--2bit .trmnl-calendar .trmnl-day-number,
   .screen--1bit .trmnl-calendar .trmnl-month-label,
   .screen--2bit .trmnl-calendar .trmnl-month-label,
   .screen--1bit .trmnl-calendar .fc-daygrid-dot-event,
-  .screen--2bit .trmnl-calendar .fc-daygrid-dot-event { background: #fff; }
+  .screen--2bit .trmnl-calendar .fc-daygrid-dot-event { background-color: var(--white); }
 
-  .trmnl-calendar-error { padding: 4px 6px; font-size: 13px; font-weight: 700; }
+  .trmnl-calendar-error { font-weight: 700; }
 </style>
 
 <script>
@@ -237,6 +226,25 @@
     return { splitList: splitList, wallClock: wallClock, buildEvents: buildEvents };
   })();
 
+  // The framework scales the whole screen with `transform: scale(var(--pixel-ratio))`
+  // (1.8 on the TRMNL X, which it lays out at 1040x780). FullCalendar sizes its grid from
+  // getBoundingClientRect(), which includes that transform, and writes the numbers back
+  // as CSS lengths, so the grid came out 1.8x too big. Inside a calendar, report rects in
+  // the calendar's own untransformed CSS pixels; everywhere else nothing changes.
+  (function() {
+    if (Element.prototype.trmnlUnscaledRects) return;
+    var rawRect = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function() {
+      var rect = rawRect.call(this);
+      var root = this.closest ? this.closest('.trmnl-calendar') : null;
+      if (!root || !root.offsetWidth) return rect;
+      var scale = (root === this ? rect : rawRect.call(root)).width / root.offsetWidth;
+      if (!scale || Math.abs(scale - 1) < 0.001) return rect;
+      return new DOMRect(rect.x / scale, rect.y / scale, rect.width / scale, rect.height / scale);
+    };
+    Element.prototype.trmnlUnscaledRects = true;
+  })();
+
   // Shared initializer: bootstrap any .trmnl-calendar element with data-calendar-config JSON
   window.trmnlInitCalendars = function(root) {
     try {
@@ -264,7 +272,7 @@
         var cfg = {
           timeZone: 'UTC', // event strings are already wall-clock in ha.timeZoneName
           now: ha.today,
-          headerToolbar: ha.monthHeader ? { start: 'title', center: '', end: '' } : false,
+          headerToolbar: false, // the title bar (month_header) is the framework's .title_bar
           height: '100%',
           initialView: 'rollingMonth',
           initialDate: ha.today,
@@ -286,11 +294,25 @@
           locale: (cfg.locale || 'en')
         };
 
+        // TRMNL framework classes on FullCalendar's elements: text--* picks the device's
+        // font and size, bg--gray-* paints solid on 4-bit and a dither pattern on 1-/2-bit.
+        // The "Dither" setting paints raw greys in CSS instead (see .dither-greys).
+        var textSmall = function() { return ['text--small']; };
+        baseOpts.dayHeaderClassNames = textSmall;
+        baseOpts.eventClassNames = textSmall;
+        baseOpts.moreLinkClassNames = textSmall;
+        baseOpts.weekNumberClassNames = textSmall;
+        baseOpts.dayCellClassNames = function(arg) {
+          var weekend = arg.dow === 0 || arg.dow === 6;
+          return (weekend && ha.shadeWeekends && !ha.ditherGreys) ? ['bg--gray-75'] : [];
+        };
+
         // Month/rolling-month: force numeric day number, but add a small month label
         if (node.classList.contains('trmnl-calendar--month')) {
           baseOpts.dayCellContent = function(arg) {
             try {
-              return { html: String(arg.date.getUTCDate()) };
+              var cls = 'trmnl-day-number text--base' + (arg.isPast ? ' is-past' + (ha.ditherGreys ? '' : ' text--muted') : '');
+              return { html: '<span class="' + cls + '">' + arg.date.getUTCDate() + '</span>' };
             } catch (e) {
               return { html: '' };
             }
@@ -307,7 +329,7 @@
 
               var monthName = arg.date.toLocaleDateString((cfg.locale || 'en'), { month: 'long', timeZone: 'UTC' });
               var label = document.createElement('span');
-              label.className = 'trmnl-month-label';
+              label.className = 'trmnl-month-label text--small';
               label.textContent = monthName;
               // Mark parent so CSS can align the pair to the right without :has()
               top.classList.add('trmnl-has-month-label');
@@ -347,10 +369,14 @@
 
         if (built.errors.length) {
           var err = document.createElement('div');
-          err.className = 'trmnl-calendar-error';
+          err.className = 'trmnl-calendar-error text--small';
           err.textContent = 'Could not load ' + built.errors.join('; ');
           node.parentNode.insertBefore(err, node);
         }
+
+        // Title bar: the visible date range, the same text FullCalendar's toolbar would show
+        var titleRange = document.querySelector('.title_bar [data-calendar-range]');
+        if (titleRange) titleRange.textContent = calendar.view.title;
 
         node.setAttribute('data-initialized', 'true');
 

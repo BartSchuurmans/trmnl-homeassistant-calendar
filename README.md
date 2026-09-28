@@ -99,13 +99,32 @@ place and keeps your settings.
 | Show event times / end times | yes / yes | End times take up most of a cell, turn them off for longer titles |
 | Show past events | yes | Earlier days of the current week |
 | Highlight today, Shade weekends | yes | |
-| Show month title, week numbers | no | |
-| Greys on 1-bit / 2-bit screens | Adapt styles | `Adapt` swaps greys for a pixel pattern and solid black text. `Dither` keeps the greys and has LaraPaper Floyd–Steinberg dither the whole screen. The TRMNL X (4-bit) is always dithered, so this only matters for 1-bit and 2-bit devices |
+| Show title bar, week numbers | no | The title bar is the framework's, with the recipe name and the visible date range |
+| Greys on 1-bit / 2-bit screens | Adapt styles | `Adapt` uses the framework's greys, which become dither patterns on 1-/2-bit screens. `Dither` paints plain greys and has LaraPaper Floyd–Steinberg dither the whole screen. The TRMNL X (4-bit) is always dithered, so this only matters for 1-bit and 2-bit devices |
 | Locale | `en` | Day/month names, e.g. `nl`, `de` |
 | Ignore events containing / titled exactly | – | Same filters as upstream |
 
 The grid shows as many whole weeks (4–6) as fit, like upstream: busy weeks make
 rows taller, so fewer fit.
+
+## TRMNL framework
+
+LaraPaper renders recipes inside the [TRMNL framework](https://github.com/usetrmnl/trmnl-framework)
+(`framework_version: 3.3.1` in `settings.yml`, LaraPaper's default). The plugin uses it for:
+
+- **Text**: `text--small` / `text--base` on FullCalendar's elements. That's Inter at the
+  device's scale on the TRMNL X, and TRMNL pixel fonts on low-density 1-bit screens.
+- **Greys**: `bg--gray-75` for weekends and `text--muted` for past days. Solid on 4-bit,
+  dither patterns on 1-/2-bit.
+- **Layout**: `view` → `layout` → optional `title_bar`, with spacing from `--ui-scale`.
+
+The calendar grid itself (borders, cells, event blocks) is custom CSS, as upstream,
+because the framework has no calendar component.
+
+On the TRMNL X, LaraPaper renders at 1872×1404 with `screen--v2 screen--scale-xxlarge`.
+The framework lays that out at 1040×780 and scales the screen by 1.8 with a CSS
+`transform`, with a 1.5× UI scale on top. FullCalendar can't measure through a transform,
+so `shared.liquid` corrects its measurements inside the calendar (see the comment there).
 
 ## Local preview
 
@@ -120,9 +139,14 @@ HA_URL=http://homeassistant.local:8123 HA_TOKEN=... \
 
 Options: `--set key=value` (any custom field), `--tz Europe/Amsterdam`,
 `--device og` / `og2` (800×480, 1-bit / 2-bit), `--raw` (skip the grey-level reduction), `--data payload.json`, `--out file.png`. It needs a Chromium;
-set `CHROMIUM_PATH` if Playwright can't find one. The preview renders with
-[liquidjs](https://liquidjs.com) and without the TRMNL framework CSS when trmnl.com
-isn't reachable, so small differences from LaraPaper's output are possible.
+set `CHROMIUM_PATH` if Playwright can't find one.
+
+The preview uses the same window size, screen classes and framework version as
+LaraPaper. It loads the framework from trmnl.com; to work offline, point
+`FRAMEWORK_DIR` at the `public/` folder of a
+[trmnl-framework](https://github.com/usetrmnl/trmnl-framework) checkout at the matching
+tag (`git checkout v3.3.1`). Templates are rendered with [liquidjs](https://liquidjs.com)
+instead of LaraPaper's PHP Liquid, so small differences are possible.
 
 ## Notes
 
@@ -130,8 +154,10 @@ isn't reachable, so small differences from LaraPaper's output are possible.
   which LaraPaper's Liquid engine supports. It fetches 7 days back to 43 days ahead,
   enough for the current week plus 6 weeks.
 - FullCalendar and (for non-English locales) its locale bundle load from jsDelivr
-  when the screen renders, so the LaraPaper container needs internet access. It
-  also loads the TRMNL framework CSS from trmnl.com.
+  when the screen renders, and LaraPaper loads the framework from trmnl.com, so the
+  LaraPaper container needs internet access. LaraPaper can point the framework
+  elsewhere with `TRMNL_BLADE_FRAMEWORK_CSS_URL` / `TRMNL_BLADE_FRAMEWORK_JS_URL`
+  (untested here; the CSS loads its fonts from `/fonts/` on the same host).
 - Like LaraPaper, the preview reduces the screenshot to the device's grey levels. 4-bit
   is always dithered. 1-bit and 2-bit are dithered only when the page contains
   `<img class="image-dither">`, which is what the `Dither` setting adds.

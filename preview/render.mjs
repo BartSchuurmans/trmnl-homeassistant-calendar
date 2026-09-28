@@ -1,5 +1,7 @@
 // Local preview: renders plugin/src/{shared,full}.liquid the way LaraPaper does and
-// screenshots it at TRMNL X resolution (1872x1404, CSS viewport 1040x780 @ 1.8x).
+// screenshots it. Like LaraPaper, the browser window is the device's pixel size at 1x
+// (1872x1404 for the TRMNL X) inside the same screen markup and framework version, so
+// the framework applies the same scale, fonts and grey patterns.
 //
 //   node render.mjs                         sample events → out/preview.png
 //   HA_URL=http://ha:8123 HA_TOKEN=... HA_CALENDARS=calendar.family,calendar.work node render.mjs
@@ -10,8 +12,10 @@
 // reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
 // 1-/2-bit only when the page contains <img class="image-dither">. --raw skips this.
 //
-// The TRMNL framework CSS is loaded from trmnl.com when reachable; FullCalendar is
-// served from node_modules so the preview works offline.
+// The TRMNL framework (CSS, JS, fonts) loads from trmnl.com, or from a local copy when
+// FRAMEWORK_DIR points at a directory with css/<v>/, js/<v>/ and fonts/ (the public/
+// folder of github.com/usetrmnl/trmnl-framework at that version's tag). FullCalendar
+// is served from node_modules.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,10 +27,12 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const src = path.join(here, '..', 'plugin', 'src');
 const outDir = path.join(here, 'out');
 
+// Screen classes and CSS variables as LaraPaper sets them for its seeded device models
+// (DeviceModel css_name / color_depth / scale_level / css_variables).
 const DEVICES = {
-  x: { width: 1040, height: 780, scale: 1.8, variant: 'v2', depth: '4bit' },
-  og: { width: 800, height: 480, scale: 1, variant: 'og', depth: '1bit' },
-  og2: { width: 800, height: 480, scale: 1, variant: 'og', depth: '2bit' },
+  x: { width: 1872, height: 1404, classes: 'screen--v2 screen--4bit screen--scale-xxlarge', depth: '4bit', vars: {} },
+  og: { width: 800, height: 480, classes: 'screen--og_png screen--1bit', depth: '1bit', vars: { '--ui-scale': '1.0', '--gap-scale': '1.0' } },
+  og2: { width: 800, height: 480, classes: 'screen--og_png screen--2bit', depth: '2bit', vars: { '--ui-scale': '1.0', '--gap-scale': '1.0' } },
 };
 
 const args = process.argv.slice(2);
@@ -141,7 +147,7 @@ const context = {
   trmnl: {
     system: { timestamp_utc: Math.floor(Date.now() / 1000) },
     user: { locale: 'en', time_zone_iana: timeZone, utc_offset: '0', name: 'Preview' },
-    device: { width: Math.round(device.width * device.scale), height: Math.round(device.height * device.scale) },
+    device: { width: device.width, height: device.height },
     plugin_settings: { instance_name: settings.name, custom_fields_values: customFields },
   },
 };
@@ -150,27 +156,33 @@ const engine = new Liquid();
 const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n' + fs.readFileSync(path.join(src, 'full.liquid'), 'utf8');
 const body = await engine.parseAndRender(markup, context);
 
+// LaraPaper's resources/views/vendor/trmnl/components/screen.blade.php
+const fw = settings.framework_version || '3.3.1';
+const vars = { '--screen-w': `${device.width}px`, '--screen-h': `${device.height}px`, ...device.vars };
 const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8">
-<link rel="stylesheet" href="https://trmnl.com/css/latest/plugins.css">
-<script src="https://trmnl.com/js/latest/plugins.js"></script>
-<style>html,body{margin:0;background:#fff;font-family:Inter,system-ui,sans-serif}
-.screen{width:${device.width}px;height:${device.height}px;overflow:hidden;box-sizing:border-box}
-.view{height:100%;box-sizing:border-box;padding:12px}</style>
-</head><body class="environment trmnl"><div class="screen screen--${device.variant} screen--${device.depth}">${body}</div></body></html>`;
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://trmnl.com/css/${fw}/plugins.css">
+<script src="https://trmnl.com/js/${fw}/plugins.js"></script>
+<style>:root { ${Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join(' ')} }</style>
+</head><body class="environment trmnl"><div class="screen ${device.classes}">${body}</div></body></html>`;
 
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out.replace(/\.png$/, '.html'), html);
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-const page = await browser.newPage({ viewport: { width: device.width, height: device.height }, deviceScaleFactor: device.scale, timezoneId: 'UTC' });
+const page = await browser.newPage({ viewport: { width: device.width, height: device.height }, deviceScaleFactor: 1, timezoneId: 'UTC' });
 const nm = path.join(here, 'node_modules');
 await page.route('https://cdn.jsdelivr.net/npm/**', (route) => {
   const rel = new URL(route.request().url()).pathname.replace(/^\/npm\//, '').replace(/@[\d.]+/, '');
   const file = path.join(nm, rel);
   return fs.existsSync(file) ? route.fulfill({ path: file, contentType: 'application/javascript' }) : route.abort();
 });
-await page.route('https://trmnl.com/**', (route) => route.continue().catch(() => route.abort()));
+const frameworkDir = process.env.FRAMEWORK_DIR;
+await page.route('https://trmnl.com/**', (route) => {
+  if (!frameworkDir) return route.continue().catch(() => route.abort());
+  const file = path.join(frameworkDir, new URL(route.request().url()).pathname);
+  return fs.existsSync(file) ? route.fulfill({ path: file }) : route.abort();
+});
 page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.text().includes('parser-blocking')) console.warn(`[browser] ${m.text()}`); });
 page.on('pageerror', (e) => console.error(`[browser] ${e.message}`));
 await page.setContent(html, { waitUntil: 'load', timeout: 20000 }).catch(() => {});

@@ -13,6 +13,8 @@ polling_url: |-
   {% endfor %}
 polling_headers: Authorization=Bearer {{ ha_token }}
 static_data: '{}'
+# Framework version this recipe is built and tested against (LaraPaper's default).
+framework_version: 3.3.1
 custom_fields:
   - keyname: about
     field_type: author_bio
@@ -111,7 +113,8 @@ custom_fields:
     default: 'no'
   - keyname: month_header
     field_type: select
-    name: Show month title
+    name: Show title bar
+    description: TRMNL title bar at the bottom with the recipe name and the visible date range.
     options:
       - 'Yes': 'yes'
       - 'No': 'no'

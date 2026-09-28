@@ -33,8 +33,13 @@ Forked from [usetrmnl/plugins](https://github.com/usetrmnl/plugins), `lib/calend
 - **FullCalendar**: the open-source 6.1 build from jsDelivr instead of the private
   build at trmnl.com. No `schedulerLicenseKey`, since dayGrid doesn't need one.
 - **Styles**: upstream links `plugins/calendars` and `plugins/calendars_full_month`
-  stylesheets that aren't published. The CSS in `shared.liquid` is written from scratch
-  for grayscale e-ink.
+  stylesheets that aren't published. Here fonts, text sizes and greys come from TRMNL
+  framework classes put on FullCalendar's elements through its `*ClassNames` hooks. The
+  grid CSS in `shared.liquid` is written from scratch and sized with `--ui-scale`.
+- **Transform fix**: `getBoundingClientRect()` is corrected inside the calendar, so
+  FullCalendar sizes correctly under the framework's `transform: scale(--pixel-ratio)`.
+- **Title bar**: the framework's `title_bar` with the visible date range replaces
+  FullCalendar's `headerToolbar` (`month_header`).
 - **Removed**: time-grid helpers (`trmnlAllDaySlotAuto`, `trmnlSlotBoundsAuto`, the
   week-view now indicator, `dayHeaders`), the colour options (`colorize_events`,
   `palette_colors`, `adaptiveEventStroke`), because HA calendars have no colours, and the
