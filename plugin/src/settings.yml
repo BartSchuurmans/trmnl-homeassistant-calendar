@@ -13,6 +13,8 @@ polling_url: |-
   {% endfor %}
 polling_headers: Authorization=Bearer {{ ha_token }}
 static_data: '{}'
+# Framework version this recipe is built and tested against (LaraPaper's default).
+framework_version: 3.3.1
 custom_fields:
   - keyname: about
     field_type: author_bio
@@ -34,8 +36,13 @@ custom_fields:
     placeholder: calendar.family
   - keyname: calendar_labels
     field_type: multi_string
-    name: Calendar labels
-    description: Optional short labels, in the same order as the calendar entities. Shown before the event title when set.
+    name: Calendar prefixes
+    description: Optional text shown before each event title, one per calendar in the same order as the entities (e.g. W:, Kids). Use - for a calendar without one.
+    optional: true
+  - keyname: calendar_colors
+    field_type: multi_string
+    name: Calendar colors
+    description: Optional event background, one per calendar in the same order as the entities. A TRMNL color name (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
     optional: true
   - keyname: time_zone
     field_type: time_zone
@@ -101,9 +108,18 @@ custom_fields:
       - 'Yes': 'yes'
       - 'No': 'no'
     default: 'yes'
+  - keyname: dither_greys
+    field_type: select
+    name: Greys on 1-bit / 2-bit screens
+    description: Adapt swaps greys for pixel patterns and solid black text. Dither keeps the greys and has LaraPaper dither the whole screen (text edges get slightly grainy). No effect on 4-bit screens like the TRMNL X, which LaraPaper always dithers.
+    options:
+      - Adapt styles: 'no'
+      - Dither: 'yes'
+    default: 'no'
   - keyname: month_header
     field_type: select
-    name: Show month title
+    name: Show title bar
+    description: TRMNL title bar at the bottom with the recipe name and the visible date range.
     options:
       - 'Yes': 'yes'
       - 'No': 'no'
