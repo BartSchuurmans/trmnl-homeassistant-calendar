@@ -1,0 +1,36 @@
+{% comment %}
+  Rolling month layout. Fork of usetrmnl/plugins lib/calendars/_full_month.html.erb
+  (event_layout == 'rolling_month'), fed by Home Assistant calendar entities instead
+  of Google Calendar. CSS + JS live in shared.liquid, which LaraPaper prepends.
+
+  Settings live under trmnl.plugin_settings.custom_fields_values (same path on TRMNL
+  cloud and LaraPaper). The polled payload is handed to the browser as-is; the JS in
+  shared.liquid turns HA events into FullCalendar events (the Ruby side of upstream,
+  Calendar::Helper#fullcalendar_events_json, is not open source).
+{% endcomment %}
+{% assign s = trmnl.plugin_settings.custom_fields_values %}
+{% assign time_zone = s.time_zone | default: trmnl.user.time_zone_iana | default: "UTC" %}
+{% assign locale = s.locale | default: "en" | strip %}
+
+<div class="view view--full">
+  <div id="calendar-full-month"
+       class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends == 'no' %} no-weekend-shading{% endif %}"
+       data-events="{{ data | json | escape }}"
+       data-calendar-config='{
+         "timeZoneName": {{ time_zone | json | escape }},
+         "nowUtc": {{ trmnl.system.timestamp_utc | default: 0 }},
+         "calendarEntities": {{ s.calendars | default: "" | json | escape }},
+         "calendarLabels": {{ s.calendar_labels | default: "" | json | escape }},
+         "ignoredPhrases": {{ s.ignored_phrases | default: "" | json | escape }},
+         "ignoredPhrasesExactMatch": {{ s.ignored_phrases_exact_match | default: "" | json | escape }},
+         "includePastEvents": {% if s.include_past_events == "no" %}false{% else %}true{% endif %},
+         "rollingAdvancement": {{ s.rolling_advancement | default: "week" | json | escape }},
+         "monthHeader": {% if s.month_header == "yes" %}true{% else %}false{% endif %},
+         "firstDay": {{ s.first_day | default: 1 | plus: 0 }},
+         "hour12": {% if s.time_format == "am/pm" %}true{% else %}false{% endif %},
+         "displayEventTime": {% if s.include_event_time == "no" %}false{% else %}true{% endif %},
+         "displayEventEnd": {% if s.display_event_end == "no" %}false{% else %}true{% endif %},
+         "weekNumbers": {% if s.show_week_numbers == "yes" %}true{% else %}false{% endif %},
+         "locale": {{ locale | json | escape }}
+       }'></div>
+</div>

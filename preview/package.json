@@ -1,0 +1,16 @@
+{
+  "name": "trmnl-ha-calendar-preview",
+  "private": true,
+  "type": "module",
+  "description": "Render the plugin locally with sample or live Home Assistant data",
+  "scripts": {
+    "preview": "node render.mjs"
+  },
+  "dependencies": {
+    "@fullcalendar/core": "6.1.21",
+    "fullcalendar": "6.1.21",
+    "js-yaml": "^4.1.0",
+    "liquidjs": "^10.21.0",
+    "playwright-core": "^1.55.0"
+  }
+}
