@@ -1,0 +1,5 @@
+# Home Assistant app repository: add this repo's URL under
+# Settings → Apps → store → ⋮ → Repositories.
+name: TRMNL Home Assistant Calendar
+url: https://github.com/BartSchuurmans/trmnl-homeassistant-calendar
+maintainer: Bart Schuurmans

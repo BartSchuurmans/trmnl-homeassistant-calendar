@@ -3,14 +3,18 @@
   what the month layouts use, plus the Home Assistant → FullCalendar event mapping.
 
   Upstream loads a private FullCalendar build from trmnl.com; the open-source build is
-  enough for dayGrid, so this uses the npm release. The stylesheets upstream links
-  (plugins/calendars, plugins/calendars_full_month) aren't published, so the styles
-  below are a re-creation.
+  enough for dayGrid. It loads from /ha-calendar/..., which the LaraPaper (local) app
+  in this repo serves so rendering needs no internet, and falls back to jsDelivr on
+  any other server. The stylesheets upstream links (plugins/calendars,
+  plugins/calendars_full_month) aren't published, so the styles below are a
+  re-creation.
 {% endcomment %}
 {% assign ha_locale = trmnl.plugin_settings.custom_fields_values.locale | default: "en" | strip | downcase %}
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
+<script src="/ha-calendar/fullcalendar/6.1.21/index.global.min.js"></script>
+<script>window.FullCalendar || document.write('<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"><\/script>');</script>
 {% if ha_locale != "en" and ha_locale != "" %}
-<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
+<script src="/ha-calendar/fullcalendar/6.1.21/locales-all.global.min.js"></script>
+<script>(window.FullCalendar && FullCalendar.globalLocales && FullCalendar.globalLocales.length) || document.write('<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"><\/script>');</script>
 {% endif %}
 
 <style>
