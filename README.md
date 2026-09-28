@@ -127,8 +127,9 @@ the first entity, and so on. Use `-` for a calendar that should have none. For e
     colors on color panels.
   - Hex colors are painted as-is. Without dithering, a 1-bit screen snaps them to black
     or white.
-- Events without a calendar color keep the default look: black all-day blocks and
-  dotted timed events. So give the other calendars a grey if they need to stand out.
+- Events without a calendar color use the upstream look: timed events get a grey bar
+  on the left with the time in grey below the title, and all-day events a light grey
+  bar.
 
 ## TRMNL framework
 
