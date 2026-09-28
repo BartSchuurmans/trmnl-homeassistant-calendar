@@ -96,8 +96,18 @@
     border-color: var(--black);
     border-radius: 50%;
   }
-  .trmnl-calendar .fc-daygrid-dot-event .fc-event-time { margin-right: calc(3px * var(--cal-u)); font-weight: 400; }
-  .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { overflow: hidden; text-overflow: ellipsis; }
+  /* event time on its own line above the title, like upstream; the title gets the full
+     width. Dot events: dot + time on the first line, title below the time. */
+  .trmnl-calendar .fc-daygrid-dot-event {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+  .trmnl-calendar .fc-daygrid-dot-event .fc-daygrid-event-dot { grid-row: 1; }
+  .trmnl-calendar .fc-daygrid-dot-event .fc-event-time,
+  .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { grid-column: 2; }
+  .trmnl-calendar .fc-event-time { margin: 0; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trmnl-calendar .fc-event-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .trmnl-calendar .fc-daygrid-day-events { margin-bottom: calc(2px * var(--cal-u)); }
   .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; }
   /* calendar colours: the fill comes from bg--* (or inline hex); keep a black outline so
@@ -108,9 +118,7 @@
     overflow: hidden;
   }
   .trmnl-calendar .fc-daygrid-event.trmnl-event--colored .fc-event-main { height: 100%; }
-  .trmnl-calendar .fc-daygrid-block-event .fc-event-main-frame { align-items: baseline; }
-  .trmnl-calendar .fc-daygrid-block-event .fc-event-time { flex-shrink: 0; margin-right: calc(3px * var(--cal-u)); }
-  .trmnl-calendar .fc-daygrid-block-event .fc-event-title { overflow: hidden; text-overflow: ellipsis; }
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-main-frame { flex-direction: column; align-items: stretch; }
   .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; }
   /* the week number sits top-left of the week's first cell; keep a month label clear of it */
   .trmnl-calendar .fc-daygrid-day-frame:has(.fc-daygrid-week-number) .trmnl-month-label { padding-left: 2.6em; }

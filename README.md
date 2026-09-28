@@ -97,7 +97,7 @@ place and keeps your settings.
 | Week starts on | Monday | |
 | Advance | Weekly | `Daily` starts the grid at today instead of the start of the week |
 | Time format | 24 hour | |
-| Show event times / end times | yes / yes | End times take up most of a cell, turn them off for longer titles |
+| Show event times / end times | yes / yes | Times go on their own line above the title, like upstream |
 | Show past events | yes | Earlier days of the current week |
 | Highlight today, Shade weekends | yes | |
 | Show title bar, week numbers | no | The title bar is the framework's, with the recipe name and the visible date range |
