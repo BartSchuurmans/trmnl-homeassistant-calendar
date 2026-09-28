@@ -97,7 +97,7 @@ place and keeps your settings.
 | Week starts on | Monday | |
 | Advance | Weekly | `Daily` starts the grid at today instead of the start of the week |
 | Time format | 24 hour | |
-| Show event times / end times | yes / yes | End times take up most of a cell, turn them off for longer titles |
+| Show event times / end times | yes / yes | Times go on their own line below the title |
 | Show past events | yes | Earlier days of the current week |
 | Highlight today, Shade weekends | yes | |
 | Show title bar, week numbers | no | The title bar is the framework's, with the recipe name and the visible date range |
@@ -127,8 +127,9 @@ the first entity, and so on. Use `-` for a calendar that should have none. For e
     colors on color panels.
   - Hex colors are painted as-is. Without dithering, a 1-bit screen snaps them to black
     or white.
-- Events without a calendar color keep the default look: black all-day blocks and
-  dotted timed events. So give the other calendars a grey if they need to stand out.
+- Events without a calendar color use the upstream look: timed events get a grey bar
+  on the left with the time in grey below the title, and all-day events a light grey
+  bar.
 
 ## TRMNL framework
 

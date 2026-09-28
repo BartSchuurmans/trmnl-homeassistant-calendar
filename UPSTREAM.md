@@ -38,6 +38,11 @@ Forked from [usetrmnl/plugins](https://github.com/usetrmnl/plugins), `lib/calend
   grid CSS in `shared.liquid` is written from scratch and sized with `--ui-scale`.
 - **Transform fix**: `getBoundingClientRect()` is corrected inside the calendar, so
   FullCalendar sizes correctly under the framework's `transform: scale(--pixel-ratio)`.
+- **Event look**: matched to upstream's month-layout preview. Timed events use
+  FullCalendar's dot, restyled as a grey bar on the left, with a bold title that wraps
+  and the time in grey below it. All-day events get a light grey fill (`bg--gray-70`).
+  Grid lines are thin grey (dotted on 1-/2-bit), headers are centred and bold with the
+  weekend shaded, and day numbers are small.
 - **Title bar**: the framework's `title_bar` with the visible date range replaces
   FullCalendar's `headerToolbar` (`month_header`).
 - **Removed**: time-grid helpers (`trmnlAllDaySlotAuto`, `trmnlSlotBoundsAuto`, the
