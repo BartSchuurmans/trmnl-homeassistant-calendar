@@ -30,8 +30,9 @@ Forked from [usetrmnl/plugins](https://github.com/usetrmnl/plugins), `lib/calend
 - **Time zones**: timed events are converted to the configured zone's wall-clock time and
   given to FullCalendar with `timeZone: 'UTC'`, so the result doesn't depend on the
   renderer's system zone. Day numbers and month labels read UTC dates to match.
-- **FullCalendar**: the open-source 6.1 build from jsDelivr instead of the private
-  build at trmnl.com. No `schedulerLicenseKey`, since dayGrid doesn't need one.
+- **FullCalendar**: the open-source 6.1 build instead of the private build at
+  trmnl.com, loaded from `/ha-calendar/...` (served by the LaraPaper (local) app) with
+  jsDelivr as fallback. No `schedulerLicenseKey`, since dayGrid doesn't need one.
 - **Styles**: upstream links `plugins/calendars` and `plugins/calendars_full_month`
   stylesheets that aren't published. Here fonts, text sizes and greys come from TRMNL
   framework classes put on FullCalendar's elements through its `*ClassNames` hooks. The
