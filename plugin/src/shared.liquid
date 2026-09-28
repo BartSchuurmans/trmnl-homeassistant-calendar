@@ -1,0 +1,383 @@
+{% comment %}
+  Shared CSS + JS. Fork of usetrmnl/plugins lib/calendars/_common.html.erb, trimmed to
+  what the month layouts use, plus the Home Assistant → FullCalendar event mapping.
+
+  Upstream loads a private FullCalendar build from trmnl.com; the open-source build is
+  enough for dayGrid, so this uses the npm release. The stylesheets upstream links
+  (plugins/calendars, plugins/calendars_full_month) aren't published, so the styles
+  below are a re-creation.
+{% endcomment %}
+{% assign ha_locale = trmnl.plugin_settings.custom_fields_values.locale | default: "en" | strip | downcase %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
+{% if ha_locale != "en" and ha_locale != "" %}
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"></script>
+{% endif %}
+
+<style>
+  .trmnl-calendar {
+    height: 100%;
+    width: 100%;
+    color: #000;
+    font-size: 15px;
+    line-height: 1.2;
+    --fc-border-color: #000;
+    --fc-page-bg-color: #fff;
+    --fc-neutral-bg-color: transparent;
+    --fc-today-bg-color: transparent;
+    --fc-event-bg-color: #000;
+    --fc-event-border-color: #000;
+    --fc-event-text-color: #fff;
+    --fc-small-font-size: 0.85em;
+    --trmnl-weekend-bg: #e6e6e6;
+    --trmnl-muted: #6b6b6b;
+  }
+
+  /* e-ink: no scrollbars, no hover states, no links */
+  .trmnl-calendar .fc-scroller { overflow: hidden !important; }
+  .trmnl-calendar a { color: inherit; text-decoration: none; }
+  .trmnl-calendar .fc-event:hover,
+  .trmnl-calendar .fc-daygrid-dot-event:hover { background: none; }
+
+  /* month title (month_header) */
+  .trmnl-calendar .fc-header-toolbar.fc-toolbar { margin-bottom: 6px; }
+  .trmnl-calendar .fc-toolbar-title { font-size: 22px; font-weight: 700; }
+
+  /* grid */
+  .trmnl-calendar .fc-scrollgrid { border-width: 0; }
+  .trmnl-calendar .fc-scrollgrid-section > * { border-width: 0; }
+  .trmnl-calendar th, .trmnl-calendar td { border-color: #000; }
+  .trmnl-calendar .fc-col-header-cell { border-width: 0 0 2px 0; }
+  .trmnl-calendar .fc-col-header-cell-cushion {
+    display: block;
+    padding: 2px 6px 4px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+  .trmnl-calendar .fc-daygrid-body tr:last-child > td { border-bottom-width: 0; }
+  .trmnl-calendar .fc-daygrid-body td:first-child,
+  .trmnl-calendar .fc-col-header-cell:first-child { border-left-width: 0; }
+  .trmnl-calendar .fc-daygrid-body td:last-child,
+  .trmnl-calendar .fc-col-header-cell:last-child { border-right-width: 0; }
+
+  .trmnl-calendar:not(.no-weekend-shading) .fc-daygrid-day.fc-day-sat,
+  .trmnl-calendar:not(.no-weekend-shading) .fc-daygrid-day.fc-day-sun { background: var(--trmnl-weekend-bg); }
+
+  /* day number, right aligned; month label sits left of the number on the 1st */
+  .trmnl-calendar .fc-daygrid-day-top { align-items: center; }
+  .trmnl-calendar .fc-daygrid-day-top.trmnl-has-month-label { flex-direction: row; justify-content: flex-end; }
+  .trmnl-calendar .fc-daygrid-day-number {
+    margin: 3px 4px 1px;
+    padding: 1px 6px;
+    min-width: 1.5em;
+    border-radius: 999px;
+    font-size: 17px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .trmnl-calendar .fc-day-past .fc-daygrid-day-number { color: var(--trmnl-muted); }
+  .trmnl-calendar.highlight-today .fc-day-today .fc-daygrid-day-number { background: #000; color: #fff; }
+  .trmnl-calendar .trmnl-month-label {
+    padding-top: 2px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  /* events */
+  .trmnl-calendar .fc-daygrid-event { margin-top: 1px; font-size: 13px; line-height: 1.25; }
+  .trmnl-calendar .fc-daygrid-block-event { border-radius: 3px; }
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-main { padding: 0 3px; }
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-time { font-weight: 400; }
+  .trmnl-calendar .fc-event-title { font-weight: 600; }
+  .trmnl-calendar .fc-daygrid-dot-event { padding: 0; color: #000; }
+  .trmnl-calendar .fc-daygrid-event-dot { margin: 0 3px 0 2px; border-width: 4px; border-color: #000; }
+  .trmnl-calendar .fc-daygrid-dot-event .fc-event-time { margin-right: 3px; font-weight: 400; }
+  .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { overflow: hidden; text-overflow: ellipsis; }
+  .trmnl-calendar .fc-daygrid-day-events { margin-bottom: 2px; }
+  .trmnl-calendar .fc-daygrid-more-link { font-size: 12px; font-weight: 700; }
+
+  .trmnl-calendar .fc-daygrid-week-number {
+    background: none;
+    color: var(--trmnl-muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .trmnl-calendar-error { padding: 4px 6px; font-size: 13px; font-weight: 700; }
+</style>
+
+<script>
+  // Home Assistant REST (/api/calendars/<entity>) → FullCalendar events.
+  // Stands in for the closed-source Calendar::Helper of the native plugin and mirrors
+  // the filtering of Plugins::GoogleCalendar#prepare_events.
+  window.trmnlHaCalendar = (function() {
+    function splitList(value) {
+      return String(value || '').split(',').map(function(v) { return v.trim(); }).filter(Boolean);
+    }
+
+    // LaraPaper stores one polled URL as its JSON (a bare list becomes { data: [...] }, and
+    // is also spread into the top-level `data`) and several as { IDX_0: ..., IDX_1: ... }.
+    function payloadToCalendars(payload) {
+      if (Array.isArray(payload)) return [{ events: payload }];
+      if (!payload || typeof payload !== 'object') return [];
+      var idxKeys = Object.keys(payload).filter(function(k) { return /^IDX_\d+$/.test(k); });
+      if (idxKeys.length) {
+        return idxKeys
+          .sort(function(a, b) { return parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10); })
+          .map(function(k) { return payloadToCalendars(payload[k])[0] || { events: [] }; });
+      }
+      if (Array.isArray(payload.data)) return [{ events: payload.data }];
+      if (payload.error || payload.message) return [{ events: [], error: payload.error || payload.message }];
+      return [];
+    }
+
+    // HA sends timed events as ISO strings in HA's own offset. The renderer's clock is
+    // whatever the BYOS container runs in, so convert to wall-clock time in the chosen
+    // zone and give FullCalendar zone-less strings with timeZone: 'UTC'.
+    function wallClock(dateOrIso, timeZone) {
+      var d = dateOrIso instanceof Date ? dateOrIso : new Date(dateOrIso);
+      try {
+        var parts = {};
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: timeZone, hourCycle: 'h23',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        }).formatToParts(d).forEach(function(p) { parts[p.type] = p.value; });
+        return parts.year + '-' + parts.month + '-' + parts.day + 'T' + parts.hour + ':' + parts.minute + ':' + parts.second;
+      } catch (e) {
+        // unknown zone: keep HA's own wall-clock time
+        return typeof dateOrIso === 'string' ? dateOrIso.slice(0, 19) : d.toISOString().slice(0, 19);
+      }
+    }
+
+    function includesAny(text, phrases) {
+      return phrases.some(function(p) { return (text || '').indexOf(p) !== -1; });
+    }
+
+    function isIgnored(ev, cfg) {
+      var summary = ev.summary, description = ev.description || '';
+      return includesAny(summary, cfg.ignoredPhrases) ||
+        includesAny(description, cfg.ignoredPhrases) ||
+        cfg.ignoredPhrasesExactMatch.indexOf((summary || '').trim()) !== -1 ||
+        cfg.ignoredPhrasesExactMatch.indexOf(description.trim()) !== -1;
+    }
+
+    function toEvent(ev, label, cfg) {
+      if (!ev || !ev.start) return null;
+      var allDay = !!ev.start.date && !ev.start.dateTime;
+      var start = allDay ? ev.start.date : wallClock(ev.start.dateTime, cfg.timeZoneName);
+      var end = null;
+      if (ev.end) end = allDay ? (ev.end.date || null) : (ev.end.dateTime ? wallClock(ev.end.dateTime, cfg.timeZoneName) : null);
+      return {
+        title: (label ? label + ': ' : '') + ev.summary,
+        start: start,
+        end: end,
+        allDay: allDay,
+        extendedProps: { summary: ev.summary, description: ev.description || '', location: ev.location || '' }
+      };
+    }
+
+    function buildEvents(payload, cfg) {
+      var today = cfg.today;
+      var errors = [];
+      var seen = {};
+      var events = [];
+
+      payloadToCalendars(payload).forEach(function(cal, i) {
+        if (cal.error) errors.push((cfg.calendarEntities[i] || 'calendar ' + (i + 1)) + ': ' + cal.error);
+        (cal.events || []).forEach(function(raw) {
+          // private events without details have no summary; upstream calls them 'Busy'
+          raw.summary = raw.summary || 'Busy';
+          if (isIgnored(raw, cfg)) return;
+          var ev = toEvent(raw, cfg.calendarLabels[i], cfg);
+          if (!ev) return;
+
+          if (!cfg.includePastEvents) {
+            var endsAt = ev.end || ev.start;
+            if (ev.allDay ? (ev.end ? endsAt <= today : endsAt < today) : endsAt <= today + 'T00:00:00') return;
+          }
+
+          // de-duplicate across calendars (family calendars often share an event), like upstream
+          var key = [raw.summary, raw.description || '', ev.start, ev.end, ev.allDay].join('\u0000');
+          if (seen[key]) return;
+          seen[key] = true;
+          events.push(ev);
+        });
+      });
+
+      events.sort(function(a, b) { return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; });
+      return { events: events, errors: errors };
+    }
+
+    return { splitList: splitList, wallClock: wallClock, buildEvents: buildEvents };
+  })();
+
+  // Shared initializer: bootstrap any .trmnl-calendar element with data-calendar-config JSON
+  window.trmnlInitCalendars = function(root) {
+    try {
+      var scope = root || document;
+      var nodes = scope.querySelectorAll('.trmnl-calendar:not([data-initialized])');
+      nodes.forEach(function(node){
+        var ha = {};
+        try { ha = JSON.parse(node.getAttribute('data-calendar-config') || '{}'); } catch(e) { console.warn('Invalid calendar config', e); }
+        var payload = null;
+        try { payload = JSON.parse(node.getAttribute('data-events') || 'null'); } catch(e) { console.warn('Invalid calendar data', e); }
+
+        var nowDate = ha.nowUtc ? new Date(ha.nowUtc * 1000) : new Date();
+        ha.today = window.trmnlHaCalendar.wallClock(nowDate, ha.timeZoneName).slice(0, 10);
+        ha.calendarEntities = window.trmnlHaCalendar.splitList(ha.calendarEntities);
+        ha.calendarLabels = window.trmnlHaCalendar.splitList(ha.calendarLabels);
+        ha.ignoredPhrases = window.trmnlHaCalendar.splitList(ha.ignoredPhrases);
+        ha.ignoredPhrasesExactMatch = window.trmnlHaCalendar.splitList(ha.ignoredPhrasesExactMatch);
+        var built = window.trmnlHaCalendar.buildEvents(payload, ha);
+
+        // Everything below follows upstream _full_month + _common; `cfg` is the object
+        // upstream renders server-side into data-calendar-config.
+        var rollingMonthView = { type: 'dayGridMonth', duration: { weeks: 4 }, fixedWeekCount: false };
+        if (ha.rollingAdvancement === 'day') rollingMonthView.dateAlignment = 'day';
+
+        var cfg = {
+          timeZone: 'UTC', // event strings are already wall-clock in ha.timeZoneName
+          now: ha.today,
+          headerToolbar: ha.monthHeader ? { start: 'title', center: '', end: '' } : false,
+          height: '100%',
+          initialView: 'rollingMonth',
+          initialDate: ha.today,
+          firstDay: ha.firstDay,
+          eventTimeFormat: { hour: 'numeric', minute: '2-digit', hour12: ha.hour12, meridiem: false },
+          views: { rollingMonth: rollingMonthView },
+          events: built.events,
+          displayEventTime: ha.displayEventTime,
+          dayMaxEventRows: false,
+          displayEventEnd: ha.displayEventEnd, // FullCalendar defaults this off in dayGrid
+          weekNumbers: ha.weekNumbers,
+          weekNumberCalculation: 'ISO',
+          locale: ha.locale || 'en'
+        };
+
+        // Base options shared by all calendars
+        var baseOpts = {
+          headerToolbar: false,
+          locale: (cfg.locale || 'en')
+        };
+
+        // Month/rolling-month: force numeric day number, but add a small month label
+        if (node.classList.contains('trmnl-calendar--month')) {
+          baseOpts.dayCellContent = function(arg) {
+            try {
+              return { html: String(arg.date.getUTCDate()) };
+            } catch (e) {
+              return { html: '' };
+            }
+          };
+
+          baseOpts.dayCellDidMount = function(arg) {
+            try {
+              var top = arg.el.querySelector('.fc-daygrid-day-top');
+              var numEl = top && top.querySelector('.fc-daygrid-day-number');
+              if (!top || !numEl) return;
+
+              // FullCalendar marks certain day numbers as month-start
+              if (!numEl.classList.contains('fc-daygrid-month-start')) return;
+
+              var monthName = arg.date.toLocaleDateString((cfg.locale || 'en'), { month: 'long', timeZone: 'UTC' });
+              var label = document.createElement('span');
+              label.className = 'trmnl-month-label';
+              label.textContent = monthName;
+              // Mark parent so CSS can align the pair to the right without :has()
+              top.classList.add('trmnl-has-month-label');
+              top.insertBefore(label, numEl);
+            } catch (e) { /* ignore */ }
+          };
+        }
+
+        // Rolling month fills the screen with as many whole weeks as actually fit.
+        // Render the max first — 6, because only 6 weeks of events are fetched ahead
+        // (polling_url in settings.yml); further rows would be blank.
+        var rollingMonth = cfg.initialView === 'rollingMonth' && cfg.views && cfg.views.rollingMonth;
+        // Capped rows stretch to share the height, so every week count "fits" and counting
+        // them proves nothing — a capped grid keeps the weeks the server asked for.
+        var expandWeeksToFillHeight = rollingMonth && !cfg.dayMaxEventRows;
+        if (expandWeeksToFillHeight) { cfg.views.rollingMonth.duration = { weeks: 6 }; }
+
+        var calendar = new FullCalendar.Calendar(node, Object.assign(baseOpts, cfg));
+        calendar.render();
+
+        // Count the week rows that landed fully on screen (row height is content-
+        // driven, so dense months fit fewer). Re-render with just those weeks so
+        // the range — and the title — match what is actually visible.
+        if (expandWeeksToFillHeight) {
+          var gridBottom = node.getBoundingClientRect().bottom + 1;
+          var weekRows = node.querySelectorAll('.fc-daygrid-body tr');
+          var fitWeeks = 0;
+          weekRows.forEach(function(tr){ if (tr.getBoundingClientRect().bottom <= gridBottom) fitWeeks++; });
+          fitWeeks = Math.min(6, Math.max(4, fitWeeks));
+          if (fitWeeks < weekRows.length) {
+            calendar.destroy();
+            cfg.views.rollingMonth.duration = { weeks: fitWeeks };
+            calendar = new FullCalendar.Calendar(node, Object.assign(baseOpts, cfg));
+            calendar.render();
+          }
+        }
+
+        if (built.errors.length) {
+          var err = document.createElement('div');
+          err.className = 'trmnl-calendar-error';
+          err.textContent = 'Could not load ' + built.errors.join('; ');
+          node.parentNode.insertBefore(err, node);
+        }
+
+        node.setAttribute('data-initialized', 'true');
+
+        // Hacky fix for bug shown in https://github.com/usetrmnl/core/pull/2951.
+        // Month view multi-day reflow detector. FC writes inline `top:Npx`
+        // on .fc-daygrid-event-harness-abs during render based on measured
+        // cell heights, but doesn't recompute when cells reflow later (font
+        // swap on hard refresh, late CSS, images). Watch per-cell event
+        // containers and trigger updateSize() when any height changes.
+        if (node.classList.contains('trmnl-calendar--month') && window.ResizeObserver) {
+          var rerunPending = false;
+          var lastHeights = new Map();
+          var rerun = function() {
+            if (rerunPending) return;
+            rerunPending = true;
+            requestAnimationFrame(function() {
+              rerunPending = false;
+              try { calendar.updateSize(); } catch (_) {}
+            });
+          };
+          var ro = new ResizeObserver(function(entries) {
+            var changed = false;
+            for (var i = 0; i < entries.length; i++) {
+              var el = entries[i].target;
+              var h = Math.round(entries[i].contentRect.height);
+              if (lastHeights.get(el) !== h) {
+                lastHeights.set(el, h);
+                changed = true;
+              }
+            }
+            if (changed) rerun();
+          });
+          node.querySelectorAll('.fc-daygrid-day-events').forEach(function(el) {
+            lastHeights.set(el, Math.round(el.getBoundingClientRect().height));
+            ro.observe(el);
+          });
+          // Insurance for the font-swap reflow specifically:
+          // some browsers may defer the per-cell ResizeObserver signal
+          // longer than the global fonts `loadingdone` event.
+          if (document.fonts && document.fonts.addEventListener) {
+            document.fonts.addEventListener('loadingdone', rerun);
+          }
+        }
+      });
+    } catch (e) { console.error(e); }
+  };
+
+  // Auto-init on DOM ready
+  document.addEventListener('DOMContentLoaded', function(){
+    window.trmnlInitCalendars(document);
+  });
+</script>

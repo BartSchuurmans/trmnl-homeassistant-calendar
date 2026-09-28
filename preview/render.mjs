@@ -1,0 +1,173 @@
+// Local preview: renders plugin/src/{shared,full}.liquid the way LaraPaper does and
+// screenshots it at TRMNL X resolution (1872x1404, CSS viewport 1040x780 @ 1.8x).
+//
+//   node render.mjs                         sample events → out/preview.png
+//   HA_URL=http://ha:8123 HA_TOKEN=... HA_CALENDARS=calendar.family,calendar.work node render.mjs
+//   node render.mjs --set first_day=0 --set time_format=am/pm --device og
+//
+// The TRMNL framework CSS is loaded from trmnl.com when reachable; FullCalendar is
+// served from node_modules so the preview works offline.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Liquid } from 'liquidjs';
+import yaml from 'js-yaml';
+import { chromium } from 'playwright-core';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const src = path.join(here, '..', 'plugin', 'src');
+const outDir = path.join(here, 'out');
+
+const DEVICES = {
+  x: { width: 1040, height: 780, scale: 1.8, variant: 'v2', depth: '4bit' },
+  og: { width: 800, height: 480, scale: 1, variant: 'og', depth: '1bit' },
+};
+
+const args = process.argv.slice(2);
+const overrides = {};
+let deviceName = 'x';
+let dataFile = null;
+let out = path.join(outDir, 'preview.png');
+let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--set') { const [k, ...v] = args[++i].split('='); overrides[k] = v.join('='); }
+  else if (args[i] === '--device') deviceName = args[++i];
+  else if (args[i] === '--data') dataFile = args[++i];
+  else if (args[i] === '--out') out = path.resolve(args[++i]);
+  else if (args[i] === '--tz') timeZone = args[++i];
+}
+const device = DEVICES[deviceName];
+if (!device) throw new Error(`unknown device ${deviceName}`);
+
+const settings = yaml.load(fs.readFileSync(path.join(src, 'settings.yml'), 'utf8'));
+const customFields = {};
+for (const f of settings.custom_fields) if (f.default !== undefined) customFields[f.keyname] = String(f.default);
+if (process.env.HA_CALENDARS) customFields.calendars = process.env.HA_CALENDARS;
+Object.assign(customFields, overrides);
+
+const iso = (d) => d.toISOString().slice(0, 10);
+const addDays = (d, n) => new Date(d.getTime() + n * 86400000);
+
+async function liveData() {
+  const base = process.env.HA_URL.replace(/\/$/, '');
+  const today = new Date();
+  const q = `start=${iso(addDays(today, -7))}&end=${iso(addDays(today, 43))}`;
+  const cals = (customFields.calendars || '').split(',').map((c) => c.trim()).filter(Boolean);
+  const results = await Promise.all(cals.map(async (cal) => {
+    const res = await fetch(`${base}/api/calendars/${cal}?${q}`, {
+      headers: { Authorization: `Bearer ${process.env.HA_TOKEN}`, Accept: 'application/json' },
+    });
+    if (!res.ok) { console.warn(`${cal}: HTTP ${res.status}`); return { error: 'Failed to fetch data' }; }
+    return { data: await res.json() };
+  }));
+  // same shape LaraPaper stores: one URL unwrapped, several keyed IDX_n
+  if (results.length === 1) return results[0];
+  return Object.fromEntries(results.map((r, i) => [`IDX_${i}`, r]));
+}
+
+// Sample events relative to today, in HA's /api/calendars response format.
+function sampleData() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  // UTC offset of the preview time zone, as HA would send it
+  const offset = (() => {
+    const name = new Intl.DateTimeFormat('en-US', { timeZone: timeZone, timeZoneName: 'longOffset' })
+      .formatToParts(today).find((p) => p.type === 'timeZoneName').value;
+    return name === 'GMT' ? '+00:00' : name.replace('GMT', '');
+  })();
+  const pad = (n) => String(n).padStart(2, '0');
+  const local = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const timed = (day, from, to, summary, extra = {}) => ({
+    start: { dateTime: `${local(addDays(today, day))}T${from}:00${offset}` },
+    end: { dateTime: `${local(addDays(today, day))}T${to}:00${offset}` },
+    summary, description: null, location: null, uid: `${summary}-${day}`, recurrence_id: null, rrule: null, ...extra,
+  });
+  const allDay = (day, days, summary) => ({
+    start: { date: local(addDays(today, day)) }, end: { date: local(addDays(today, day + days)) },
+    summary, description: null, location: null, uid: `${summary}-${day}`, recurrence_id: null, rrule: null,
+  });
+  const family = [
+    timed(-2, '18:30', '19:30', 'Swimming lessons'),
+    timed(0, '08:15', '08:45', 'School run'),
+    timed(0, '19:00', '21:00', 'Dinner with Anna & Tom'),
+    allDay(1, 1, 'Bin day'),
+    timed(2, '10:00', '11:00', 'Dentist'),
+    timed(3, '18:30', '19:30', 'Swimming lessons'),
+    allDay(5, 3, 'Weekend in Antwerp'),
+    timed(9, '15:00', '16:00', 'Parent-teacher meeting'),
+    allDay(12, 1, 'Birthday Oma'),
+    timed(12, '16:00', '19:00', 'Birthday party'),
+    timed(10, '18:30', '19:30', 'Swimming lessons'),
+    timed(17, '18:30', '19:30', 'Swimming lessons'),
+    allDay(20, 5, 'Autumn holiday'),
+    timed(24, '09:00', '09:30', 'Car service'),
+    timed(31, '18:30', '19:30', 'Swimming lessons'),
+    allDay(33, 1, 'Bin day'),
+    timed(38, '20:00', '22:30', 'Concert'),
+  ];
+  const work = [
+    timed(0, '09:30', '10:00', 'Standup'),
+    timed(1, '13:00', '14:30', 'Quarterly planning'),
+    timed(2, '09:30', '10:00', 'Standup'),
+    timed(4, '11:00', '12:00', '1:1'),
+    timed(8, '09:00', '17:00', 'Offsite'),
+    timed(15, '14:00', '15:00', 'Design review'),
+    allDay(26, 2, 'Conference'),
+    // shared with family calendar → de-duplicated
+    timed(9, '15:00', '16:00', 'Parent-teacher meeting'),
+    timed(3, '12:00', '13:00', 'Lunch', { summary: null }),
+  ];
+  return { IDX_0: { data: family }, IDX_1: { data: work } };
+}
+
+const payload = dataFile ? JSON.parse(fs.readFileSync(dataFile, 'utf8'))
+  : process.env.HA_URL ? await liveData() : sampleData();
+if (!dataFile && !process.env.HA_URL && !overrides.calendars) customFields.calendars = 'calendar.family,calendar.work';
+
+// LaraPaper render context: `data` is the payload, then the payload keys are spread
+// on top (so a single calendar's { data: [...] } turns `data` into the bare list).
+const context = {
+  size: 'full',
+  data: payload,
+  config: customFields,
+  ...payload,
+  trmnl: {
+    system: { timestamp_utc: Math.floor(Date.now() / 1000) },
+    user: { locale: 'en', time_zone_iana: timeZone, utc_offset: '0', name: 'Preview' },
+    device: { width: Math.round(device.width * device.scale), height: Math.round(device.height * device.scale) },
+    plugin_settings: { instance_name: settings.name, custom_fields_values: customFields },
+  },
+};
+
+const engine = new Liquid();
+const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n' + fs.readFileSync(path.join(src, 'full.liquid'), 'utf8');
+const body = await engine.parseAndRender(markup, context);
+
+const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://trmnl.com/css/latest/plugins.css">
+<script src="https://trmnl.com/js/latest/plugins.js"></script>
+<style>html,body{margin:0;background:#fff;font-family:Inter,system-ui,sans-serif}
+.screen{width:${device.width}px;height:${device.height}px;overflow:hidden;box-sizing:border-box}
+.view{height:100%;box-sizing:border-box;padding:12px}</style>
+</head><body class="environment trmnl"><div class="screen screen--${device.variant} screen--${device.depth}">${body}</div></body></html>`;
+
+fs.mkdirSync(path.dirname(out), { recursive: true });
+fs.writeFileSync(out.replace(/\.png$/, '.html'), html);
+
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+const page = await browser.newPage({ viewport: { width: device.width, height: device.height }, deviceScaleFactor: device.scale, timezoneId: 'UTC' });
+const nm = path.join(here, 'node_modules');
+await page.route('https://cdn.jsdelivr.net/npm/**', (route) => {
+  const rel = new URL(route.request().url()).pathname.replace(/^\/npm\//, '').replace(/@[\d.]+/, '');
+  const file = path.join(nm, rel);
+  return fs.existsSync(file) ? route.fulfill({ path: file, contentType: 'application/javascript' }) : route.abort();
+});
+await page.route('https://trmnl.com/**', (route) => route.continue().catch(() => route.abort()));
+page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.text().includes('parser-blocking')) console.warn(`[browser] ${m.text()}`); });
+page.on('pageerror', (e) => console.error(`[browser] ${e.message}`));
+await page.setContent(html, { waitUntil: 'load', timeout: 20000 }).catch(() => {});
+await page.waitForSelector('.trmnl-calendar[data-initialized]', { timeout: 10000 });
+await page.waitForTimeout(300);
+await page.screenshot({ path: out });
+await browser.close();
+console.log(`wrote ${path.relative(process.cwd(), out)}`);

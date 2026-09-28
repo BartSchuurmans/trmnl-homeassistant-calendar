@@ -1,0 +1,26 @@
+# LaraPaper (BYOS for TRMNL) — https://github.com/usetrmnl/larapaper
+# Based on upstream docker/prod/docker-compose.yml.
+#
+#   create .env with APP_KEY and APP_URL (see README)
+#   docker compose up -d   # UI on http://<host>:4567
+services:
+  larapaper:
+    image: ghcr.io/usetrmnl/larapaper:latest
+    ports:
+      - "4567:8080"
+    environment:
+      - APP_KEY=${APP_KEY:?set APP_KEY in .env, see README}
+      - APP_URL=${APP_URL:-http://localhost:4567}
+      - APP_TIMEZONE=${APP_TIMEZONE:-UTC}
+      - REGISTRATION_ENABLED=${REGISTRATION_ENABLED:-1}
+      - PHP_OPCACHE_ENABLE=1
+      - TRMNL_PROXY_REFRESH_MINUTES=15
+      - DB_DATABASE=database/storage/database.sqlite
+    volumes:
+      - database:/var/www/html/database/storage
+      - storage:/var/www/html/storage/app/public/images/generated
+    restart: unless-stopped
+
+volumes:
+  database:
+  storage:

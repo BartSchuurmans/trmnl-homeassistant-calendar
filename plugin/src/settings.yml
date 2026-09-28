@@ -1,0 +1,132 @@
+---
+# TRMNL recipe settings (trmnlp format). Import into LaraPaper as a ZIP, see README.md.
+name: Home Assistant Calendar
+id: ha-calendar-rolling-month
+refresh_interval: 15
+strategy: polling
+polling_verb: get
+# One URL per calendar entity. LaraPaper resolves this with Liquid (PHP DateTime
+# understands relative dates like "today -7 days") on every refresh, so the window
+# always covers the rolling month: the current week plus up to 6 weeks ahead.
+polling_url: |-
+  {% assign cals = calendars | split: "," %}{% for cal in cals %}{{ ha_url }}/api/calendars/{{ cal | strip }}?start={{ "today -7 days" | date: "%Y-%m-%d" }}&end={{ "today +43 days" | date: "%Y-%m-%d" }}
+  {% endfor %}
+polling_headers: Authorization=Bearer {{ ha_token }}
+static_data: '{}'
+custom_fields:
+  - keyname: about
+    field_type: author_bio
+    name: About
+    description: Rolling month calendar fed by Home Assistant calendar entities. Forked from the TRMNL native calendar plugin.
+  - keyname: ha_url
+    field_type: url
+    name: Home Assistant URL
+    description: Base URL of your Home Assistant instance, reachable from the BYOS server. No trailing slash.
+    placeholder: http://homeassistant.local:8123
+  - keyname: ha_token
+    field_type: password
+    name: Home Assistant access token
+    description: Long-lived access token (HA profile → Security → Long-lived access tokens).
+  - keyname: calendars
+    field_type: multi_string
+    name: Calendar entities
+    description: One or more HA calendar entity IDs.
+    placeholder: calendar.family
+  - keyname: calendar_labels
+    field_type: multi_string
+    name: Calendar labels
+    description: Optional short labels, in the same order as the calendar entities. Shown before the event title when set.
+    optional: true
+  - keyname: time_zone
+    field_type: time_zone
+    name: Time zone
+    description: Leave empty to use your LaraPaper user time zone.
+    optional: true
+  - keyname: first_day
+    field_type: select
+    name: Week starts on
+    options:
+      - Sunday: '0'
+      - Monday: '1'
+      - Saturday: '6'
+    default: '1'
+  - keyname: rolling_advancement
+    field_type: select
+    name: Advance
+    description: Start the grid at the beginning of the current week, or at today.
+    options:
+      - Weekly: week
+      - Daily: day
+    default: week
+  - keyname: time_format
+    field_type: select
+    name: Time format
+    options:
+      - 24 hour: 24h
+      - AM/PM: am/pm
+    default: 24h
+  - keyname: include_event_time
+    field_type: select
+    name: Show event times
+    options:
+      - 'Yes': 'yes'
+      - 'No': 'no'
+    default: 'yes'
+  - keyname: display_event_end
+    field_type: select
+    name: Show event end times
+    options:
+      - 'Yes': 'yes'
+      - 'No': 'no'
+    default: 'yes'
+  - keyname: include_past_events
+    field_type: select
+    name: Show past events
+    description: Show events on days before today that are still in the grid.
+    options:
+      - 'Yes': 'yes'
+      - 'No': 'no'
+    default: 'yes'
+  - keyname: highlight_today
+    field_type: select
+    name: Highlight today
+    options:
+      - 'Yes': 'yes'
+      - 'No': 'no'
+    default: 'yes'
+  - keyname: shade_weekends
+    field_type: select
+    name: Shade weekends
+    options:
+      - 'Yes': 'yes'
+      - 'No': 'no'
+    default: 'yes'
+  - keyname: month_header
+    field_type: select
+    name: Show month title
+    options:
+      - 'Yes': 'yes'
+      - 'No': 'no'
+    default: 'no'
+  - keyname: show_week_numbers
+    field_type: select
+    name: Show week numbers
+    options:
+      - 'Yes': 'yes'
+      - 'No': 'no'
+    default: 'no'
+  - keyname: locale
+    field_type: string
+    name: Locale
+    description: Language for day and month names, e.g. en, nl, de, fr.
+    default: en
+    optional: true
+  - keyname: ignored_phrases
+    field_type: multi_string
+    name: Ignore events containing
+    description: Events whose title or description contains any of these phrases are hidden.
+    optional: true
+  - keyname: ignored_phrases_exact_match
+    field_type: multi_string
+    name: Ignore events titled exactly
+    optional: true
