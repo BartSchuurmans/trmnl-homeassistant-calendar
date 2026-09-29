@@ -74,6 +74,18 @@ paints raw palette vars (`var(--gray-70)`) instead and emits LaraPaper's
 time in the configured zone and given to FullCalendar with `timeZone: 'UTC'`. Read
 dates with `getUTC*`.
 
+## Releasing
+
+- Recipe: tag `vX.Y.Z` on main and push the tag. `release.yml` reruns the render suite
+  and publishes a GitHub release with `ha-calendar.zip` (+ `.sha256`). The ZIP is
+  reproducible (`build-zip.sh` dates it by the last `plugin/src` commit). Every render
+  run also uploads the ZIP as an artifact.
+- Home Assistant app: bump `version` in `larapaper/config.yaml` (`<LaraPaper
+  version>-N`) with any change to the image; `app.yml` fails PRs that change app files
+  other than DOCS.md/translations without a bump. Add an entry to
+  `larapaper/CHANGELOG.md` (shown in HA's update dialog). HA offers the update once
+  it's on main.
+
 ## Conventions
 
 - Keep upstream's behaviour and comments where the code is forked (see UPSTREAM.md) and

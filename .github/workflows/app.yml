@@ -2,7 +2,9 @@ name: App
 
 # Lints the Home Assistant app, builds its image (amd64) and starts it with a fake
 # /data to check that LaraPaper comes up, serves the bundled framework, fonts and
-# FullCalendar, and picked up the app options.
+# FullCalendar, and picked up the app options. On pull requests it also checks that
+# changes to the image come with a new app version: Home Assistant only offers an
+# update (and rebuilds the image) when `version` in config.yaml changes.
 
 on:
   pull_request:
@@ -16,6 +18,47 @@ permissions:
   contents: read
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: LaraPaper tags match the app version
+        run: |
+          version="$(yq '.version' larapaper/config.yaml)"
+          for arch in $(yq '.build_from | keys | .[]' larapaper/build.yaml); do
+            tag="$(yq ".build_from.$arch" larapaper/build.yaml)"; tag="${tag##*:}"
+            case "$version" in
+              "$tag"-*) ;;
+              *) echo "::error file=larapaper/config.yaml::version $version doesn't match LaraPaper $tag ($arch) in build.yaml; use $tag-N"; exit 1 ;;
+            esac
+          done
+          echo "app version $version"
+
+      - name: App changes bump the version
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # DOCS.md, CHANGELOG.md and translations are read from the repository,
+          # everything else only reaches users through a rebuild
+          changed="$(git diff --name-only "$BASE"...HEAD -- larapaper ':!larapaper/DOCS.md' ':!larapaper/CHANGELOG.md' ':!larapaper/translations')"
+          [ -n "$changed" ] || exit 0
+          old="$(git show "$BASE:larapaper/config.yaml" | yq '.version')"
+          new="$(yq '.version' larapaper/config.yaml)"
+          if [ "$old" = "$new" ]; then
+            echo "Changed:"; echo "$changed"
+            echo "::error file=larapaper/config.yaml::app files changed but version is still $old; bump it (e.g. to the next -N) so Home Assistant offers the update"
+            exit 1
+          fi
+          echo "version $old → $new"
+          if ! grep -qxF "## $new" larapaper/CHANGELOG.md; then
+            echo "::error file=larapaper/CHANGELOG.md::no \"## $new\" entry in larapaper/CHANGELOG.md"
+            exit 1
+          fi
+
   lint:
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,12 @@
+# Changelog
+
+## 0.43.0-2
+
+- Enable PHP OPcache, as LaraPaper's own docker-compose setup does, so pages and
+  renders need less CPU.
+
+## 0.43.0-1
+
+- First release: LaraPaper 0.43.0 with the TRMNL framework 3.3.1, its fonts and
+  FullCalendar 6.1.21 built into the image, so rendering a screen needs no internet.
+- The database, generated screens and app key are kept in `/data`.

@@ -3,15 +3,17 @@ name: Render
 # Renders the recipe with sample and random calendars on the TRMNL X and OG, with the
 # same framework version and screen markup as LaraPaper, plus once through LaraPaper's
 # PHP Liquid engine. Fails on template errors, JavaScript errors and renders that don't
-# finish. The screenshots are uploaded as an artifact.
+# finish. The screenshots and the recipe ZIP are uploaded as artifacts. release.yml
+# calls this before publishing a release.
 
 on:
   pull_request:
-    paths: [plugin/**, preview/**, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
+    paths: [plugin/**, preview/**, scripts/build-zip.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
   push:
     branches: [main]
-    paths: [plugin/**, preview/**, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
+    paths: [plugin/**, preview/**, scripts/build-zip.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -22,6 +24,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # build-zip.sh dates the ZIP by the last plugin/src commit
 
       - uses: actions/setup-node@v4
         with:
@@ -59,3 +63,11 @@ jobs:
           name: renders
           path: preview/out/ci/*.png
           if-no-files-found: ignore
+
+      - name: Build recipe ZIP
+        run: sh scripts/build-zip.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ha-calendar
+          path: dist/ha-calendar.zip
