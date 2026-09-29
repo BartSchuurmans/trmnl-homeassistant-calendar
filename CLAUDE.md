@@ -15,6 +15,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 - `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
   in-container helper.
 - `scripts/build-zip.sh` — builds `dist/ha-calendar.zip` for LaraPaper's recipe import.
+- `LICENSE` (MIT, own code) and `THIRD_PARTY_NOTICES.md` (upstream plugin, bundled
+  assets) — keep the notices table in step with `assets.txt`.
 
 ## Checks
 
@@ -103,5 +105,6 @@ dates with `getUTC*`.
 - After changing `plugin/src/`, rebuild with `scripts/build-zip.sh`; re-importing the
   ZIP updates the recipe in LaraPaper in place (same `id`).
 - Bumping LaraPaper: `larapaper/build.yaml` + `version` in `config.yaml`. Bumping the
-  framework or FullCalendar: update `assets.txt` hashes and the paths in the
+  framework or FullCalendar: update `assets.txt` hashes (a tarball member is pinned by
+  the tarball's hash) and the license texts listed there, and the paths in the
   Dockerfile, `shared.liquid` and `settings.yml`.

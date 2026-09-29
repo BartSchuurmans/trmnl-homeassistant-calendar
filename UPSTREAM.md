@@ -1,7 +1,9 @@
 # Upstream
 
 Forked from [usetrmnl/plugins](https://github.com/usetrmnl/plugins), `lib/calendars` and
-`lib/google_calendar`, as of 2026-09-28.
+`lib/google_calendar`, as of 2026-09-28. That repository has no license file; TRMNL
+treats its native plugins as source-available and is fine with them being remixed. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 | Upstream | Here |
 |---|---|

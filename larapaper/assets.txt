@@ -28,3 +28,9 @@ b2028391dce2cc9fbaaf830ce48cb31851bfa748af4bdbacf2fc132b762b163d  fonts/TRMNL16-
 8a9d39a5cc22c0bc64bbe5c69fd33a73bdefafab097446154db342a26eb01684  fonts/TRMNL21-Regular.woff2  https://raw.githubusercontent.com/usetrmnl/trmnl-framework/v3.3.1/public/fonts/TRMNL21-Regular.woff2
 688018bca8bea0fc3a80790268cb21ef194497584d02a1a328e6e702baf8760d  ha-calendar/fullcalendar/6.1.21/index.global.min.js  https://registry.npmjs.org/fullcalendar/-/fullcalendar-6.1.21.tgz!package/index.global.min.js
 32a7c192aa411ade99f0e4cee882b31d6920566ca46828cd04369d96cafbb62f  ha-calendar/fullcalendar/6.1.21/locales-all.global.min.js  https://registry.npmjs.org/@fullcalendar/core/-/core-6.1.21.tgz!package/locales-all.global.min.js
+# License texts for the files above, kept next to them in the image.
+625120fbe9ba35bab1d0376cdc5352b0f08c91d0c68711a58cc606e563c3176b  trmnl-framework/3.3.1/LICENSE  https://raw.githubusercontent.com/usetrmnl/trmnl-framework/v3.3.1/LICENSE
+57f5f10c7a79cb73dcba6338323fb79a4065d4517b2130c40fa279535ceaa6ce  fonts/OFL-trmnl.txt  https://raw.githubusercontent.com/usetrmnl/trmnl-framework/v3.3.1/public/fonts/bundles/trmnl/OFL.txt
+4c0addd79b511b9433f5d41fa3c986ca764b17ac9a41b165a82440aecd984fda  fonts/OFL-classic.txt  https://raw.githubusercontent.com/usetrmnl/trmnl-framework/v3.3.1/public/fonts/bundles/classic/OFL.txt
+0bd64a9508f6a16773452fdc15263395fbb896922404a00547f469a6b176790a  fonts/CC-BY-3.0.txt  https://raw.githubusercontent.com/usetrmnl/trmnl-framework/v3.3.1/public/fonts/bundles/classic/CC-BY-3.0.txt
+688018bca8bea0fc3a80790268cb21ef194497584d02a1a328e6e702baf8760d  ha-calendar/fullcalendar/6.1.21/LICENSE.md  https://registry.npmjs.org/fullcalendar/-/fullcalendar-6.1.21.tgz!package/LICENSE.md

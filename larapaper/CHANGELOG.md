@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.0-3
+
+- Include the license texts of the bundled TRMNL framework, fonts and FullCalendar
+  next to them in the image.
+
 ## 0.43.0-2
 
 - Enable PHP OPcache, as LaraPaper's own docker-compose setup does, so pages and
