@@ -5,13 +5,11 @@ and rendered by a self-hosted TRMNL server ([LaraPaper](https://github.com/usetr
 
 ![preview](docs/preview.png)
 
-<sub>1-bit, adapted styles vs dithered:</sub><br>
-<img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
+## How it works
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph host["Home Assistant host"]
-        direction TB
         subgraph core["Home Assistant Core container"]
             HA["<b>Home Assistant</b><br>calendar entities"]
         end
@@ -23,7 +21,7 @@ flowchart TB
         core -- "/api/calendars/&lt;entity&gt;" --> app
     end
     X["<b>TRMNL X</b><br>1872×1404, 16 grays"]
-    app -- "screen image over Wi-Fi<br>(port 4567)" --> X
+    app -- "screen image<br>over Wi-Fi" --> X
 ```
 
 <sub>With Docker Compose instead of the app, the LaraPaper container runs on any machine that can reach Home Assistant.</sub>
@@ -166,6 +164,9 @@ place and keeps your settings.
 
 The grid shows as many whole weeks (4–6) as fit, like upstream: busy weeks make
 rows taller, so fewer fit. In a very busy month the 4th week can be cut off.
+
+<sub>Greys on a 1-bit screen: <b>Adapt styles</b> (left) vs <b>Dither</b> (right).</sub><br>
+<img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
 
 ### Multiple calendars
 
