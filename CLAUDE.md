@@ -82,7 +82,9 @@ dates with `getUTC*`.
   run also uploads the ZIP as an artifact.
 - Home Assistant app: bump `version` in `larapaper/config.yaml` (`<LaraPaper
   version>-N`) with any change to the image; `app.yml` fails PRs that change app files
-  other than DOCS.md/translations without a bump. HA offers the update once it's on main.
+  other than DOCS.md/translations without a bump. Add an entry to
+  `larapaper/CHANGELOG.md` (shown in HA's update dialog). HA offers the update once
+  it's on main.
 
 ## Conventions
 
