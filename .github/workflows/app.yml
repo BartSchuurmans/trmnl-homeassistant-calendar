@@ -2,16 +2,18 @@ name: App
 
 # Lints the Home Assistant app, builds its image (amd64) and starts it with a fake
 # /data to check that LaraPaper comes up, serves the bundled framework, fonts and
-# FullCalendar, and picked up the app options. On pull requests it also checks that
-# changes to the image come with a new app version: Home Assistant only offers an
-# update (and rebuilds the image) when `version` in config.yaml changes.
+# FullCalendar, and picked up the app options. It then runs the end-to-end test
+# (e2e/run.mjs): the recipe ZIP is imported into that LaraPaper, polls a fake Home
+# Assistant and is rendered for a TRMNL X through the device API. On pull requests it
+# also checks that changes to the image come with a new app version: Home Assistant
+# only offers an update (and rebuilds the image) when `version` in config.yaml changes.
 
 on:
   pull_request:
-    paths: [larapaper/**, repository.yaml, .github/workflows/app.yml]
+    paths: [larapaper/**, repository.yaml, plugin/**, e2e/**, scripts/build-zip.sh, .github/workflows/app.yml]
   push:
     branches: [main]
-    paths: [larapaper/**, repository.yaml, .github/workflows/app.yml]
+    paths: [larapaper/**, repository.yaml, plugin/**, e2e/**, scripts/build-zip.sh, .github/workflows/app.yml]
   workflow_dispatch:
 
 permissions:
@@ -72,6 +74,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # build-zip.sh dates the ZIP by the last plugin/src commit
 
       - name: Build image
         run: |
@@ -83,8 +87,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/data"
           echo '{"app_url": "http://localhost:4567/", "registration_enabled": false}' > "$RUNNER_TEMP/data/options.json"
+          # homeassistant:8123 is the fake Home Assistant of the end-to-end test
           docker run -d --name app -p 4567:8080 -e TZ=Europe/Amsterdam \
-            -v "$RUNNER_TEMP/data:/data" larapaper-local:ci
+            --add-host homeassistant:host-gateway -v "$RUNNER_TEMP/data:/data" larapaper-local:ci
           for i in $(seq 1 90); do
             if curl -fsS -o /dev/null http://localhost:4567/up; then echo "up after ${i}x2s"; exit 0; fi
             sleep 2
@@ -114,6 +119,22 @@ jobs:
           docker exec app grep -qx 'APP_TIMEZONE=Europe/Amsterdam' /var/www/html/.env
           test -s "$RUNNER_TEMP/data/app_key"
           test -s "$RUNNER_TEMP/data/database/database.sqlite"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: End-to-end (recipe ZIP → LaraPaper → fake Home Assistant → TRMNL X screen)
+        run: |
+          sh scripts/build-zip.sh
+          node e2e/run.mjs --container app --url http://localhost:4567 --zip dist/ha-calendar.zip
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-screens
+          path: e2e/out/*.png
+          if-no-files-found: ignore
 
       - name: Restart keeps the app key and database
         run: |
