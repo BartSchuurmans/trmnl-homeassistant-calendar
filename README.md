@@ -9,13 +9,24 @@ and rendered by a self-hosted TRMNL server ([LaraPaper](https://github.com/usetr
 <img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
 
 ```mermaid
-flowchart LR
-    HA["🏠 <b>Home Assistant</b><br><small>calendar entities</small>"]
-    LP["⚙️ <b>LaraPaper</b><br><small>renders plugin/src/*.liquid<br>in headless Chromium</small>"]
-    X["🖼️ <b>TRMNL X</b><br><small>1872×1404, 16 grays</small>"]
-    HA -- "/api/calendars/&lt;entity&gt;<br>polled every 15 min" --> LP
-    LP -- "rendered screen" --> X
+flowchart TB
+    subgraph host["Home Assistant host"]
+        direction TB
+        subgraph core["Home Assistant Core container"]
+            HA["<b>Home Assistant</b><br>calendar entities"]
+        end
+        subgraph app["LaraPaper (local) app container"]
+            LP["<b>LaraPaper</b><br>polls HA every 15 min,<br>runs the ha-calendar recipe"]
+            CR["<b>Headless Chromium</b><br>TRMNL framework and<br>FullCalendar bundled"]
+            LP -- "renders to PNG" --> CR
+        end
+        core -- "/api/calendars/&lt;entity&gt;" --> app
+    end
+    X["<b>TRMNL X</b><br>1872×1404, 16 grays"]
+    app -- "screen image over Wi-Fi<br>(port 4567)" --> X
 ```
+
+<sub>With Docker Compose instead of the app, the LaraPaper container runs on any machine that can reach Home Assistant.</sub>
 
 ## What's in this repository
 
