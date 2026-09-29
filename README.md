@@ -29,7 +29,7 @@ Home Assistant ──/api/calendars/<entity>──▶ LaraPaper (polls every 15 
 | `plugin/src/full.liquid` | Markup (fork of `_full_month.html.erb`) |
 | `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the HA event mapping) |
 | `preview/` | Local renderer: sample or live HA data → PNG at TRMNL X resolution |
-| `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper |
+| `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
 | `docker-compose.yml` | LaraPaper |
 | `larapaper/`, `repository.yaml` | LaraPaper as a Home Assistant app that renders without internet access |
 
@@ -79,11 +79,15 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ### 4. Import the plugin
 
+Download [`ha-calendar.zip`](https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/releases/latest/download/ha-calendar.zip) from the latest
+[release](https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/releases), or
+build it from a checkout:
+
 ```sh
 ./scripts/build-zip.sh        # → dist/ha-calendar.zip
 ```
 
-LaraPaper → **Plugins** → add menu → **Import Recipe Archive** → upload `dist/ha-calendar.zip`. Then
+LaraPaper → **Plugins** → add menu → **Import Recipe Archive** → upload `ha-calendar.zip`. Then
 open the recipe's settings and fill in:
 
 - **Home Assistant URL**, e.g. `http://homeassistant.local:8123` (must be reachable
@@ -93,8 +97,8 @@ open the recipe's settings and fill in:
 
 Add the recipe to the device's playlist (**Add to Playlist** on the recipe page).
 
-**Updating:** after changing anything under `plugin/src`, rebuild and import the ZIP
-again. The recipe keeps the same `id` (`settings.yml`), so LaraPaper updates it in
+**Updating:** import the ZIP from a newer release, or after changing anything under
+`plugin/src`, rebuild and import it again. The recipe keeps the same `id` (`settings.yml`), so LaraPaper updates it in
 place and keeps your settings.
 
 ## Settings

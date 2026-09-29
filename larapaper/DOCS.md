@@ -26,9 +26,10 @@ checked against a pinned SHA-256.
    back for 5 seconds, enter Wi-Fi, choose **Custom Server** and enter the App URL.
    With **Permit Auto-Join** switched on in LaraPaper's header, the device appears by
    itself.
-4. Import the calendar recipe (`dist/ha-calendar.zip`, see the repository README). For
-   **Home Assistant URL**, use `http://homeassistant:8123`: that is how apps reach Home
-   Assistant.
+4. Import the calendar recipe: `ha-calendar.zip` from the latest release
+   (<https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/releases/latest/download/ha-calendar.zip>),
+   see the repository README. For **Home Assistant URL**, use
+   `http://homeassistant:8123`: that is how apps reach Home Assistant.
 
 ## What still goes online
 
