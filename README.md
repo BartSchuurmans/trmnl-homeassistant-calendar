@@ -8,11 +8,13 @@ and rendered by a self-hosted TRMNL server ([LaraPaper](https://github.com/usetr
 <sub>1-bit, adapted styles vs dithered:</sub><br>
 <img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
 
-```
-Home Assistant ──/api/calendars/<entity>──▶ LaraPaper (polls every 15 min)
-                                               │ renders plugin/src/*.liquid
-                                               ▼ in headless Chromium
-                                            TRMNL X (1872×1404, 16 grays)
+```mermaid
+flowchart LR
+    HA["🏠 <b>Home Assistant</b><br><small>calendar entities</small>"]
+    LP["⚙️ <b>LaraPaper</b><br><small>renders plugin/src/*.liquid<br>in headless Chromium</small>"]
+    X["🖼️ <b>TRMNL X</b><br><small>1872×1404, 16 grays</small>"]
+    HA -- "/api/calendars/&lt;entity&gt;<br>polled every 15 min" --> LP
+    LP -- "rendered screen" --> X
 ```
 
 ## What's in this repository
