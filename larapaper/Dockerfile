@@ -22,9 +22,11 @@ RUN for dir in trmnl-framework fonts ha-calendar; do \
     done
 
 # Point LaraPaper at the bundled framework instead of trmnl.com, and drop the Inter
-# stylesheet from fonts.bunny.net (the framework ships Inter itself).
+# stylesheet from fonts.bunny.net (the framework ships Inter itself). OPcache on, as in
+# LaraPaper's own docker-compose.
 ENV TRMNL_BLADE_FRAMEWORK_CSS_URL=/trmnl-framework/3.3.1/plugins.min.css \
-    TRMNL_BLADE_FRAMEWORK_JS_URL=/trmnl-framework/3.3.1/plugins.min.js
+    TRMNL_BLADE_FRAMEWORK_JS_URL=/trmnl-framework/3.3.1/plugins.min.js \
+    PHP_OPCACHE_ENABLE=1
 RUN view=/var/www/html/resources/views/vendor/trmnl/components/screen.blade.php \
     && sed -i '/fonts\.bunny\.net/d' "$view" \
     && ! grep -q 'fonts\.bunny\.net' "$view"

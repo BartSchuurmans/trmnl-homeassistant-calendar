@@ -1,0 +1,86 @@
+name: App
+
+# Lints the Home Assistant app, builds its image (amd64) and starts it with a fake
+# /data to check that LaraPaper comes up, serves the bundled framework, fonts and
+# FullCalendar, and picked up the app options.
+
+on:
+  pull_request:
+    paths: [larapaper/**, repository.yaml, .github/workflows/app.yml]
+  push:
+    branches: [main]
+    paths: [larapaper/**, repository.yaml, .github/workflows/app.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: frenck/action-addon-linter@v2
+        with:
+          path: ./larapaper
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: |
+          base="$(yq '.build_from.amd64' larapaper/build.yaml)"
+          echo "Base image: $base"
+          docker build --build-arg "BUILD_FROM=$base" -t larapaper-local:ci larapaper
+
+      - name: Start with a fake /data
+        run: |
+          mkdir -p "$RUNNER_TEMP/data"
+          echo '{"app_url": "http://localhost:4567/", "registration_enabled": false}' > "$RUNNER_TEMP/data/options.json"
+          docker run -d --name app -p 4567:8080 -e TZ=Europe/Amsterdam \
+            -v "$RUNNER_TEMP/data:/data" larapaper-local:ci
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null http://localhost:4567/up; then echo "up after ${i}x2s"; exit 0; fi
+            sleep 2
+          done
+          docker logs app
+          exit 1
+
+      - name: Check bundled assets are served
+        run: |
+          fw="$(yq '.framework_version' plugin/src/settings.yml)"
+          for path in "/trmnl-framework/$fw/plugins.min.css" "/trmnl-framework/$fw/plugins.min.js" \
+                      /fonts/Inter.ttf /fonts/TRMNL16-Regular.woff2 \
+                      /ha-calendar/fullcalendar/6.1.21/index.global.min.js \
+                      /ha-calendar/fullcalendar/6.1.21/locales-all.global.min.js; do
+            curl -fsS -o /dev/null -w "%{http_code} $path\n" "http://localhost:4567$path"
+          done
+
+      - name: Check the render paths, framework settings and options
+        run: |
+          # screens render from a file:// page, so the assets must exist at the filesystem root
+          docker exec app sh -c 'test -s /trmnl-framework/3.3.1/plugins.min.css && test -s /fonts/Inter.ttf && test -s /ha-calendar/fullcalendar/6.1.21/index.global.min.js'
+          docker exec app sh -c '! grep -q "fonts.bunny.net" /var/www/html/resources/views/vendor/trmnl/components/screen.blade.php'
+          docker exec app printenv TRMNL_BLADE_FRAMEWORK_CSS_URL | grep -qx '/trmnl-framework/3.3.1/plugins.min.css'
+          docker exec app sh -c 'f=/var/www/html/bootstrap/cache/config.php; ! test -f "$f" || grep -q "/trmnl-framework/3.3.1/plugins.min.css" "$f"'
+          docker exec app grep -qx 'APP_URL=http://localhost:4567' /var/www/html/.env
+          docker exec app grep -qx 'REGISTRATION_ENABLED=0' /var/www/html/.env
+          docker exec app grep -qx 'APP_TIMEZONE=Europe/Amsterdam' /var/www/html/.env
+          test -s "$RUNNER_TEMP/data/app_key"
+          test -s "$RUNNER_TEMP/data/database/database.sqlite"
+
+      - name: Restart keeps the app key and database
+        run: |
+          key="$(cat "$RUNNER_TEMP/data/app_key")"
+          docker restart app
+          for _ in $(seq 1 60); do curl -fsS -o /dev/null http://localhost:4567/up && break; sleep 2; done
+          curl -fsS -o /dev/null http://localhost:4567/up
+          test "$(cat "$RUNNER_TEMP/data/app_key")" = "$key"
+          docker exec app grep -qx "APP_KEY=$key" /var/www/html/.env
+
+      - name: Logs
+        if: always()
+        run: docker logs app 2>&1 | tail -100 || true

@@ -182,6 +182,22 @@ LaraPaper. It loads the framework from trmnl.com; to work offline, point
 tag (`git checkout v3.3.1`). Templates are rendered with [liquidjs](https://liquidjs.com)
 instead of LaraPaper's PHP Liquid, so small differences are possible.
 
+## CI
+
+- **Render** (`.github/workflows/render.yml`, on changes to the recipe or preview): runs
+  `preview/ci.sh`. That renders sample and random calendars on the TRMNL X and OG with
+  the framework files pinned in `larapaper/assets.txt`, and renders once through
+  LaraPaper's PHP Liquid engine (`preview/php/render.php`, which also checks the polling
+  URLs and header). It fails on template errors, JavaScript errors and renders that
+  don't finish. The screenshots are attached to the run as the `renders` artifact.
+- **App** (`.github/workflows/app.yml`, on changes to `larapaper/`): lints the app,
+  builds the image (amd64) and starts it with a fake `/data`. It checks that LaraPaper
+  comes up, serves the bundled framework, fonts and FullCalendar, applied the app
+  options, and keeps its key and database across a restart.
+
+To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
+`composer install` in `preview/php`, then run `sh preview/ci.sh`.
+
 ## Notes
 
 - The polling URL uses Liquid that relies on PHP's `DateTime` (`"today -7 days" | date`),

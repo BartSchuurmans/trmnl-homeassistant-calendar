@@ -8,6 +8,10 @@
 //   node render.mjs --set first_day=0 --set time_format=am/pm --device og
 //   node render.mjs --device og --set dither_greys=yes      1-bit, dithered greys
 //
+// For CI: --dump-context <file> writes the Liquid render context as JSON, --body <file>
+// screenshots markup rendered elsewhere (e.g. by LaraPaper's PHP Liquid, php/render.php),
+// and --strict exits non-zero on JavaScript errors in the page.
+//
 // Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
 // reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
 // 1-/2-bit only when the page contains <img class="image-dither">. --raw skips this.
@@ -40,6 +44,9 @@ const overrides = {};
 let deviceName = 'x';
 let raw = false;
 let dataFile = null;
+let dumpContext = null;
+let bodyFile = null;
+let strict = false;
 let out = path.join(outDir, 'preview.png');
 let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
 for (let i = 0; i < args.length; i++) {
@@ -47,6 +54,9 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--device') deviceName = args[++i];
   else if (args[i] === '--raw') raw = true;
   else if (args[i] === '--data') dataFile = args[++i];
+  else if (args[i] === '--dump-context') dumpContext = args[++i];
+  else if (args[i] === '--body') bodyFile = args[++i];
+  else if (args[i] === '--strict') strict = true;
   else if (args[i] === '--out') out = path.resolve(args[++i]);
   else if (args[i] === '--tz') timeZone = args[++i];
 }
@@ -152,9 +162,11 @@ const context = {
   },
 };
 
+if (dumpContext) fs.writeFileSync(dumpContext, JSON.stringify(context, null, 1));
+
 const engine = new Liquid();
 const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n' + fs.readFileSync(path.join(src, 'full.liquid'), 'utf8');
-const body = await engine.parseAndRender(markup, context);
+const body = bodyFile ? fs.readFileSync(bodyFile, 'utf8') : await engine.parseAndRender(markup, context);
 
 // LaraPaper's resources/views/vendor/trmnl/components/screen.blade.php
 const fw = settings.framework_version || '3.3.1';
@@ -184,9 +196,14 @@ await page.route('https://trmnl.com/**', (route) => {
   return fs.existsSync(file) ? route.fulfill({ path: file }) : route.abort();
 });
 page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.text().includes('parser-blocking')) console.warn(`[browser] ${m.text()}`); });
-page.on('pageerror', (e) => console.error(`[browser] ${e.message}`));
+const pageErrors = [];
+page.on('pageerror', (e) => { pageErrors.push(e.message); console.error(`[browser] ${e.message}`); });
 await page.setContent(html, { waitUntil: 'load', timeout: 20000 }).catch(() => {});
 await page.waitForSelector('.trmnl-calendar[data-initialized]', { timeout: 10000 });
+if (strict && pageErrors.length) {
+  await browser.close();
+  throw new Error(`JavaScript errors in the page: ${pageErrors.join('; ')}`);
+}
 await page.waitForTimeout(300);
 const shot = await page.screenshot();
 if (raw) {

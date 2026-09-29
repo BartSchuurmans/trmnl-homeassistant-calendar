@@ -1,0 +1,17 @@
+{
+    "name": "ha-calendar/liquid-check",
+    "description": "Renders the recipe with the Liquid engine LaraPaper uses",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2",
+        "keepsuit/liquid": "0.12.0",
+        "symfony/yaml": "^7.0"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2.0"
+        }
+    }
+}

@@ -37,6 +37,7 @@ fi
 
 # App options (/data/options.json); PHP is in the image, jq/bashio are not.
 opt() {
+    # shellcheck disable=SC2016 # PHP code, not shell expansions
     php -r '$o = json_decode(@file_get_contents($argv[1]), true) ?: [];
             $v = $o[$argv[2]] ?? "";
             echo is_bool($v) ? ($v ? "1" : "0") : $v;' "$DATA_DIR/options.json" "$1"
