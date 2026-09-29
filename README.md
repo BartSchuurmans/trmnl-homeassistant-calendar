@@ -5,15 +5,26 @@ and rendered by a self-hosted TRMNL server ([LaraPaper](https://github.com/usetr
 
 ![preview](docs/preview.png)
 
-<sub>1-bit, adapted styles vs dithered:</sub><br>
-<img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
+## How it works
 
+```mermaid
+flowchart LR
+    subgraph host["Home Assistant host"]
+        subgraph core["Home Assistant Core container"]
+            HA["<b>Home Assistant</b><br>calendar entities"]
+        end
+        subgraph app["LaraPaper (local) app container"]
+            LP["<b>LaraPaper</b><br>polls HA every 15 min,<br>runs the ha-calendar recipe"]
+            CR["<b>Headless Chromium</b><br>TRMNL framework and<br>FullCalendar bundled"]
+            LP -- "renders to PNG" --> CR
+        end
+        core -- "/api/calendars/&lt;entity&gt;" --> app
+    end
+    X["<b>TRMNL X</b><br>1872×1404, 16 grays"]
+    app -- "screen image<br>over Wi-Fi" --> X
 ```
-Home Assistant ──/api/calendars/<entity>──▶ LaraPaper (polls every 15 min)
-                                               │ renders plugin/src/*.liquid
-                                               ▼ in headless Chromium
-                                            TRMNL X (1872×1404, 16 grays)
-```
+
+<sub>With Docker Compose instead of the app, the LaraPaper container runs on any machine that can reach Home Assistant.</sub>
 
 ## What's in this repository
 
@@ -153,6 +164,9 @@ place and keeps your settings.
 
 The grid shows as many whole weeks (4–6) as fit, like upstream: busy weeks make
 rows taller, so fewer fit. In a very busy month the 4th week can be cut off.
+
+<sub>Greys on a 1-bit screen: <b>Adapt styles</b> (left) vs <b>Dither</b> (right).</sub><br>
+<img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
 
 ### Multiple calendars
 
