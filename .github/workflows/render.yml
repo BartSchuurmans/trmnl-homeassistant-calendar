@@ -1,0 +1,61 @@
+name: Render
+
+# Renders the recipe with sample and random calendars on the TRMNL X and OG, with the
+# same framework version and screen markup as LaraPaper, plus once through LaraPaper's
+# PHP Liquid engine. Fails on template errors, JavaScript errors and renders that don't
+# finish. The screenshots are uploaded as an artifact.
+
+on:
+  pull_request:
+    paths: [plugin/**, preview/**, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
+  push:
+    branches: [main]
+    paths: [plugin/**, preview/**, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: preview/package-lock.json
+
+      - name: Install preview dependencies and Chromium
+        working-directory: preview
+        run: |
+          npm ci
+          npx playwright-core install --with-deps chromium
+
+      - name: Install PHP Liquid engine
+        working-directory: preview/php
+        run: composer install --no-interaction --no-progress
+
+      - name: TRMNL framework (pinned in larapaper/assets.txt)
+        run: |
+          version="$(yq '.framework_version' plugin/src/settings.yml)"
+          sh larapaper/fetch-assets.sh larapaper/assets.txt "$RUNNER_TEMP/assets" > /dev/null
+          fw="$RUNNER_TEMP/framework"
+          mkdir -p "$fw/css/$version" "$fw/js/$version"
+          ln -s "$RUNNER_TEMP/assets/trmnl-framework/$version/plugins.min.css" "$fw/css/$version/plugins.css"
+          ln -s "$RUNNER_TEMP/assets/trmnl-framework/$version/plugins.min.js" "$fw/js/$version/plugins.js"
+          ln -s "$RUNNER_TEMP/assets/fonts" "$fw/fonts"
+          echo "FRAMEWORK_DIR=$fw" >> "$GITHUB_ENV"
+
+      - name: Render
+        run: sh preview/ci.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: renders
+          path: preview/out/ci/*.png
+          if-no-files-found: ignore
