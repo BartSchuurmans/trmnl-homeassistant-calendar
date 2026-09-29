@@ -31,10 +31,20 @@ Home Assistant ──/api/calendars/<entity>──▶ LaraPaper (polls every 15 
 | `preview/` | Local renderer: sample or live HA data → PNG at TRMNL X resolution |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper |
 | `docker-compose.yml` | LaraPaper |
+| `larapaper/`, `repository.yaml` | LaraPaper as a Home Assistant app that renders without internet access |
 
 ## Setup
 
 ### 1. Run LaraPaper
+
+**As a Home Assistant app (recommended).** This repository is an app repository. Go to
+Settings → Apps → store → ⋮ → Repositories, add
+`https://github.com/BartSchuurmans/trmnl-homeassistant-calendar`, and install
+**LaraPaper (local)**. It bundles the TRMNL framework and FullCalendar, so rendering
+needs no internet access. Setup steps are in [larapaper/DOCS.md](larapaper/DOCS.md). In
+the recipe settings, use `http://homeassistant:8123` as the Home Assistant URL.
+
+**Or with Docker Compose** on any machine:
 
 ```sh
 cat > .env <<EOF
@@ -177,11 +187,12 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
 - The polling URL uses Liquid that relies on PHP's `DateTime` (`"today -7 days" | date`),
   which LaraPaper's Liquid engine supports. It fetches 7 days back to 43 days ahead,
   enough for the current week plus 6 weeks.
-- FullCalendar and (for non-English locales) its locale bundle load from jsDelivr
-  when the screen renders, and LaraPaper loads the framework from trmnl.com, so the
-  LaraPaper container needs internet access. LaraPaper can point the framework
-  elsewhere with `TRMNL_BLADE_FRAMEWORK_CSS_URL` / `TRMNL_BLADE_FRAMEWORK_JS_URL`
-  (untested here; the CSS loads its fonts from `/fonts/` on the same host).
+- The recipe loads FullCalendar from `/ha-calendar/...`, which the LaraPaper (local)
+  app serves, and falls back to jsDelivr on any other server. With plain LaraPaper,
+  rendering also loads the TRMNL framework from trmnl.com, so the container needs
+  internet access. The app avoids both. How: screens render from a temporary
+  `file://` page, so root-relative paths resolve to files in the image, and to nginx
+  in the browser preview.
 - Like LaraPaper, the preview reduces the screenshot to the device's grey levels. 4-bit
   is always dithered. 1-bit and 2-bit are dithered only when the page contains
   `<img class="image-dither">`, which is what the `Dither` setting adds.
