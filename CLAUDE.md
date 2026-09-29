@@ -12,6 +12,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   (`random-data.mjs`), PHP Liquid check (`php/render.php`).
 - `larapaper/` + `repository.yaml` — Home Assistant app: official LaraPaper image plus
   bundled TRMNL framework, fonts and FullCalendar (`assets.txt`, pinned by SHA-256).
+- `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
+  in-container helper.
 - `scripts/build-zip.sh` — builds `dist/ha-calendar.zip` for LaraPaper's recipe import.
 
 ## Checks
@@ -22,8 +24,14 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   `preview/php/`, and `FRAMEWORK_DIR` set up as in `.github/workflows/render.yml`.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
 - `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders.
+- `node e2e/run.mjs` — end-to-end: imports `dist/ha-calendar.zip` into a running app
+  container (`app`, started as in `app.yml` with `--add-host
+  homeassistant:host-gateway`), polls the fake HA in `e2e/fake-ha.mjs`, fetches the
+  TRMNL X screen via `/api/display` and checks payloads and pixels; screens in
+  `e2e/out/`. `e2e/larapaper.php` runs inside the container through LaraPaper's own
+  services. `--local <larapaper checkout>` runs it without Docker.
 - CI: `.github/workflows/render.yml` (recipe) and `app.yml` (builds and smoke-tests
-  the Home Assistant app).
+  the Home Assistant app, then runs the end-to-end test).
 
 ## Things that are easy to get wrong
 
@@ -52,7 +60,8 @@ assets locally.
 **LaraPaper Liquid context.** Custom field values are under
 `trmnl.plugin_settings.custom_fields_values` (not top level). The polled payload is
 `data`, but its keys are also spread on top, so one calendar's `{data: [...]}` makes
-`data` the bare list; several calendars are `{IDX_0: ..., IDX_1: ...}`. The JS
+`data` the bare list; several calendars are `{IDX_0: ..., IDX_1: ...}`. One calendar
+with no events is stored as a bare `[]` (LaraPaper's list check fails on empty arrays). The JS
 normalises all shapes. LaraPaper uses keepsuit/liquid (PHP) with its own filters
 (`json` etc.) and regex preprocessing of `date:` filters — test with `php/render.php`,
 liquidjs alone is not proof.

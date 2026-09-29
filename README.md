@@ -247,10 +247,16 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   LaraPaper's PHP Liquid engine (`preview/php/render.php`, which also checks the polling
   URLs and header). It fails on template errors, JavaScript errors and renders that
   don't finish. The screenshots are attached to the run as the `renders` artifact.
-- **App** (`.github/workflows/app.yml`, on changes to `larapaper/`): lints the app,
-  builds the image (amd64) and starts it with a fake `/data`. It checks that LaraPaper
-  comes up, serves the bundled framework, fonts and FullCalendar, applied the app
-  options, and keeps its key and database across a restart.
+- **App** (`.github/workflows/app.yml`, on changes to `larapaper/` or the recipe): lints
+  the app, builds the image (amd64) and starts it with a fake `/data`. It checks that
+  LaraPaper comes up, serves the bundled framework, fonts and FullCalendar, applied the
+  app options, and keeps its key and database across a restart.
+- **End-to-end** (`e2e/run.mjs`, part of the App workflow): imports the recipe ZIP into
+  that LaraPaper, points it at a fake Home Assistant (`e2e/fake-ha.mjs`) and fetches
+  the screen like a TRMNL X does (`GET /api/display`). It checks the polled URLs and
+  token, the stored payload for two, one and zero-event calendars, that the recipe
+  rendered rather than LaraPaper's error screen, the PNG size, and that events show up
+  on the screen. The screens are attached as the `e2e-screens` artifact.
 
 To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
 `composer install` in `preview/php`, then run `sh preview/ci.sh`.
