@@ -174,12 +174,17 @@ rows taller, so fewer fit. In a very busy month the 4th week can be cut off.
 
 List several entities under **Calendar entities**. **Calendar prefixes** and
 **Calendar colors** are matched to them by position: the first prefix/color goes with
-the first entity, and so on. Use `-` for a calendar that should have none. For example:
+the first entity, and so on. Empty entries are skipped, so use `-` to hold the place of
+a calendar that should have none. For example, with these settings:
 
-| Calendar entities | Calendar prefixes | Calendar colors |
-|---|---|---|
-| `calendar.family` | `-` | `gray-65` |
-| `calendar.work` | `W:` | `black` |
+| Setting | Entries |
+|---|---|
+| Calendar entities | `calendar.family`, `calendar.work` |
+| Calendar prefixes | `-`, `W:` |
+| Calendar colors | `gray-65`, `black` |
+
+family events get no prefix and a `gray-65` fill, and work events get `W:` and a
+`black` fill.
 
 - **Prefix**: shown before the title, followed by a space (`W: Standup`).
 - **Color**: fills every event of that calendar, timed ones included, instead of a dot.
