@@ -276,3 +276,10 @@ To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
   is always dithered. 1-bit and 2-bit are dithered only when the page contains
   `<img class="image-dither">`, which is what the `Dither` setting adds.
 - The token only goes into the request header. It is not written into the rendered page.
+
+## License
+
+MIT, see [LICENSE](LICENSE), for this project's own code. The recipe is forked from
+TRMNL's source-available native calendar plugin, and the Home Assistant app bundles the
+TRMNL framework, its fonts and FullCalendar; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for their terms.
