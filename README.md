@@ -1,13 +1,7 @@
 # trmnl-homeassistant-calendar
 
-A rolling-month calendar for a **TRMNL X**, served by a local BYOS server
-([LaraPaper](https://github.com/usetrmnl/larapaper)) and fed by **Home Assistant**
-calendar entities.
-
-The plugin is a fork of the native TRMNL calendar plugin
-([usetrmnl/plugins `lib/calendars`](https://github.com/usetrmnl/plugins/tree/master/lib/calendars)),
-`rolling_month` layout, ported from ERB to a Liquid recipe. See [UPSTREAM.md](UPSTREAM.md)
-for what was carried over and what changed.
+A rolling-month calendar for a **TRMNL X**, fed by **Home Assistant** calendar entities
+and rendered by a self-hosted TRMNL server ([LaraPaper](https://github.com/usetrmnl/larapaper)).
 
 ![preview](docs/preview.png)
 
@@ -21,17 +15,55 @@ Home Assistant ──/api/calendars/<entity>──▶ LaraPaper (polls every 15 
                                             TRMNL X (1872×1404, 16 grays)
 ```
 
-## Layout
+## What's in this repository
+
+- **The calendar recipe** (`plugin/src/`): a LaraPaper recipe that polls Home Assistant's
+  calendar API and draws the events with FullCalendar inside the TRMNL framework. Each
+  release has it as `ha-calendar.zip`, ready to import into LaraPaper.
+- **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
+  the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
+  in, so rendering a screen needs no internet access. See
+  [larapaper/DOCS.md](larapaper/DOCS.md).
+- **A local preview** (`preview/`): renders the recipe to a PNG at the device's
+  resolution and grey levels, from sample, random or live Home Assistant data. CI uses it
+  to check every change.
 
 | Path | What |
 |---|---|
 | `plugin/src/settings.yml` | Recipe settings: polling URL, auth header, custom fields |
 | `plugin/src/full.liquid` | Markup (fork of `_full_month.html.erb`) |
 | `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the HA event mapping) |
-| `preview/` | Local renderer: sample or live HA data → PNG at TRMNL X resolution |
+| `preview/` | Local renderer and CI render checks |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
-| `docker-compose.yml` | LaraPaper |
-| `larapaper/`, `repository.yaml` | LaraPaper as a Home Assistant app that renders without internet access |
+| `larapaper/`, `repository.yaml` | The LaraPaper (local) Home Assistant app |
+| `docker-compose.yml` | Plain LaraPaper, for running outside Home Assistant |
+
+## Differences from upstream
+
+The recipe is a fork of TRMNL's native calendar plugin
+([usetrmnl/plugins `lib/calendars`](https://github.com/usetrmnl/plugins/tree/master/lib/calendars)),
+`rolling_month` layout only. The FullCalendar view, the 4–6 week fitting and the event
+filtering work as upstream. What changed:
+
+- **Home Assistant instead of Google Calendar.** Events come from HA's
+  `/api/calendars/<entity>` endpoint, so any HA calendar integration works. HA's JSON is
+  turned into FullCalendar events in the browser, where upstream does it server-side.
+- **Liquid recipe instead of ERB.** Runs on LaraPaper; the settings are custom fields.
+- **Open-source parts only.** The public FullCalendar 6.1 build instead of TRMNL's
+  private one, and styles rebuilt from TRMNL framework classes, because upstream's
+  calendar stylesheets aren't published. The look matches upstream's month preview.
+- **Per-calendar colors and prefixes** replace Google's calendar and event colors.
+  The RSVP filter is gone, since HA doesn't expose attendees.
+- **Explicit time zone handling**: events are converted to the configured zone, so the
+  result doesn't depend on the renderer's system zone.
+- **Rendering fixes and additions**: FullCalendar measures correctly under the
+  framework's scale transform, a choice between adapted greys and full-screen dithering
+  on 1-/2-bit screens, and a notice when a calendar fails to load.
+- **Removed**: the time-grid helpers and FullCalendar's own header toolbar (the
+  framework's title bar is used instead).
+
+[UPSTREAM.md](UPSTREAM.md) maps each upstream file to its counterpart here and lists
+the changes in detail.
 
 ## Setup
 
