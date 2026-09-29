@@ -154,11 +154,13 @@ place and keeps your settings.
 | Week starts on | Monday | |
 | Advance | Weekly | `Daily` starts the grid at today instead of the start of the week |
 | Time format | 24 hour | |
-| Show event times / end times | yes / yes | Times go on their own line below the title |
+| Show event times / end times | yes / yes | Times go on their own line below the title. End times only show with event times on |
 | Show past events | yes | Earlier days of the current week |
-| Highlight today, Shade weekends | yes | |
-| Show title bar, week numbers | no | The title bar is the framework's, with the recipe name and the visible date range |
-| Greys on 1-bit / 2-bit screens | Adapt styles | `Adapt` uses the framework's greys, which become dither patterns on 1-/2-bit screens. `Dither` paints plain greys and has LaraPaper Floyd–Steinberg dither the whole screen. The TRMNL X (4-bit) is always dithered, so this only matters for 1-bit and 2-bit devices |
+| Highlight today | yes | |
+| Shade weekends | yes | |
+| Show title bar | no | The framework's title bar, with the recipe name and the visible date range |
+| Show week numbers | no | |
+| Greys on 1-bit / 2-bit screens | Adapt styles | `Adapt` uses the framework's greys, which become dither patterns on 1-/2-bit screens. `Dither` paints plain greys and has LaraPaper Floyd–Steinberg dither the whole screen. LaraPaper dithers 4-bit output (TRMNL X) either way, so this only matters for 1-bit and 2-bit devices |
 | Locale | `en` | Day/month names, e.g. `nl`, `de` |
 | Ignore events containing / titled exactly | – | Same filters as upstream |
 
