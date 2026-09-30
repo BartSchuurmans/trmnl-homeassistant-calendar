@@ -1,7 +1,8 @@
 # trmnl-homeassistant-calendar
 
-A rolling-month calendar for a **TRMNL X**, fed by **Home Assistant** calendar entities
-and rendered by a self-hosted TRMNL server ([LaraPaper](https://github.com/usetrmnl/larapaper)).
+A rolling-month calendar for a **TRMNL X**, fed by **ICS feeds** (Google, iCloud,
+Outlook, Fastmail, Nextcloud…) or **Home Assistant** calendar entities, and rendered by a
+self-hosted TRMNL server ([LaraPaper](https://github.com/usetrmnl/larapaper)).
 
 ![preview](docs/preview.png)
 
@@ -28,8 +29,9 @@ flowchart LR
 
 ## What's in this repository
 
-- **The calendar recipe** (`plugin/src/`): a LaraPaper recipe that polls Home Assistant's
-  calendar API and draws the events with FullCalendar inside the TRMNL framework. Each
+- **The calendar recipe** (`plugin/src/`): a LaraPaper recipe that polls ICS feeds or
+  Home Assistant's calendar API and draws the events with FullCalendar inside the TRMNL
+  framework. Each
   release has it as `ha-calendar.zip`, ready to import into LaraPaper.
 - **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
   the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
@@ -43,7 +45,7 @@ flowchart LR
 |---|---|
 | `plugin/src/settings.yml` | Recipe settings: polling URL, auth header, custom fields |
 | `plugin/src/full.liquid` | Markup (fork of `_full_month.html.erb`) |
-| `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the HA event mapping) |
+| `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA event mapping) |
 | `preview/` | Local renderer and CI render checks |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
 | `larapaper/`, `repository.yaml` | The LaraPaper (local) Home Assistant app |
@@ -56,8 +58,9 @@ The recipe is a fork of TRMNL's native calendar plugin
 `rolling_month` layout only. The FullCalendar view, the 4–6 week fitting and the event
 filtering work as upstream. What changed:
 
-- **Home Assistant instead of Google Calendar.** Events come from HA's
-  `/api/calendars/<entity>` endpoint, so any HA calendar integration works. HA's JSON is
+- **ICS feeds or Home Assistant instead of Google Calendar.** Events come from any
+  calendar's ICS feed link, which LaraPaper fetches and parses, or from HA's
+  `/api/calendars/<entity>` endpoint, so any HA calendar integration works. Both are
   turned into FullCalendar events in the browser, where upstream does it server-side.
 - **Liquid recipe instead of ERB.** Runs on LaraPaper; the settings are custom fields.
 - **Open-source parts only.** The public FullCalendar 6.1 build instead of TRMNL's
@@ -119,11 +122,23 @@ the touch bar to refresh now).
 
 ### 3. Find your calendars
 
-Find your calendar entity IDs under Settings → Devices & services → Entities (filter
-on `calendar.`). Any calendar integration works (Local Calendar, Google, CalDAV,
-iCloud…).
+**ICS feeds.** Most calendar services publish a private feed link (read-only, and
+anyone with the link can read the calendar, so keep it private):
 
-**Docker Compose only:** LaraPaper needs a token to read them. HA → your profile →
+- Google Calendar: calendar settings → **Integrate calendar** → **Secret address in
+  iCal format**
+- iCloud: Calendar app → share the calendar → **Public Calendar** → copy the
+  `webcal://` link
+- Outlook.com / Microsoft 365: Settings → Calendar → **Shared calendars** → **Publish a
+  calendar** → the ICS link
+- Fastmail, Nextcloud and most CalDAV servers have a similar "subscribe" or "export"
+  link
+
+**Home Assistant.** Find your calendar entity IDs under Settings → Devices & services →
+Entities (filter on `calendar.`). Any calendar integration works (Local Calendar,
+Google, CalDAV, iCloud…).
+
+**Docker Compose only:** LaraPaper needs a token to read Home Assistant. HA → your profile →
 **Security** → **Long-lived access tokens** → Create. Check it from the LaraPaper host:
 
 ```sh
@@ -142,10 +157,12 @@ build it from a checkout:
 ```
 
 LaraPaper → **Plugins** → add menu → **Import Recipe Archive** → upload `ha-calendar.zip`. Then
-open the recipe's settings and fill in:
+open the settings of the **Rolling Month Calendar** recipe and fill in either:
 
-- **Calendar entities**, e.g. `calendar.family`, `calendar.work`
-- With Docker Compose also **Home Assistant URL**, e.g. `http://homeassistant.local:8123`
+- **ICS feed URLs**, one per calendar. When these are set, the Home Assistant fields are
+  not used. Or:
+- **Home Assistant calendar entities**, e.g. `calendar.family`, `calendar.work`. With
+  Docker Compose also **Home Assistant URL**, e.g. `http://homeassistant.local:8123`
   (must be reachable from the LaraPaper container), and **Access token**. With the
   Home Assistant app, leave the URL at its default `http://127.0.0.1:8124` and the
   token empty: that is the app's own access to Home Assistant.
@@ -178,7 +195,8 @@ place and keeps your settings.
 | Locale | `en` | Day/month names, e.g. `nl`, `de` |
 | Ignore events containing / titled exactly | – | Same filters as upstream |
 
-The grid shows as many whole weeks (up to 6) as fit: busy weeks make rows taller, so
+The grid shows as many whole weeks (up to 6) as fit, and with ICS feeds no more than
+the feeds cover (see below): busy weeks make rows taller, so
 fewer fit. With **Busy weeks** set to `Show fewer weeks` it shows only the weeks that
 fit, so every event stays visible even if that is only a week or two. `Show "+N more"`
 keeps at least 3 weeks and ends a day that doesn't fit with "+N more". (Upstream keeps
@@ -191,16 +209,28 @@ the pixel fonts on top of them hard to read.
 <sub>Greys on a 1-bit screen: <b>Adapt styles</b> (left) vs <b>Dither</b> (right).</sub><br>
 <img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
 
+### ICS feeds
+
+LaraPaper fetches each feed on every refresh and parses it itself: recurring events are
+expanded and times are converted from the feed's time zones. It keeps only events from
+7 days back to 30 days ahead, so with ICS feeds the grid ends at the last whole week
+before that, usually 4 weeks and sometimes 5. A later day would otherwise look free
+while its events are simply not in the data. Home Assistant is asked for 6 weeks ahead
+and has no such limit.
+
+A `webcal://` link is fetched over `https://`. The Home Assistant token is never sent
+to the feeds.
+
 ### Multiple calendars
 
-List several entities under **Calendar entities**. **Calendar prefixes** and
-**Calendar colors** are matched to them by position: the first prefix/color goes with
-the first entity, and so on. Empty entries are skipped, so use `-` to hold the place of
+List several feeds under **ICS feed URLs** or several entities under **Home Assistant
+calendar entities**. **Calendar prefixes** and **Calendar colors** are matched to them by
+position: the first prefix/color goes with the first feed or entity, and so on. Empty entries are skipped, so use `-` to hold the place of
 a calendar that should have none. For example, with these settings:
 
 | Setting | Entries |
 |---|---|
-| Calendar entities | `calendar.family`, `calendar.mark`, `calendar.sara` |
+| Home Assistant calendar entities | `calendar.family`, `calendar.mark`, `calendar.sara` |
 | Calendar prefixes | `-`, `M:`, `S:` |
 | Calendar colors | `black`, `-`, `gray-50` |
 
@@ -252,7 +282,8 @@ HA_URL=http://homeassistant.local:8123 HA_TOKEN=... \
 ```
 
 Options: `--set key=value` (any custom field), `--tz Europe/Amsterdam`,
-`--device og` / `og2` (800×480, 1-bit / 2-bit), `--raw` (skip the grey-level reduction), `--data payload.json`, `--out file.png`. It needs a Chromium;
+`--device og` / `og2` (800×480, 1-bit / 2-bit), `--raw` (skip the grey-level reduction), `--data payload.json`,
+`--ics` (hand the events over as parsed ICS feeds, as LaraPaper does), `--out file.png`. It needs a Chromium;
 set `CHROMIUM_PATH` if Playwright can't find one.
 
 The preview uses the same window size, screen classes and framework version as
@@ -268,7 +299,9 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   `preview/ci.sh`. That renders sample and random calendars on the TRMNL X and OG with
   the framework files pinned in `larapaper/assets.txt`, and renders once through
   LaraPaper's PHP Liquid engine (`preview/php/render.php`, which also checks the polling
-  URLs and header). It fails on template errors, JavaScript errors and renders that
+  URLs and headers for Home Assistant and ICS feeds). The sample and some random
+  calendars are also rendered as ICS feeds, in the shape LaraPaper parses them into. It
+  fails on template errors, JavaScript errors and renders that
   don't finish. The screenshots are attached to the run as the `renders` artifact.
 - **App** (`.github/workflows/app.yml`, on changes to `larapaper/` or the recipe): lints
   the app, builds the image (amd64) and starts it with a fake `/data`. It checks that
@@ -279,7 +312,8 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
 - **End-to-end** (`e2e/run.mjs`, part of the App workflow): imports the recipe ZIP into
   that LaraPaper, points it at a fake Home Assistant (`e2e/fake-ha.mjs`) and fetches
   the screen like a TRMNL X does (`GET /api/display`). It checks the polled URLs and
-  token, the stored payload for two, one and zero-event calendars, that the recipe
+  token, the stored payload for two, one and zero-event calendars and for two ICS feeds
+  it serves (recurring and all-day events, no token sent), that the recipe
   rendered rather than LaraPaper's error screen, the PNG size, and that events show up
   on the screen. The screens are attached as the `e2e-screens` artifact.
 
@@ -288,9 +322,10 @@ To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
 
 ## Notes
 
-- The polling URL uses Liquid that relies on PHP's `DateTime` (`"today -7 days" | date`),
-  which LaraPaper's Liquid engine supports. It fetches 7 days back to 43 days ahead,
-  enough for the current week plus 6 weeks.
+- For Home Assistant, the polling URL fetches 7 days back to 43 days ahead, enough for
+  the current week plus 6 weeks. The dates are computed from a timestamp
+  (`"now" | date: "%s" | minus: 604800`), which LaraPaper's PHP Liquid and the Ruby
+  Liquid of TRMNL's own servers both read the same way.
 - The recipe loads FullCalendar from `/ha-calendar/...`, which the LaraPaper (local)
   app serves, and falls back to jsDelivr on any other server. With plain LaraPaper,
   rendering also loads the TRMNL framework from trmnl.com, so the container needs

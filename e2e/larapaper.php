@@ -84,11 +84,13 @@ switch ($command) {
         $plugin = plugin();
         $device = Device::where('api_key', API_KEY)->firstOrFail();
         $payload = $plugin->data_payload;
-        // one calendar is stored unwrapped ({data: [...]}), several as IDX_n
-        $calendars = is_array($payload) && array_key_exists('data', $payload) ? ['IDX_0' => $payload] : ($payload ?? []);
+        // one calendar is stored unwrapped ({data: [...]}, an ICS feed {ical: [...]}), several as IDX_n
+        $single = is_array($payload) && (array_key_exists('data', $payload) || array_key_exists('ical', $payload));
+        $calendars = $single ? ['IDX_0' => $payload] : ($payload ?? []);
         $summary = [];
         foreach ($calendars as $key => $calendar) {
-            $summary[$key] = isset($calendar['error']) ? ['error' => $calendar['error']] : ['events' => count($calendar['data'] ?? [])];
+            $summary[$key] = isset($calendar['error']) ? ['error' => $calendar['error']]
+                : (isset($calendar['ical']) ? ['ical' => count($calendar['ical'])] : ['events' => count($calendar['data'] ?? [])]);
         }
 
         $image = null;

@@ -9,7 +9,7 @@ treats its native plugins as source-available and is fine with them being remixe
 |---|---|
 | `lib/calendars/_full_month.html.erb` (`event_layout == 'rolling_month'`) | `plugin/src/full.liquid` and the `cfg` object in `shared.liquid` |
 | `lib/calendars/_common.html.erb` (`trmnlInitCalendars`) | `plugin/src/shared.liquid` |
-| `lib/google_calendar/google_calendar.rb` (`prepare_events`, filters, `time_min`/`time_max`) | `trmnlHaCalendar` in `shared.liquid`, `polling_url` in `settings.yml` |
+| `lib/google_calendar/google_calendar.rb` (`prepare_events`, filters, `time_min`/`time_max`) | `trmnlHaCalendar` in `shared.liquid` (incl. `fromIcal`), `polling_url` in `settings.yml` |
 
 ## Kept as upstream
 
@@ -26,10 +26,11 @@ treats its native plugins as source-available and is fine with them being remixe
 
 ## Changed
 
-- **Data source**: Home Assistant's `/api/calendars/<entity>` REST endpoint, polled by
-  LaraPaper, instead of the Google Calendar API. HA's JSON is turned into FullCalendar
-  events in the browser; upstream does that server-side in `Calendar::Helper`, which is
-  not public.
+- **Data source**: ICS feeds (parsed by LaraPaper) or Home Assistant's
+  `/api/calendars/<entity>` REST endpoint, polled by LaraPaper, instead of the Google
+  Calendar API. Both are turned into FullCalendar events in the browser; upstream does
+  that server-side in `Calendar::Helper`, which is not public. With ICS feeds the grid
+  ends at the last week the feed covers (LaraPaper keeps 30 days ahead).
 - **Time zones**: timed events are converted to the configured zone's wall-clock time and
   given to FullCalendar with `timeZone: 'UTC'`, so the result doesn't depend on the
   renderer's system zone. Day numbers and month labels read UTC dates to match.

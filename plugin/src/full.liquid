@@ -1,17 +1,20 @@
 {% comment %}
   Rolling month layout. Fork of usetrmnl/plugins lib/calendars/_full_month.html.erb
-  (event_layout == 'rolling_month'), fed by Home Assistant calendar entities instead
-  of Google Calendar. CSS + JS live in shared.liquid, which LaraPaper prepends.
+  (event_layout == 'rolling_month'), fed by ICS feeds or Home Assistant calendar
+  entities instead of Google Calendar. CSS + JS live in shared.liquid, which LaraPaper
+  prepends.
   The markup starts at the layout: TRMNL and LaraPaper wrap it in the view div.
 
   Settings live under trmnl.plugin_settings.custom_fields_values (same path on TRMNL
   cloud and LaraPaper). The polled payload is handed to the browser as-is; the JS in
-  shared.liquid turns HA events into FullCalendar events (the Ruby side of upstream,
+  shared.liquid turns ICS and HA events into FullCalendar events (the Ruby side of upstream,
   Calendar::Helper#fullcalendar_events_json, is not open source).
 {% endcomment %}
 {% assign s = trmnl.plugin_settings.custom_fields_values %}
 {% assign time_zone = s.time_zone | default: trmnl.user.time_zone_iana | default: "UTC" %}
 {% assign locale = s.locale | default: "en" | strip %}
+{% comment %} ICS feeds replace the HA entities when set (see polling_url in settings.yml) {% endcomment %}
+{% assign source = "ha" %}{% if s.ics_urls contains "/" %}{% assign source = "ics" %}{% endif %}
 
 {% if s.dither_greys == "yes" %}
   {% comment %}
@@ -28,7 +31,8 @@
        data-calendar-config='{
          "timeZoneName": {{ time_zone | json | escape }},
          "nowUtc": {{ trmnl.system.timestamp_utc | default: 0 }},
-         "calendarEntities": {{ s.calendars | default: "" | json | escape }},
+         "source": "{{ source }}",
+         "calendarEntities": {% if source == "ics" %}""{% else %}{{ s.calendars | default: "" | json | escape }}{% endif %},
          "calendarPrefixes": {{ s.calendar_labels | default: "" | json | escape }},
          "calendarColors": {{ s.calendar_colors | default: "" | json | escape }},
          "ignoredPhrases": {{ s.ignored_phrases | default: "" | json | escape }},

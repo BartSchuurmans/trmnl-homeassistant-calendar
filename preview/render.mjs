@@ -14,6 +14,11 @@
 // as if it were noon on that day (sample events and the recipe's "today"), so
 // screenshots don't change from one day to the next.
 //
+// --ics serves the same events (sample, --data or live) as ICS feeds would reach the
+// recipe on LaraPaper: parsed into { ical: [...] } by its IcalResponseParser, only events
+// from 7 days back to 30 days ahead, dates as ISO strings with an offset (all-day ones
+// at midnight UTC). It also fills in ics_urls, which switches the recipe to ICS.
+//
 // Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
 // reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
 // 1-/2-bit only when the page contains <img class="image-dither">. --raw skips this.
@@ -49,6 +54,7 @@ let dataFile = null;
 let dumpContext = null;
 let bodyFile = null;
 let strict = false;
+let ics = false;
 let now = new Date();
 let out = path.join(outDir, 'preview.png');
 let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -63,6 +69,7 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--out') out = path.resolve(args[++i]);
   else if (args[i] === '--tz') timeZone = args[++i];
   else if (args[i] === '--now') now = new Date(`${args[++i]}T12:00:00`);
+  else if (args[i] === '--ics') ics = true;
 }
 const device = DEVICES[deviceName];
 if (!device) throw new Error(`unknown device ${deviceName}`);
@@ -153,9 +160,36 @@ function sampleData() {
   return { IDX_0: { data: family }, IDX_1: { data: mark }, IDX_2: { data: sara } };
 }
 
-const payload = dataFile ? JSON.parse(fs.readFileSync(dataFile, 'utf8'))
+// HA events as LaraPaper hands over a parsed ICS feed (IcalResponseParser): uppercase
+// iCalendar keys, all-day dates at midnight in the server's zone (UTC), events without
+// an end dropped, and only events overlapping 7 days back to 30 days ahead.
+function toIcal(calendar) {
+  if (!calendar || calendar.error || !Array.isArray(calendar.data)) return calendar;
+  const from = now.getTime() - 7 * 86400000, to = now.getTime() + 30 * 86400000;
+  const at = (t) => (t.dateTime ? new Date(t.dateTime) : new Date(`${t.date}T00:00:00Z`));
+  const atom = (t) => (t.dateTime ? t.dateTime : `${t.date}T00:00:00+00:00`);
+  const ical = calendar.data.filter((e) => e.end).filter((e) => {
+    const s = at(e.start).getTime(), en = at(e.end).getTime();
+    return (s >= from && s < to) || (en > from && en <= to) || (from >= s && to <= en);
+  }).map((e) => ({
+    UID: e.uid || undefined, DTSTART: atom(e.start), DTEND: atom(e.end),
+    ...(e.summary ? { SUMMARY: e.summary } : {}), ...(e.description ? { DESCRIPTION: e.description } : {}),
+    ...(e.location ? { LOCATION: e.location } : {}),
+  }));
+  return { ical };
+}
+
+let payload = dataFile ? JSON.parse(fs.readFileSync(dataFile, 'utf8'))
   : process.env.HA_URL ? await liveData() : sampleData();
 if (!dataFile && !process.env.HA_URL && !overrides.calendars) customFields.calendars = 'calendar.family,calendar.mark,calendar.sara';
+if (ics) {
+  const idx = Object.keys(payload).filter((k) => /^IDX_\d+$/.test(k));
+  payload = idx.length ? Object.fromEntries(idx.map((k) => [k, toIcal(payload[k])]))
+    : toIcal(Array.isArray(payload) ? { data: payload } : payload);
+  if (!overrides.ics_urls) {
+    customFields.ics_urls = (idx.length ? idx : ['IDX_0']).map((_, i) => `https://calendar.example/${i + 1}.ics`).join(',');
+  }
+}
 
 // LaraPaper render context: `data` is the payload, then the payload keys are spread
 // on top (so a single calendar's { data: [...] } turns `data` into the bare list).
