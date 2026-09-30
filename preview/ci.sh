@@ -132,6 +132,8 @@ if [ -n "$trmnlp" ]; then
     spawn trmnlp-ics-x trmnlp_render trmnlp-ics-x "$out/context-ics.json" "$out/trmnlp-ics-body.html"
     spawn trmnlp-half-vertical-x trmnlp_render trmnlp-half-vertical-x "$out/context.json" "$out/trmnlp-half-vertical-body.html" half_vertical
     spawn trmnlp-quadrant-x trmnlp_render trmnlp-quadrant-x "$out/context.json" "$out/trmnlp-quadrant-body.html" quadrant
+    # TRMNL's best-practice checks, as LaraPaper and TRMNL.com run the recipe
+    spawn trmnlp-lint node trmnlp.mjs --lint
 else
     echo "== trmnlp skipped (no Docker)"
 fi
