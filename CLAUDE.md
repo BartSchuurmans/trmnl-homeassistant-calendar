@@ -18,6 +18,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   bundled TRMNL framework, fonts and FullCalendar (`assets.txt`, pinned by SHA-256).
 - `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
   in-container helper.
+- `plugin/trmnl-com/` — the recipe on TRMNL.com: Plugin Merge strategy, its form fields
+  (`custom_fields.yml`) and `merge.liquid`, prepended to the shared markup there.
 - `scripts/build-zip.sh` — builds `dist/rolling-month-calendar.zip` for LaraPaper's recipe import.
 - `LICENSE` (MIT, own code) and `THIRD_PARTY_NOTICES.md` (upstream plugin, bundled
   assets) — keep the notices table in step with `assets.txt`.
@@ -96,9 +98,12 @@ fakes that shape; `e2e/fake-ha.mjs` serves real feeds.
 `trmnl.com/api/plugin_settings/<id>/data` (TRMNL's Plugin Data API), which returns
 `{data: {events: [...]}}` with `start_full`/`end_full`/`all_day` (`fromNative` in
 `shared.liquid`). ICS feeds win over it, it wins over HA. TRMNL's recommended "Plugin
-Merge" strategy names each source `<plugin>_<id>`, which a shared recipe can't know and
-keepsuit can't look up dynamically, so the recipe polls the API instead. `render.mjs
---native` fakes that shape.
+Merge" strategy names each source `<plugin>_<id>`, which keepsuit can't look up
+dynamically (and LaraPaper has no Plugin Merge), so there the recipe polls the API.
+`render.mjs --native` fakes that shape. On TRMNL.com itself the recipe uses Plugin Merge
+(`plugin/trmnl-com/`): "Calendar" dropdowns store the merged data's name (`caldav_<id>`),
+which `merge.liquid` looks up with `{{ [name] }}`. keepsuit can't parse that, so it stays
+out of `shared.liquid`; `render.mjs --merge` covers it.
 
 **Home Assistant access.** In the app, the recipe's default URL `http://127.0.0.1:8124`
 is an nginx proxy written by `larapaper/rootfs/etc/entrypoint.d/10-ha-calendar.sh`: it
