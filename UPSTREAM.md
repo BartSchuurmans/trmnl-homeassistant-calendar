@@ -44,7 +44,7 @@ treats its native plugins as source-available and is fine with them being remixe
 - **Event look**: matched to upstream's month-layout preview. Timed events use
   FullCalendar's dot, restyled as a grey bar on the left, with a bold title that wraps
   and the time in grey below it. Multi-day events get a light grey fill (`bg--gray-70`)
-  with a bold title. Single-day all-day events differ from upstream (which fills them
+  with a bold title; events from a coloured calendar have bold titles too. Single-day all-day events differ from upstream (which fills them
   too): they are drawn like timed events, with the bar and no time.
   Grid lines are thin grey (dotted on 1-/2-bit), headers are centred and bold with the
   weekend shaded, and day numbers are small.

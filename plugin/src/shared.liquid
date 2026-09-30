@@ -136,8 +136,8 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
-  /* multi-day events without a colour keep upstream's grey band, with a bold title to match */
-  .trmnl-calendar .fc-daygrid-block-event:not(.trmnl-event--colored) .fc-event-title { font-weight: 700; }
+  /* filled events (multi-day, or any from a coloured calendar) get a bold title to match */
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-title { font-weight: 700; }
   .trmnl-calendar .fc-daygrid-day-events { margin-bottom: calc(3px * var(--cal-u)); }
   .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; }
   .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; }
