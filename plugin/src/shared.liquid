@@ -159,9 +159,11 @@
   .trmnl-calendar .fc-daygrid-day-frame:has(.fc-daygrid-week-number) .trmnl-month-label { padding-left: 2.6em; }
 
   /* "Fade past events": events that are over recede. Only where greys print as greys (4-bit,
-     or the "Dither" setting); a 1-/2-bit pattern would make them unreadable instead. */
+     or the "Dither" setting); a 1-/2-bit pattern would make them unreadable instead.
+     invert/brightness/invert mixes every pixel 55% towards white, like 45% opacity on a
+     white cell; TRMNL's publish check rejects the opacity property. */
   .screen--4bit .trmnl-calendar.fade-past .fc-event-past,
-  .trmnl-calendar.fade-past.dither-greys .fc-event-past { opacity: 0.45; }
+  .trmnl-calendar.fade-past.dither-greys .fc-event-past { filter: invert(1) brightness(0.45) invert(1); }
 
   /* "Dither" setting: skip the framework's per-depth greys (patterns on 1-/2-bit) and
      paint the raw palette greys; LaraPaper then dithers the whole screen. */
