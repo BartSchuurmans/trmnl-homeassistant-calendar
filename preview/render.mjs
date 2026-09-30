@@ -19,6 +19,11 @@
 // from 7 days back to 30 days ahead, dates as ISO strings with an offset (all-day ones
 // at midnight UTC). It also fills in ics_urls, which switches the recipe to ICS.
 //
+// --native serves the events as TRMNL's Plugin Data API returns a native calendar plugin's
+// data ({ data: { events: [...] } }) and fills in trmnl_plugins, which switches to that source.
+//
+// --expect-events fails the render when no event made it onto the grid.
+//
 // Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
 // reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
 // 1-/2-bit only when the page contains <img class="image-dither">. --raw skips this.
@@ -55,6 +60,8 @@ let dumpContext = null;
 let bodyFile = null;
 let strict = false;
 let ics = false;
+let native = false;
+let expectEvents = false;
 let now = new Date();
 let out = path.join(outDir, 'preview.png');
 let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -70,6 +77,8 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--tz') timeZone = args[++i];
   else if (args[i] === '--now') now = new Date(`${args[++i]}T12:00:00`);
   else if (args[i] === '--ics') ics = true;
+  else if (args[i] === '--native') native = true;
+  else if (args[i] === '--expect-events') expectEvents = true;
 }
 const device = DEVICES[deviceName];
 if (!device) throw new Error(`unknown device ${deviceName}`);
@@ -179,9 +188,28 @@ function toIcal(calendar) {
   return { ical };
 }
 
+// HA events as TRMNL's Plugin Data API returns a native calendar plugin's data:
+// { data: { events: [...] } } with start_full/end_full, all-day ones as plain dates.
+function toNative(calendar) {
+  if (!calendar || calendar.error || !Array.isArray(calendar.data)) return calendar;
+  const at = (t) => t.dateTime || t.date;
+  const events = calendar.data.map((e) => ({
+    summary: e.summary || 'Busy', description: e.description || '', status: 'confirmed',
+    date_time: at(e.start), all_day: !e.start.dateTime, location: e.location || null,
+    start_full: at(e.start), end_full: at(e.end),
+  }));
+  return { data: { events } };
+}
+
 let payload = dataFile ? JSON.parse(fs.readFileSync(dataFile, 'utf8'))
   : process.env.HA_URL ? await liveData() : sampleData();
 if (!dataFile && !process.env.HA_URL && !overrides.calendars) customFields.calendars = 'calendar.family,calendar.mark,calendar.sara';
+if (native) {
+  const idx = Object.keys(payload).filter((k) => /^IDX_\d+$/.test(k));
+  payload = idx.length ? Object.fromEntries(idx.map((k) => [k, toNative(payload[k])]))
+    : toNative(Array.isArray(payload) ? { data: payload } : payload);
+  if (!overrides.trmnl_plugins) customFields.trmnl_plugins = (idx.length ? idx : ['IDX_0']).map((_, i) => 10001 + i).join(',');
+}
 if (ics) {
   const idx = Object.keys(payload).filter((k) => /^IDX_\d+$/.test(k));
   payload = idx.length ? Object.fromEntries(idx.map((k) => [k, toIcal(payload[k])]))
@@ -251,6 +279,10 @@ if (strict && pageErrors.length) {
   throw new Error(`JavaScript errors in the page: ${pageErrors.join('; ')}`);
 }
 await page.waitForTimeout(300);
+if (expectEvents && !(await page.locator('.fc-event').count())) {
+  await browser.close();
+  throw new Error('no events on the grid');
+}
 const shot = await page.screenshot();
 if (raw) {
   fs.writeFileSync(out, shot);

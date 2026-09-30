@@ -26,9 +26,9 @@ treats its native plugins as source-available and is fine with them being remixe
 
 ## Changed
 
-- **Data source**: ICS feeds (parsed by LaraPaper) or Home Assistant's
-  `/api/calendars/<entity>` REST endpoint, polled by LaraPaper, instead of the Google
-  Calendar API. Both are turned into FullCalendar events in the browser; upstream does
+- **Data source**: ICS feeds (parsed by LaraPaper), TRMNL's native calendar plugins'
+  parsed events (Plugin Data API) or Home Assistant's `/api/calendars/<entity>` REST
+  endpoint, polled by the server, instead of the Google Calendar API. All are turned into FullCalendar events in the browser; upstream does
   that server-side in `Calendar::Helper`, which is not public. With ICS feeds the grid
   ends at the last week the feed covers (LaraPaper keeps 30 days ahead).
 - **Time zones**: timed events are converted to the configured zone's wall-clock time and

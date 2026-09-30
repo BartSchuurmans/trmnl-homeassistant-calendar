@@ -13,8 +13,19 @@
 {% assign s = trmnl.plugin_settings.custom_fields_values %}
 {% assign time_zone = s.time_zone | default: trmnl.user.time_zone_iana | default: "UTC" %}
 {% assign locale = s.locale | default: "en" | strip %}
-{% comment %} ICS feeds replace the HA entities when set (see polling_url in settings.yml) {% endcomment %}
-{% assign source = "ha" %}{% if s.ics_urls contains "/" %}{% assign source = "ics" %}{% endif %}
+{% comment %} ICS feeds, else TRMNL plugins, replace the HA entities when set (see polling_url in settings.yml) {% endcomment %}
+{% assign source = "ha" %}{% case s.trmnl_plugins %}{% when nil, "" %}{% else %}{% assign source = "trmnl" %}{% endcase %}
+{% if s.ics_urls contains "/" %}{% assign source = "ics" %}{% endif %}
+{% comment %}
+  LaraPaper passes the payload as `data`: one calendar's response, or {IDX_0: ..., IDX_1: ...}
+  for several. TRMNL and trmnlp have no `data` for several URLs, only IDX_0, IDX_1, ... at the
+  top level, so collect those (up to ten; unused ones come out as null, which the JS reads as empty calendars).
+{% endcomment %}
+{% assign events_json = data | json %}
+{% if IDX_0 %}{% unless data %}{% capture events_json %}{
+    "IDX_0": {{ IDX_0 | json }}, "IDX_1": {{ IDX_1 | json }}, "IDX_2": {{ IDX_2 | json }}, "IDX_3": {{ IDX_3 | json }}, "IDX_4": {{ IDX_4 | json }},
+    "IDX_5": {{ IDX_5 | json }}, "IDX_6": {{ IDX_6 | json }}, "IDX_7": {{ IDX_7 | json }}, "IDX_8": {{ IDX_8 | json }}, "IDX_9": {{ IDX_9 | json }}
+}{% endcapture %}{% endunless %}{% endif %}
 
 {% if s.dither_greys == "yes" %}
   {% comment %}
@@ -27,12 +38,12 @@
 <div class="layout layout--col layout--stretch">
   <div id="calendar-full-month"
        class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends != 'no' %} shade-weekends{% endif %}{% if s.fade_past_events != 'no' %} fade-past{% endif %}{% if s.dither_greys == 'yes' %} dither-greys{% endif %}"
-       data-events="{{ data | json | escape }}"
+       data-events="{{ events_json | escape }}"
        data-calendar-config='{
          "timeZoneName": {{ time_zone | json | escape }},
          "nowUtc": {{ trmnl.system.timestamp_utc | default: 0 }},
          "source": "{{ source }}",
-         "calendarEntities": {% if source == "ics" %}""{% else %}{{ s.calendars | default: "" | json | escape }}{% endif %},
+         "calendarEntities": {% if source != "ha" %}""{% else %}{{ s.calendars | default: "" | json | escape }}{% endif %},
          "calendarPrefixes": {{ s.calendar_labels | default: "" | json | escape }},
          "calendarColors": {{ s.calendar_colors | default: "" | json | escape }},
          "ignoredPhrases": {{ s.ignored_phrases | default: "" | json | escape }},

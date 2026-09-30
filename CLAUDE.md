@@ -21,7 +21,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 ## Checks
 
 - `sh preview/ci.sh` — renders sample and random calendars (TRMNL X, OG 1-/2-bit) and
-  once through LaraPaper's PHP Liquid engine; fails on template/JS errors or renders
+  once each through LaraPaper's PHP Liquid engine and trmnlp (TRMNL's Ruby Liquid, via
+  Docker, `preview/trmnlp.mjs`); fails on template/JS errors or renders
   that don't finish. Needs `npm ci` in `preview/`, `composer install` in
   `preview/php/`, and `FRAMEWORK_DIR` set up as in `.github/workflows/render.yml`.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
@@ -65,7 +66,9 @@ assets locally.
 `data`, but its keys are also spread on top, so one calendar's `{data: [...]}` makes
 `data` the bare list; several calendars are `{IDX_0: ..., IDX_1: ...}`. One calendar
 with no events is stored as a bare `[]` (LaraPaper's list check fails on empty arrays). The JS
-normalises all shapes. LaraPaper uses keepsuit/liquid (PHP) with its own filters
+normalises all shapes. TRMNL and trmnlp have no `data` for several URLs, only top-level
+`IDX_n`, so `full.liquid` rebuilds that object (`ci.sh` checks it through trmnlp).
+LaraPaper uses keepsuit/liquid (PHP) with its own filters
 (`json` etc.) and regex preprocessing of `date:` filters — test with `php/render.php`,
 liquidjs alone is not proof.
 
@@ -82,6 +85,14 @@ recurrences expanded, only events from 7 days back to 30 days ahead, all-day eve
 midnight-to-midnight timestamps (no all-day flag). `fromIcal` in `shared.liquid` maps that
 to HA's shape, and the grid stops at the last week the feed covers. `render.mjs --ics`
 fakes that shape; `e2e/fake-ha.mjs` serves real feeds.
+
+**TRMNL calendar plugins.** `trmnl_plugins` (plugin setting ids) + `trmnl_api_key` poll
+`trmnl.com/api/plugin_settings/<id>/data` (TRMNL's Plugin Data API), which returns
+`{data: {events: [...]}}` with `start_full`/`end_full`/`all_day` (`fromNative` in
+`shared.liquid`). ICS feeds win over it, it wins over HA. TRMNL's recommended "Plugin
+Merge" strategy names each source `<plugin>_<id>`, which a shared recipe can't know and
+keepsuit can't look up dynamically, so the recipe polls the API instead. `render.mjs
+--native` fakes that shape.
 
 **Home Assistant access.** In the app, the recipe's default URL `http://127.0.0.1:8124`
 is an nginx proxy written by `larapaper/rootfs/etc/entrypoint.d/10-ha-calendar.sh`: it

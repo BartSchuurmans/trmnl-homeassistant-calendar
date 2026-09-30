@@ -238,6 +238,23 @@
       };
     }
 
+    // TRMNL's native calendar plugins (Google, Outlook, Apple, ...) in data mode: parsed
+    // events with start_full/end_full (a date for all-day events, else a time with offset;
+    // usetrmnl/plugins lib/google_calendar/google_calendar.rb#event_hash).
+    function fromNative(ev) {
+      if (!ev || typeof ev !== 'object' || !ev.start_full) return null;
+      if (String(ev.status || '').toLowerCase() === 'cancelled') return null;
+      var start = String(ev.start_full), end = ev.end_full ? String(ev.end_full) : null;
+      var allDay = ev.all_day === true || DATE_ONLY.test(start);
+      return {
+        start: allDay ? { date: start.slice(0, 10) } : { dateTime: start },
+        end: end ? (allDay ? { date: end.slice(0, 10) } : { dateTime: end }) : null,
+        summary: ev.summary || null,
+        description: ev.description || '',
+        location: ev.location || ''
+      };
+    }
+
     // LaraPaper stores one polled URL as its JSON (a bare list becomes { data: [...] }, and
     // is also spread into the top-level `data`) and several as { IDX_0: ..., IDX_1: ... }.
     function payloadToCalendars(payload) {
@@ -250,6 +267,8 @@
           .map(function(k) { return payloadToCalendars(payload[k])[0] || { events: [] }; });
       }
       if (Array.isArray(payload.ical)) return [{ events: payload.ical.map(fromIcal).filter(Boolean) }];
+      if (Array.isArray(payload.events)) return [{ events: payload.events.map(fromNative).filter(Boolean) }];
+      if (payload.data && Array.isArray(payload.data.events)) return payloadToCalendars(payload.data);
       if (Array.isArray(payload.data)) return [{ events: payload.data }];
       if (payload.error || payload.message) return [{ events: [], error: payload.error || payload.message }];
       return [];
