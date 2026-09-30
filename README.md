@@ -45,8 +45,8 @@ flowchart LR
 | Path | What |
 |---|---|
 | `plugin/src/settings.yml` | Recipe settings: polling URL, auth header, custom fields |
-| `plugin/src/full.liquid` | Markup (fork of `_full_month.html.erb`) |
-| `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA event mapping) |
+| `plugin/src/full.liquid`, `half_horizontal.liquid`, `half_vertical.liquid` | The views: each prints the calendar from `shared.liquid` |
+| `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA event mapping) and the markup (fork of `_full_month.html.erb`) |
 | `preview/` | Local renderer and CI render checks |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
 | `larapaper/`, `repository.yaml` | The LaraPaper (local) Home Assistant app |
@@ -68,6 +68,9 @@ filtering work as upstream. What changed:
   private one, and styles rebuilt from TRMNL framework classes, because upstream's
   calendar stylesheets aren't published. The look matches upstream's month preview.
 - **Per-calendar colors and prefixes** replace Google's calendar and event colors.
+- **Half views for mashups.** The top or bottom half keeps the full width and shows the
+  weeks that fit (usually two); the left or right half is the full grid at half the
+  width, with start times only and tighter spacing. There is no quadrant view yet.
   The RSVP filter is gone, since HA doesn't expose attendees.
 - **Explicit time zone handling**: events are converted to the configured zone, so the
   result doesn't depend on the renderer's system zone.

@@ -1,7 +1,9 @@
 // Renders plugin/src with trmnlp, TRMNL's own preview tool (Ruby Liquid, as on TRMNL and
-// Terminus), and writes the markup of the full view for render.mjs --body to screenshot.
+// Terminus), and writes the markup of one view (full by default, or a half inside trmnlp's
+// mashup) for render.mjs --body to screenshot.
 //
-//   node trmnlp.mjs <context.json> <body.html>      (context from render.mjs --dump-context)
+//   node trmnlp.mjs <context.json> <body.html> [full|half_horizontal|half_vertical]
+//                                                   (context from render.mjs --dump-context)
 //
 // Needs Docker (the trmnl/trmnlp image). The context's custom fields and payload go into
 // .trmnlp.yml, so trmnlp hands the payload over the TRMNL way: its keys at the top level,
@@ -17,8 +19,8 @@ import yaml from 'js-yaml';
 
 const IMAGE = 'trmnl/trmnlp:v0.12.0';
 const here = path.dirname(fileURLToPath(import.meta.url));
-const [contextFile, bodyFile] = process.argv.slice(2);
-if (!contextFile || !bodyFile) throw new Error('usage: node trmnlp.mjs <context.json> <body.html>');
+const [contextFile, bodyFile, size = 'full'] = process.argv.slice(2);
+if (!contextFile || !bodyFile) throw new Error('usage: node trmnlp.mjs <context.json> <body.html> [size]');
 
 const context = JSON.parse(fs.readFileSync(contextFile, 'utf8'));
 const payload = context.data;
@@ -34,8 +36,8 @@ fs.writeFileSync(path.join(project, '.trmnlp.yml'), yaml.dump({
 execFileSync('docker', ['run', '--rm', '--user', `${process.getuid()}:${process.getgid()}`,
   '--volume', `${project}:/plugin`, IMAGE, 'build'], { stdio: 'inherit' });
 
-// The full view as trmnlp renders it: everything inside <div class="screen">
-const html = fs.readFileSync(path.join(project, '_build', 'full.html'), 'utf8');
+// The view as trmnlp renders it: everything inside <div class="screen">
+const html = fs.readFileSync(path.join(project, '_build', `${size}.html`), 'utf8');
 const open = '<div class="screen">';
 const start = html.indexOf(open);
 const end = html.lastIndexOf('</div>', html.lastIndexOf('</body>'));
