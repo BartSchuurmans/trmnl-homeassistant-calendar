@@ -206,9 +206,9 @@ family events get no prefix and a `gray-65` fill, and work events get `W:` and a
     colors on color panels.
   - Hex colors are painted as-is. Without dithering, a 1-bit screen snaps them to black
     or white.
-- Events without a calendar color use the upstream look: timed events get a grey bar
-  on the left with the time in grey below the title, and all-day events a light grey
-  bar.
+- Events without a calendar color get a grey bar on the left with a bold title, and
+  timed events the time in grey below it (upstream's look). Single-day all-day events
+  are drawn the same way; multi-day events are a light grey band across their days.
 
 ## TRMNL framework
 
