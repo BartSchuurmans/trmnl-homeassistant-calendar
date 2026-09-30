@@ -2,18 +2,73 @@
 # Render checks run by .github/workflows/render.yml (and locally, same prerequisites as
 # render.mjs plus PHP with composer's vendor/ in preview/php). Screenshots land in
 # preview/out/ci. Any render that errors or doesn't finish fails the run.
+#
+# Renders run in parallel, JOBS at a time (default: one per CPU); each one's output is
+# printed when it finishes, and the run fails at the end if any of them failed.
 set -eu
 cd "$(dirname "$0")"
 out=out/ci
 rm -rf "$out"
 mkdir -p "$out"
+jobs="${JOBS:-$(nproc 2> /dev/null || echo 2)}"
 
-render() {
+# A pipe holding one token per free slot: a job takes one to start and puts it back
+# when it's done
+slots="$(mktemp -u)"
+mkfifo "$slots"
+exec 3<> "$slots"
+rm "$slots"
+i=0
+while [ "$i" -lt "$jobs" ]; do echo >&3; i=$((i + 1)); done
+
+# spawn <name> <command...>: runs the command in the background once a slot is free
+spawn() {
     name="$1"
     shift
-    echo "== $name"
+    read -r _ <&3
+    (
+        if "$@" > "$out/$name.log" 2>&1; then status=ok; else status=FAILED; echo "$name" >> "$out/failed"; fi
+        { echo "== $name ($status)"; cat "$out/$name.log"; }
+        echo >&3
+    ) &
+    last=$!
+}
+
+render_now() {
+    name="$1"
+    shift
     timeout 90 node render.mjs --strict --tz Europe/Amsterdam --out "$out/$name.png" "$@"
 }
+
+render() {
+    spawn "$1" render_now "$@"
+}
+
+# Same input through LaraPaper's Liquid engine (keepsuit/liquid, PHP)
+php_render() {
+    php php/render.php "$2" > "$3"
+    render_now "$1" --body "$3"
+}
+
+# Same input through trmnlp (Ruby Liquid, as on TRMNL), which passes several calendars as
+# IDX_0, IDX_1, ... without `data`; needs Docker, which CI has
+trmnlp_render() {
+    node trmnlp.mjs "$2" "$3" ${4:+"$4"}
+    render_now "$1" --body "$3" --expect-events
+}
+trmnlp=
+if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
+    trmnlp=yes
+    # fetch the image while the other renders run
+    node trmnlp.mjs --pull > "$out/trmnlp-pull.log" 2>&1 &
+    pull=$!
+fi
+
+# The contexts for the PHP and trmnlp renders, first so those can start early
+render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
+context=$last
+render liquidjs-ics-x --ics --dump-context "$out/context-ics.json"
+context_ics=$last
 
 # Sample calendars with different settings, on the TRMNL X and a 1-bit OG
 render sample-x
@@ -39,28 +94,10 @@ render half-vertical-og --device og --size half_vertical --expect-events
 render quadrant-x --size quadrant --expect-events
 render quadrant-og --device og --size quadrant --expect-events
 
-# Same input through LaraPaper's Liquid engine (keepsuit/liquid, PHP)
-render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
-php php/render.php "$out/context.json" > "$out/php-body.html"
-render php-x --body "$out/php-body.html"
-render liquidjs-ics-x --ics --dump-context "$out/context-ics.json"
-php php/render.php "$out/context-ics.json" > "$out/php-ics-body.html"
-render php-ics-x --body "$out/php-ics-body.html"
-
-# Same input through trmnlp (Ruby Liquid, as on TRMNL), which passes several calendars as
-# IDX_0, IDX_1, ... without `data`; needs Docker, which CI has
-if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
-    node trmnlp.mjs "$out/context.json" "$out/trmnlp-body.html"
-    render trmnlp-x --body "$out/trmnlp-body.html" --expect-events
-    node trmnlp.mjs "$out/context-ics.json" "$out/trmnlp-ics-body.html"
-    render trmnlp-ics-x --body "$out/trmnlp-ics-body.html" --expect-events
-    node trmnlp.mjs "$out/context.json" "$out/trmnlp-half-vertical-body.html" half_vertical
-    render trmnlp-half-vertical-x --body "$out/trmnlp-half-vertical-body.html" --expect-events
-    node trmnlp.mjs "$out/context.json" "$out/trmnlp-quadrant-body.html" quadrant
-    render trmnlp-quadrant-x --body "$out/trmnlp-quadrant-body.html" --expect-events
-else
-    echo "== trmnlp skipped (no Docker)"
-fi
+# The contexts are written by now (their renders were the first to start)
+wait "$context" "$context_ics" || true
+spawn php-x php_render php-x "$out/context.json" "$out/php-body.html"
+spawn php-ics-x php_render php-ics-x "$out/context-ics.json" "$out/php-ics-body.html"
 
 # Random calendars (1-4, sparse to dense) catch layouts that don't settle
 for seed in 1 2 3 4 5 6 7 8 9 10 11 12; do
@@ -82,3 +119,23 @@ IFS='
 # shellcheck disable=SC2086 # split on newlines, as above
 render random-8-more-x --data "$out/random-8.json" $(node random-data.mjs 8 /dev/null) --set week_overflow=more
 unset IFS
+
+if [ -n "$trmnlp" ]; then
+    if ! wait "$pull"; then
+        cat "$out/trmnlp-pull.log"
+        echo trmnlp-pull >> "$out/failed"
+    fi
+    spawn trmnlp-x trmnlp_render trmnlp-x "$out/context.json" "$out/trmnlp-body.html"
+    spawn trmnlp-ics-x trmnlp_render trmnlp-ics-x "$out/context-ics.json" "$out/trmnlp-ics-body.html"
+    spawn trmnlp-half-vertical-x trmnlp_render trmnlp-half-vertical-x "$out/context.json" "$out/trmnlp-half-vertical-body.html" half_vertical
+    spawn trmnlp-quadrant-x trmnlp_render trmnlp-quadrant-x "$out/context.json" "$out/trmnlp-quadrant-body.html" quadrant
+else
+    echo "== trmnlp skipped (no Docker)"
+fi
+
+wait
+if [ -s "$out/failed" ]; then
+    echo "Failed:"
+    cat "$out/failed"
+    exit 1
+fi

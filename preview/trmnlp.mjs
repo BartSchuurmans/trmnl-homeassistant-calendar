@@ -4,6 +4,7 @@
 //
 //   node trmnlp.mjs <context.json> <body.html> [full|half_horizontal|half_vertical|quadrant]
 //                                                   (context from render.mjs --dump-context)
+//   node trmnlp.mjs --pull                          only fetches the image, if missing
 //
 // Needs Docker (the trmnl/trmnlp image). The context's custom fields and payload go into
 // .trmnlp.yml, so trmnlp hands the payload over the TRMNL way: its keys at the top level,
@@ -20,6 +21,14 @@ import yaml from 'js-yaml';
 const IMAGE = 'trmnl/trmnlp:v0.12.0';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const [contextFile, bodyFile, size = 'full'] = process.argv.slice(2);
+if (contextFile === '--pull') {
+  try {
+    execFileSync('docker', ['image', 'inspect', IMAGE], { stdio: 'ignore' });
+  } catch {
+    execFileSync('docker', ['pull', '--quiet', IMAGE], { stdio: 'inherit' });
+  }
+  process.exit(0);
+}
 if (!contextFile || !bodyFile) throw new Error('usage: node trmnlp.mjs <context.json> <body.html> [size]');
 
 const context = JSON.parse(fs.readFileSync(contextFile, 'utf8'));
