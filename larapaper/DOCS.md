@@ -8,6 +8,9 @@ image with these additions:
   into the image. LaraPaper normally loads the framework from trmnl.com, and the
   calendar recipe loads FullCalendar from jsDelivr, every time a screen renders.
 - The Inter stylesheet from fonts.bunny.net is removed. The framework ships Inter itself.
+- Saving a recipe's settings makes the device show them at its next refresh. LaraPaper
+  itself keeps showing the screen rendered with the old settings until the recipe's
+  refresh interval has passed (only markup edits take effect at once).
 - The database, generated screens and app key are kept in `/data`, so they survive
   updates and are part of Home Assistant backups.
 - The calendar recipe reads Home Assistant through `http://127.0.0.1:8124`, which

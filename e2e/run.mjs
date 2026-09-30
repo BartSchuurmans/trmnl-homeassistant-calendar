@@ -10,8 +10,12 @@
 // screen the way a TRMNL X does (GET /api/display) and checks what was polled and
 // rendered. Screens land in e2e/out/.
 //
+// Each scenario only changes the recipe settings, like the settings form, so it also
+// checks that the app's patch makes the device pick them up (new poll, new screen).
+//
 // --local <larapaper dir> runs the helper with the host's PHP against a LaraPaper
-// checkout instead of docker exec (for working on this script).
+// checkout instead of docker exec (for working on this script); apply
+// larapaper/patches/ to it as larapaper/Dockerfile does.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -81,6 +85,7 @@ try {
       keys: ['IDX_0', 'IDX_1'], events: { IDX_0: 100, IDX_1: 8 } }]),
   ];
   const results = {};
+  let previousImage = null;
   for (const s of scenarios) {
     console.log(`\n== ${s.name}`);
     php('configure', JSON.stringify(s.config));
@@ -109,6 +114,8 @@ try {
       Object.entries(s.events).map(([k, n]) => [k, { events: n }]))), 'payload holds the fake events');
     // A render error leaves the plugin without an image and shows LaraPaper's error screen
     check(!!state.plugin_image && state.plugin_image === state.device_image, 'device shows the rendered recipe, not an error screen');
+    check(state.plugin_image !== previousImage, 'settings change replaced the cached screen');
+    previousImage = state.plugin_image;
     check(state.image?.width === 1872 && state.image?.height === 1404, 'stored screen is 1872×1404');
 
     if (display.image_url) {

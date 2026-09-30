@@ -36,5 +36,15 @@ RUN view=/var/www/html/resources/views/vendor/trmnl/components/screen.blade.php 
     && sed -i '/fonts\.bunny\.net/d' "$view" \
     && ! grep -q 'fonts\.bunny\.net' "$view"
 
+# Also drop a recipe's cached screen when its settings change, not only its markup
+# (see the comment in the patch).
+COPY patches/plugin-settings-cache.php /tmp/ha-calendar-patches/
+RUN model=/var/www/html/app/Models/Plugin.php \
+    && grep -c 'static::updating(function ($model): void {' "$model" | grep -qx 1 \
+    && sed -i '/static::updating(function ($model): void {/r /tmp/ha-calendar-patches/plugin-settings-cache.php' "$model" \
+    && grep -q 'ha-calendar patch' "$model" \
+    && php -l "$model" \
+    && rm -rf /tmp/ha-calendar-patches
+
 COPY rootfs /
 RUN chmod +x /etc/entrypoint.d/10-ha-calendar.sh

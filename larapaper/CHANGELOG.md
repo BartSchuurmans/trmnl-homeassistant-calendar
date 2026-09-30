@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.43.0-6
+
+- Saving a recipe's settings now takes effect on the device at its next refresh. Before,
+  the device (and its preview in LaraPaper) kept showing a screen rendered with the old
+  settings until the recipe's data went stale, even though the recipe preview already
+  showed the new ones. Settings that change what is fetched (such as the calendars)
+  also fetch the data again.
+
 ## 0.43.0-5
 
 - The app is now installed from a prebuilt image (`ghcr.io/bartschuurmans/larapaper-local`)

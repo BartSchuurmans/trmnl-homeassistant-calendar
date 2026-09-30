@@ -6,7 +6,8 @@
 //   php larapaper.php setup <recipe.zip> <ha_url> <ha_token>
 //       user, recipe import, TRMNL X device with a playlist showing the recipe
 //   php larapaper.php configure '<json custom field values>'
-//       merges into the recipe configuration and drops cached data and image
+//       merges into the recipe configuration, as saving the settings form does (the
+//       app's patch then drops the cached data and screen)
 //   php larapaper.php check
 //       polled payload summary, cached images, and the screen's size and grey levels
 
@@ -73,11 +74,7 @@ switch ($command) {
         $plugin = plugin();
         $plugin->update([
             'configuration' => array_merge($plugin->configuration ?? [], json_decode($argv[2], true, flags: JSON_THROW_ON_ERROR)),
-            'data_payload_updated_at' => null,
-            'current_image' => null,
-            'current_image_metadata' => null,
         ]);
-        Device::where('api_key', API_KEY)->update(['current_screen_image' => null]);
         out(['configuration' => $plugin->configuration]);
 
     case 'check':
