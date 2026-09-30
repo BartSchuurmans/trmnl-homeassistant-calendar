@@ -168,16 +168,25 @@ place and keeps your settings.
 | Time format | 24 hour | |
 | Show event times / end times | yes / yes | Times go on their own line below the title. End times only show with event times on |
 | Show past events | yes | Earlier days of the current week |
-| Highlight today | yes | |
+| Highlight today | yes | Today's weekday is inverted in the header row and its day number gets a black pill |
+| Fade past events | yes | Events that are over are drawn faded. Greyscale screens (TRMNL X) and `Dither` only |
 | Shade weekends | yes | |
+| Busy weeks | Show fewer weeks | What happens when the weeks don't all fit, see below |
 | Show title bar | no | The framework's title bar, with the recipe name and the visible date range |
 | Show week numbers | no | |
 | Greys on 1-bit / 2-bit screens | Adapt styles | `Adapt` uses the framework's greys, which become dither patterns on 1-/2-bit screens. `Dither` paints plain greys and has LaraPaper Floyd–Steinberg dither the whole screen. LaraPaper dithers 4-bit output (TRMNL X) either way, so this only matters for 1-bit and 2-bit devices |
 | Locale | `en` | Day/month names, e.g. `nl`, `de` |
 | Ignore events containing / titled exactly | – | Same filters as upstream |
 
-The grid shows as many whole weeks (4–6) as fit, like upstream: busy weeks make
-rows taller, so fewer fit. In a very busy month the 4th week can be cut off.
+The grid shows as many whole weeks (up to 6) as fit: busy weeks make rows taller, so
+fewer fit. With **Busy weeks** set to `Show fewer weeks` it shows only the weeks that
+fit, so every event stays visible even if that is only a week or two. `Show "+N more"`
+keeps at least 3 weeks and ends a day that doesn't fit with "+N more". (Upstream keeps
+at least 4 weeks and cuts a very busy 4th week off at the bottom.)
+
+On 1-bit and 2-bit screens with `Adapt styles`, weekends are shaded in the header row
+only and event times are solid black, because the framework's grey dot patterns make
+the pixel fonts on top of them hard to read.
 
 <sub>Greys on a 1-bit screen: <b>Adapt styles</b> (left) vs <b>Dither</b> (right).</sub><br>
 <img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">

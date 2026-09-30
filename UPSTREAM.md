@@ -15,7 +15,8 @@ treats its native plugins as source-available and is fine with them being remixe
 
 - FullCalendar `rollingMonth` view: `dayGridMonth` with a week duration,
   `fixedWeekCount: false`, `dateAlignment: 'day'` for daily advancement.
-- Rendering 6 weeks, then re-rendering with only the 4–6 weeks that fit on screen.
+- Rendering 6 weeks, then re-rendering with only the weeks that fit on screen (see
+  Changed for how many at least).
 - Day cells show only the number; the 1st of a month gets a month-name label.
 - The ResizeObserver reflow fix for multi-day events (usetrmnl/core#2951).
 - `displayEventEnd: true`, ISO week numbers, `eventTimeFormat`, the `now` / `initialDate`
@@ -48,6 +49,18 @@ treats its native plugins as source-available and is fine with them being remixe
   too): they are drawn like timed events, with the bar and no time.
   Grid lines are thin grey (dotted on 1-/2-bit), headers are centred and bold with the
   weekend shaded, and day numbers are small.
+- **Busy weeks**: upstream keeps at least 4 weeks, so a very busy month is cut off at
+  the bottom. Here the `week_overflow` setting either shows only the weeks that fit
+  (down to 1, the default) or keeps at least 3 and caps days with FullCalendar's
+  `dayMaxEvents` ("+N more").
+- **Day headers and today**: weekday names are small, uppercase and letter-spaced
+  instead of `text--base`; month labels use the short month name ("Sep") instead of the
+  long one, which got cut off. Today's weekday is also inverted in the header row,
+  on top of upstream's pill around the number (now bold). Events that are over are faded
+  (`fade_past_events`, greyscale screens and `Dither` only).
+- **1-/2-bit screens** (`Adapt styles`): weekend shading only in the header row, and
+  event times in solid black instead of `text--muted`, since grey patterns break up
+  the pixel fonts.
 - **Title bar**: the framework's `title_bar` with the visible date range replaces
   FullCalendar's `headerToolbar` (`month_header`).
 - **Removed**: time-grid helpers (`trmnlAllDaySlotAuto`, `trmnlSlotBoundsAuto`, the

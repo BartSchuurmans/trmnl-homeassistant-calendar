@@ -23,7 +23,7 @@
   {% endif %}
   <div class="layout layout--col layout--stretch">
     <div id="calendar-full-month"
-         class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends != 'no' %} shade-weekends{% endif %}{% if s.dither_greys == 'yes' %} dither-greys{% endif %}"
+         class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends != 'no' %} shade-weekends{% endif %}{% if s.fade_past_events != 'no' %} fade-past{% endif %}{% if s.dither_greys == 'yes' %} dither-greys{% endif %}"
          data-events="{{ data | json | escape }}"
          data-calendar-config='{
            "timeZoneName": {{ time_zone | json | escape }},
@@ -35,6 +35,7 @@
            "ignoredPhrasesExactMatch": {{ s.ignored_phrases_exact_match | default: "" | json | escape }},
            "includePastEvents": {% if s.include_past_events == "no" %}false{% else %}true{% endif %},
            "rollingAdvancement": {{ s.rolling_advancement | default: "week" | json | escape }},
+           "weekOverflow": {{ s.week_overflow | default: "fewer_weeks" | json | escape }},
            "firstDay": {{ s.first_day | default: 1 | plus: 0 }},
            "hour12": {% if s.time_format == "am/pm" %}true{% else %}false{% endif %},
            "displayEventTime": {% if s.include_event_time == "no" %}false{% else %}true{% endif %},

@@ -103,6 +103,14 @@ custom_fields:
       - 'Yes': 'yes'
       - 'No': 'no'
     default: 'yes'
+  - keyname: fade_past_events
+    field_type: select
+    name: Fade past events
+    description: Grey out events that are over (on earlier days). Greyscale screens only; 1-bit and 2-bit screens with Adapt styles show them as usual.
+    options:
+      - 'Yes': 'yes'
+      - 'No': 'no'
+    default: 'yes'
   - keyname: shade_weekends
     field_type: select
     name: Shade weekends
@@ -118,6 +126,14 @@ custom_fields:
       - Adapt styles: 'no'
       - Dither: 'yes'
     default: 'no'
+  - keyname: week_overflow
+    field_type: select
+    name: Busy weeks
+    description: When the weeks don't all fit, show fewer weeks so every event stays visible, or keep at least 3 weeks and end a full day with "+N more".
+    options:
+      - Show fewer weeks: fewer_weeks
+      - Show "+N more": more
+    default: fewer_weeks
   - keyname: month_header
     field_type: select
     name: Show title bar
