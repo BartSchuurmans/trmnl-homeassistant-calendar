@@ -175,7 +175,9 @@ const context = {
 if (dumpContext) fs.writeFileSync(dumpContext, JSON.stringify(context, null, 1));
 
 const engine = new Liquid();
-const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n' + fs.readFileSync(path.join(src, 'full.liquid'), 'utf8');
+// The view wrapper comes from the platform, as on TRMNL: LaraPaper adds it to full.liquid
+// on import (PluginImportService::ensureLiquidViewWrapper) and prepends shared.liquid.
+const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n<div class="view view--full">\n' + fs.readFileSync(path.join(src, 'full.liquid'), 'utf8') + '\n</div>';
 const body = bodyFile ? fs.readFileSync(bodyFile, 'utf8') : await engine.parseAndRender(markup, context);
 
 // LaraPaper's resources/views/vendor/trmnl/components/screen.blade.php
