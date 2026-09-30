@@ -13,8 +13,9 @@
 {% assign s = trmnl.plugin_settings.custom_fields_values %}
 {% assign time_zone = s.time_zone | default: trmnl.user.time_zone_iana | default: "UTC" %}
 {% assign locale = s.locale | default: "en" | strip %}
-{% comment %} ICS feeds replace the HA entities when set (see polling_url in settings.yml) {% endcomment %}
-{% assign source = "ha" %}{% if s.ics_urls contains "/" %}{% assign source = "ics" %}{% endif %}
+{% comment %} ICS feeds, else TRMNL plugins, replace the HA entities when set (see polling_url in settings.yml) {% endcomment %}
+{% assign source = "ha" %}{% case s.trmnl_plugins %}{% when nil, "" %}{% else %}{% assign source = "trmnl" %}{% endcase %}
+{% if s.ics_urls contains "/" %}{% assign source = "ics" %}{% endif %}
 {% comment %}
   LaraPaper passes the payload as `data`: one calendar's response, or {IDX_0: ..., IDX_1: ...}
   for several. TRMNL and trmnlp have no `data` for several URLs, only IDX_0, IDX_1, ... at the
@@ -42,7 +43,7 @@
          "timeZoneName": {{ time_zone | json | escape }},
          "nowUtc": {{ trmnl.system.timestamp_utc | default: 0 }},
          "source": "{{ source }}",
-         "calendarEntities": {% if source == "ics" %}""{% else %}{{ s.calendars | default: "" | json | escape }}{% endif %},
+         "calendarEntities": {% if source != "ha" %}""{% else %}{{ s.calendars | default: "" | json | escape }}{% endif %},
          "calendarPrefixes": {{ s.calendar_labels | default: "" | json | escape }},
          "calendarColors": {{ s.calendar_colors | default: "" | json | escape }},
          "ignoredPhrases": {{ s.ignored_phrases | default: "" | json | escape }},

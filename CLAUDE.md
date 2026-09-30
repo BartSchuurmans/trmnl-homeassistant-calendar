@@ -86,6 +86,14 @@ midnight-to-midnight timestamps (no all-day flag). `fromIcal` in `shared.liquid`
 to HA's shape, and the grid stops at the last week the feed covers. `render.mjs --ics`
 fakes that shape; `e2e/fake-ha.mjs` serves real feeds.
 
+**TRMNL calendar plugins.** `trmnl_plugins` (plugin setting ids) + `trmnl_api_key` poll
+`trmnl.com/api/plugin_settings/<id>/data` (TRMNL's Plugin Data API), which returns
+`{data: {events: [...]}}` with `start_full`/`end_full`/`all_day` (`fromNative` in
+`shared.liquid`). ICS feeds win over it, it wins over HA. TRMNL's recommended "Plugin
+Merge" strategy names each source `<plugin>_<id>`, which a shared recipe can't know and
+keepsuit can't look up dynamically, so the recipe polls the API instead. `render.mjs
+--native` fakes that shape.
+
 **Home Assistant access.** In the app, the recipe's default URL `http://127.0.0.1:8124`
 is an nginx proxy written by `larapaper/rootfs/etc/entrypoint.d/10-ha-calendar.sh`: it
 forwards only GET `/api/calendars/` to `http://supervisor/core/api` with the app's

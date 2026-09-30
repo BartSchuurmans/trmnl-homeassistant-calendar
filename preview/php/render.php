@@ -36,7 +36,9 @@ $settings = Yaml::parse(preg_split('/^---[ \t]*\r?\n/m', file_get_contents($src.
 $config = $context['trmnl']['plugin_settings']['custom_fields_values'];
 $config['ha_url'] = 'http://homeassistant:8123';
 $config['ha_token'] = 'test.token';
-$config['ics_urls'] = ''; // the markup is rendered from the context as it is, ICS or not
+$config['ics_urls'] = ''; // the markup is rendered from the context as it is, whatever the source
+$config['trmnl_plugins'] = '';
+$config['trmnl_api_key'] = 'trmnl.key';
 
 $environment = EnvironmentFactory::new()->setRethrowErrors(true)->build();
 $resolve = fn (string $template, array $data) => $environment->parseString($template)->render($environment->newRenderContext(data: $data));
@@ -64,6 +66,17 @@ $icsUrls = array_values(array_filter(array_map('trim', explode("\n", $resolve($s
 $icsUrls === ['https://calendar.example/a.ics', 'https://calendar.example/b.ics?x=1&y=2']
     || fail('unexpected ICS polling URLs: '.implode(' ', $icsUrls));
 $header($ics) === '' || fail('the Home Assistant token is sent to ICS feeds: '.$header($ics));
+
+// TRMNL calendar plugins replace the entities: their data over TRMNL's API, with the TRMNL
+// key; ICS feeds still win when both are set
+$trmnl = [...$config, 'trmnl_plugins' => '12345, 678'];
+$trmnlUrls = array_values(array_filter(array_map('trim', explode("\n", $resolve($settings['polling_url'], $trmnl)))));
+$trmnlUrls === ['https://trmnl.com/api/plugin_settings/12345/data', 'https://trmnl.com/api/plugin_settings/678/data']
+    || fail('unexpected TRMNL polling URLs: '.implode(' ', $trmnlUrls));
+$header($trmnl) === 'Authorization:Bearer trmnl.key' || fail('unexpected TRMNL polling header: '.$header($trmnl));
+$both = [...$ics, 'trmnl_plugins' => '12345'];
+$resolve($settings['polling_url'], $both) === $resolve($settings['polling_url'], $ics) && $header($both) === ''
+    || fail('TRMNL plugins override ICS feeds');
 
 // Markup, with the same filters and context shape as Plugin::render; the view wrapper is
 // what PluginImportService::ensureLiquidViewWrapper adds to full.liquid on import
