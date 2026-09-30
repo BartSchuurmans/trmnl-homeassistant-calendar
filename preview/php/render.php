@@ -55,9 +55,10 @@ foreach ($urls as $i => $url) {
 $header = trim($resolve(str_replace('=', ':', $settings['polling_headers']), $config));
 $header === 'Authorization:Bearer test.token' || fail("unexpected polling header: $header");
 
-// Markup, with the same filters and context shape as Plugin::render
+// Markup, with the same filters and context shape as Plugin::render; the view wrapper is
+// what PluginImportService::ensureLiquidViewWrapper adds to full.liquid on import
 $environment->filterRegistry->register(DataFilters::class);
-$markup = file_get_contents($src.'shared.liquid')."\n".file_get_contents($src.'full.liquid');
+$markup = file_get_contents($src.'shared.liquid')."\n".'<div class="view view--{{ size }}">'."\n".file_get_contents($src.'full.liquid')."\n</div>";
 $html = $resolve($markup, $context);
 
 str_contains($html, 'data-calendar-config=') || fail('rendered markup has no calendar element');

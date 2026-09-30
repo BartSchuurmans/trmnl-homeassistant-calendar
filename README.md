@@ -230,7 +230,7 @@ LaraPaper renders recipes inside the [TRMNL framework](https://github.com/usetrm
   device's scale on the TRMNL X, and TRMNL pixel fonts on low-density 1-bit screens.
 - **Greys**: `bg--gray-75` for weekends and `text--muted` for past days. Solid on 4-bit,
   dither patterns on 1-/2-bit.
-- **Layout**: `view` → `layout` → optional `title_bar`, with spacing from `--ui-scale`.
+- **Layout**: `layout` → optional `title_bar` (the `view` wrapper comes from TRMNL or LaraPaper), with spacing from `--ui-scale`.
 
 The calendar grid itself (borders, cells, event blocks) is custom CSS, as upstream,
 because the framework has no calendar component.
