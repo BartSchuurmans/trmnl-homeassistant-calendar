@@ -6,7 +6,8 @@
 set -eu
 cd "$(dirname "$0")"
 docs=../docs
-common="--strict --tz Europe/Amsterdam --now 2026-09-28 --set calendar_colors=-,black --set calendar_labels=-,W:"
+common="--strict --tz Europe/Amsterdam --now 2026-09-30 --set show_week_numbers=yes \
+    --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:"
 
 # shellcheck disable=SC2086 # $common is a list of arguments
 node render.mjs $common --set month_header=yes --out "$docs/preview.png"

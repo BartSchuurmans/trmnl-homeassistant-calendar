@@ -200,14 +200,15 @@ a calendar that should have none. For example, with these settings:
 
 | Setting | Entries |
 |---|---|
-| Calendar entities | `calendar.family`, `calendar.work` |
-| Calendar prefixes | `-`, `W:` |
-| Calendar colors | `gray-65`, `black` |
+| Calendar entities | `calendar.family`, `calendar.mark`, `calendar.sara` |
+| Calendar prefixes | `-`, `M:`, `S:` |
+| Calendar colors | `black`, `-`, `gray-50` |
 
-family events get no prefix and a `gray-65` fill, and work events get `W:` and a
-`black` fill.
+shared family events get no prefix and a `black` fill, Mark's events get `M:` and no
+fill, and Sara's get `S:` and a `gray-50` fill. That is what the screenshots above
+show, with week numbers on.
 
-- **Prefix**: shown before the title, followed by a space (`W: Standup`).
+- **Prefix**: shown before the title, followed by a space (`S: Standup`).
 - **Color**: fills every event of that calendar, timed ones included, instead of a dot.
   Text turns black or white depending on how light the color is.
   - Color names use the framework's classes: solid greys on the TRMNL X (hues fall back

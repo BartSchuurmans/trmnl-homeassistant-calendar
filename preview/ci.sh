@@ -19,13 +19,13 @@ render() {
 render sample-x
 render sample-og --device og
 render sample-og-2bit --device og2
-render colors-x --set calendar_colors=gray-65,black --set calendar_labels=-,W: --set month_header=yes
-render colors-og-dither --device og --set calendar_colors=-,black --set calendar_labels=-,W: --set dither_greys=yes
+render colors-x --set calendar_colors=black,-,gray-65 --set calendar_labels=-,M:,S: --set month_header=yes
+render colors-og-dither --device og --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S: --set dither_greys=yes
 render options-x --set locale=nl --set first_day=0 --set show_week_numbers=yes --set time_format=am/pm \
     --set display_event_end=no --set rolling_advancement=day --set include_past_events=no
 
 # Same input through LaraPaper's Liquid engine (keepsuit/liquid, PHP)
-render liquidjs-x --set calendar_colors=gray-65,black --set dither_greys=yes --dump-context "$out/context.json"
+render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
 php php/render.php "$out/context.json" > "$out/php-body.html"
 render php-x --body "$out/php-body.html"
 
