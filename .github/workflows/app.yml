@@ -218,6 +218,9 @@ jobs:
         uses: home-assistant/builder/actions/build-image@2026.09.0
         with:
           arch: ${{ matrix.arch }}
+          # Exporting every layer of the LaraPaper base to the Actions cache crashed
+          # BuildKit after the push; a release build has nothing worth caching
+          cache-gha: false
           container-registry-password: ${{ secrets.GITHUB_TOKEN }}
           context: ./larapaper
           image: ${{ matrix.image }}
