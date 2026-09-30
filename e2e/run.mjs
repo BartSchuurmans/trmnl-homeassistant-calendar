@@ -3,7 +3,9 @@
 //   node e2e/run.mjs [--container app] [--url http://localhost:4567] [--zip dist/ha-calendar.zip]
 //
 // Needs a running app container (see .github/workflows/app.yml) that reaches this
-// machine as http://homeassistant:8123 (docker run --add-host homeassistant:host-gateway).
+// machine as http://homeassistant:8123 (docker run --add-host homeassistant:host-gateway),
+// with its calendar proxy pointed there (-e SUPERVISOR_TOKEN=e2e-supervisor-token
+// -e HA_API_URL=http://homeassistant:8123/api).
 // Imports the recipe ZIP into LaraPaper, points it at the fake HA, then fetches the
 // screen the way a TRMNL X does (GET /api/display) and checks what was polled and
 // rendered. Screens land in e2e/out/.
@@ -13,7 +15,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { startFakeHa, TOKEN } from './fake-ha.mjs';
+import { startFakeHa, SUPERVISOR_TOKEN, TOKEN } from './fake-ha.mjs';
 
 const dir = path.dirname(new URL(import.meta.url).pathname);
 const opt = { container: 'app', url: 'http://localhost:4567', zip: path.join(dir, '../dist/ha-calendar.zip'),
@@ -72,6 +74,11 @@ try {
     // one calendar without events: LaraPaper stores a bare [] (its list check fails on [])
     { name: 'no-events', config: { calendars: 'calendar.empty', calendar_colors: '' },
       keys: [], events: {} },
+    // the app's calendar proxy (the recipe's default URL) instead of a user token;
+    // last, since configure merges into the settings
+    ...(opt.local ? [] : [{ name: 'app-proxy', token: SUPERVISOR_TOKEN,
+      config: { ha_url: 'http://127.0.0.1:8124', ha_token: '', calendars: 'calendar.family,calendar.work', calendar_colors: '-,black' },
+      keys: ['IDX_0', 'IDX_1'], events: { IDX_0: 100, IDX_1: 8 } }]),
   ];
   const results = {};
   for (const s of scenarios) {
@@ -88,9 +95,10 @@ try {
 
     const polled = requests.slice(before);
     const entities = s.config.calendars.split(',');
+    const token = s.token ?? TOKEN;
     check(polled.length === entities.length && entities.every((e) => polled.some((r) => r.entity === e)),
       `polled ${entities.join(', ')} (${polled.map((r) => r.entity).join(', ')})`);
-    check(polled.every((r) => r.authorization === `Bearer ${TOKEN}`), 'sent the access token');
+    check(polled.every((r) => r.authorization === `Bearer ${token}`), `sent the ${s.token ? 'app' : 'user'} access token`);
     check(polled.every((r) => r.start === dayOffset(-7) && r.end === dayOffset(43)),
       `window ${dayOffset(-7)} .. ${dayOffset(43)} (${[...new Set(polled.map((r) => `${r.start} .. ${r.end}`))].join(', ')})`);
 

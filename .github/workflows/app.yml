@@ -86,8 +86,10 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/data"
           echo '{"app_url": "http://localhost:4567/", "registration_enabled": false}' > "$RUNNER_TEMP/data/options.json"
-          # homeassistant:8123 is the fake Home Assistant of the end-to-end test
+          # homeassistant:8123 is the fake Home Assistant of the end-to-end test; the
+          # calendar proxy goes there too, with the token the Supervisor would provide
           docker run -d --name app -p 4567:8080 -e TZ=Europe/Amsterdam \
+            -e SUPERVISOR_TOKEN=e2e-supervisor-token -e HA_API_URL=http://homeassistant:8123/api \
             --add-host homeassistant:host-gateway -v "$RUNNER_TEMP/data:/data" larapaper-local:ci
           for i in $(seq 1 90); do
             if curl -fsS -o /dev/null http://localhost:4567/up; then echo "up after ${i}x2s"; exit 0; fi
@@ -119,6 +121,18 @@ jobs:
           docker exec app grep -qx 'APP_TIMEZONE=Europe/Amsterdam' /var/www/html/.env
           test -s "$RUNNER_TEMP/data/app_key"
           test -s "$RUNNER_TEMP/data/database/database.sqlite"
+
+      - name: Check the calendar proxy only allows calendar reads from inside the app
+        run: |
+          status() {
+            # shellcheck disable=SC2016 # PHP code
+            docker exec app php -r '$c = stream_context_create(["http" => ["method" => $argv[1], "ignore_errors" => true]]);
+              @file_get_contents($argv[2], false, $c); echo explode(" ", $http_response_header[0] ?? "x 000")[1];' "$1" "$2"
+          }
+          test "$(status POST http://127.0.0.1:8124/api/calendars/calendar.work)" = 403
+          test "$(status GET http://127.0.0.1:8124/api/states)" = 404
+          # not published: the port only listens inside the container
+          ! curl -fsS -o /dev/null --max-time 5 http://localhost:8124/api/calendars/calendar.work
 
       - uses: actions/setup-node@v4
         with:

@@ -23,12 +23,14 @@ custom_fields:
   - keyname: ha_url
     field_type: url
     name: Home Assistant URL
-    description: Base URL of your Home Assistant instance, reachable from the BYOS server. No trailing slash.
+    description: Base URL of your Home Assistant instance, reachable from the BYOS server. No trailing slash. The default is the LaraPaper (local) Home Assistant app's own calendar access, which needs no token.
+    default: http://127.0.0.1:8124
     placeholder: http://homeassistant.local:8123
   - keyname: ha_token
     field_type: password
     name: Home Assistant access token
-    description: Long-lived access token (HA profile → Security → Long-lived access tokens).
+    description: Long-lived access token (HA profile → Security → Long-lived access tokens). Leave empty with the LaraPaper (local) app's default URL.
+    optional: true
   - keyname: calendars
     field_type: multi_string
     name: Calendar entities

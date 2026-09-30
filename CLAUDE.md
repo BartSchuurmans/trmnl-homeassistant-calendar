@@ -73,6 +73,13 @@ dates rely on PHP `DateTime` wording (`"today -7 days" | date: "%Y-%m-%d"`). Don
 `T` in date formats there (PHP treats it as a timezone). HA accepts date-only
 `start`/`end`.
 
+**Home Assistant access.** In the app, the recipe's default URL `http://127.0.0.1:8124`
+is an nginx proxy written by `larapaper/rootfs/etc/entrypoint.d/10-ha-calendar.sh`: it
+forwards only GET `/api/calendars/` to `http://supervisor/core/api` with the app's
+`SUPERVISOR_TOKEN` (`homeassistant_api: true`), so no user token is needed. It listens
+on loopback only; don't publish it or widen its paths. Docker Compose setups still use a
+URL and long-lived token. CI and the e2e test point it at the fake HA via `HA_API_URL`.
+
 **Greys and fonts.** Use framework classes (`text--small`, `bg--gray-*`,
 `text--muted`) on FullCalendar elements via its `*ClassNames` hooks / `eventDidMount`,
 so each bit depth gets its own rendering (solid on 4-bit, dither patterns on 1-/2-bit,

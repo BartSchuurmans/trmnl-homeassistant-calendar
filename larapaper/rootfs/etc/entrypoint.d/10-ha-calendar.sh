@@ -64,3 +64,40 @@ set_env REGISTRATION_ENABLED "${REGISTRATION_ENABLED:-1}"
 [ -n "$APP_URL" ] && set_env APP_URL "$APP_URL"
 
 log "APP_URL=${APP_URL:-<unset>} TZ=${TZ:-UTC} registration=${REGISTRATION_ENABLED:-1}"
+
+# Home Assistant API without a user token: with homeassistant_api in config.yaml the
+# Supervisor gives the app its own token (SUPERVISOR_TOKEN). The recipe can't read
+# environment variables, so nginx serves Home Assistant's calendar endpoint on
+# 127.0.0.1:8124 and adds the token there. Only calendar reads get through, and only
+# from inside this container. HA_API_URL is for the end-to-end test's fake HA.
+HA_PROXY_CONF=/etc/nginx/conf.d/ha-calendar-api.conf
+HA_API_URL="${HA_API_URL:-http://supervisor/core/api}"
+# nginx won't start if the upstream name doesn't resolve
+# shellcheck disable=SC2016 # PHP code, not shell expansions
+ha_api_host="$(php -r '$h = parse_url($argv[1], PHP_URL_HOST);
+                       echo gethostbyname($h) === $h ? "" : $h;' "$HA_API_URL")"
+rm -f "$HA_PROXY_CONF"
+if [ -z "$SUPERVISOR_TOKEN" ]; then
+    log "no SUPERVISOR_TOKEN: calendar proxy off, the recipe needs an access token"
+elif [ -z "$ha_api_host" ]; then
+    log "can't resolve $HA_API_URL: calendar proxy off, the recipe needs an access token"
+else
+    cat > "$HA_PROXY_CONF" <<CONF
+server {
+    listen 127.0.0.1:8124;
+    access_log off;
+
+    location /api/calendars/ {
+        limit_except GET { deny all; }
+        proxy_pass ${HA_API_URL}/calendars/;
+        proxy_set_header Authorization "Bearer ${SUPERVISOR_TOKEN}";
+    }
+
+    location / {
+        return 404;
+    }
+}
+CONF
+    chmod 600 "$HA_PROXY_CONF"
+    log "calendar proxy on http://127.0.0.1:8124 → $HA_API_URL"
+fi
