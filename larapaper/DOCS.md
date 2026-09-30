@@ -11,9 +11,10 @@ image with these additions:
 - The database, generated screens and app key are kept in `/data`, so they survive
   updates and are part of Home Assistant backups.
 
-The image is built on your Home Assistant when you install the app. That step does need
-internet: it downloads the LaraPaper image and the files listed in `assets.txt`, each
-checked against a pinned SHA-256.
+Installing or updating the app downloads a prebuilt image
+(`ghcr.io/bartschuurmans/larapaper-local`, amd64 and aarch64), which needs internet.
+The image is built by this repository's CI from the LaraPaper image and the files
+listed in `assets.txt`, each checked against a pinned SHA-256.
 
 ## Setup
 
@@ -47,4 +48,4 @@ their own scripts or images from the internet still need it too.
 ## Updating
 
 LaraPaper updates come through updates of this app, which pin an exact LaraPaper
-version (`build.yaml`).
+version (`FROM` in the `Dockerfile`).

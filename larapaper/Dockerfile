@@ -1,7 +1,12 @@
 # LaraPaper (local): the official LaraPaper image plus everything a screen render
 # would otherwise fetch from the internet.
+# The official LaraPaper image is multi-arch (linux/amd64 + linux/arm64). To update
+# LaraPaper, bump this tag and the version in config.yaml.
 ARG BUILD_FROM=ghcr.io/usetrmnl/larapaper:0.43.0
 FROM ${BUILD_FROM}
+
+LABEL org.opencontainers.image.title="LaraPaper (local)" \
+      org.opencontainers.image.source="https://github.com/BartSchuurmans/trmnl-homeassistant-calendar"
 
 # Root so the entrypoint hook can take ownership of the Supervisor-mounted /data;
 # PHP-FPM workers still run as www-data (serversideup-php images support this).

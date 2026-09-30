@@ -6,7 +6,10 @@ name: App
 # (e2e/run.mjs): the recipe ZIP is imported into that LaraPaper, polls a fake Home
 # Assistant and is rendered for a TRMNL X through the device API. On pull requests it
 # also checks that changes to the image come with a new app version: Home Assistant
-# only offers an update (and rebuilds the image) when `version` in config.yaml changes.
+# only offers an update when `version` in config.yaml changes. On main, once all of that
+# passes, it publishes the image for each architecture to GHCR under `image` from
+# config.yaml (the version and `latest`), unless that version is already published:
+# Home Assistant pulls it from there instead of building it.
 
 on:
   pull_request:
@@ -27,16 +30,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: LaraPaper tags match the app version
+      - name: LaraPaper tag matches the app version
         run: |
           version="$(yq '.version' larapaper/config.yaml)"
-          for arch in $(yq '.build_from | keys | .[]' larapaper/build.yaml); do
-            tag="$(yq ".build_from.$arch" larapaper/build.yaml)"; tag="${tag##*:}"
-            case "$version" in
-              "$tag"-*) ;;
-              *) echo "::error file=larapaper/config.yaml::version $version doesn't match LaraPaper $tag ($arch) in build.yaml; use $tag-N"; exit 1 ;;
-            esac
-          done
+          base="$(sed -n 's/^ARG BUILD_FROM=//p' larapaper/Dockerfile)"
+          tag="${base##*:}"
+          case "$version" in
+            "$tag"-*) ;;
+            *) echo "::error file=larapaper/config.yaml::version $version doesn't match LaraPaper $tag in the Dockerfile; use $tag-N"; exit 1 ;;
+          esac
           echo "app version $version"
 
       - name: App changes bump the version
@@ -78,10 +80,7 @@ jobs:
           fetch-depth: 0 # build-zip.sh dates the ZIP by the last plugin/src commit
 
       - name: Build image
-        run: |
-          base="$(yq '.build_from.amd64' larapaper/build.yaml)"
-          echo "Base image: $base"
-          docker build --build-arg "BUILD_FROM=$base" -t larapaper-local:ci larapaper
+        run: docker build -t larapaper-local:ci larapaper
 
       - name: Start with a fake /data
         run: |
@@ -149,3 +148,91 @@ jobs:
       - name: Logs
         if: always()
         run: docker logs app 2>&1 | tail -100 || true
+
+  # Home Assistant's builder actions, as in its example app repository
+  # (home-assistant/apps-example): one native build per architecture, signed with
+  # cosign, then a multi-arch manifest under the `image` name from config.yaml.
+  publish-prepare:
+    needs: [version, lint, build]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      architectures: ${{ steps.info.outputs.architectures }}
+      image_name: ${{ steps.info.outputs.image_name }}
+      registry_prefix: ${{ steps.info.outputs.registry_prefix }}
+      version: ${{ steps.info.outputs.version }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the app config
+        id: info
+        run: |
+          image="$(yq '.image' larapaper/config.yaml)"
+          {
+            echo "architectures=$(yq -o=json -I=0 '.arch' larapaper/config.yaml)"
+            echo "image_name=${image##*/}"
+            echo "registry_prefix=${image%/*}"
+            echo "version=$(yq '.version' larapaper/config.yaml)"
+          } | tee -a "$GITHUB_OUTPUT"
+
+      - name: Prepare build matrix
+        id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@2026.09.0
+        with:
+          architectures: ${{ steps.info.outputs.architectures }}
+          image-name: ${{ steps.info.outputs.image_name }}
+          registry-prefix: ${{ steps.info.outputs.registry_prefix }}
+
+  publish-image:
+    needs: publish-prepare
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.publish-prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build and push ${{ matrix.arch }} image
+        uses: home-assistant/builder/actions/build-image@2026.09.0
+        with:
+          arch: ${{ matrix.arch }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          context: ./larapaper
+          image: ${{ matrix.image }}
+          image-tags: |
+            ${{ needs.publish-prepare.outputs.version }}
+            latest
+          labels: |
+            io.hass.type=app
+            io.hass.name=LaraPaper (local)
+            io.hass.url=https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/tree/main/larapaper
+          push: true
+          skip-existing: ${{ needs.publish-prepare.outputs.version }}
+          version: ${{ needs.publish-prepare.outputs.version }}
+
+  publish-manifest:
+    needs: [publish-prepare, publish-image]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+    steps:
+      - name: Publish multi-arch manifest
+        uses: home-assistant/builder/actions/publish-multi-arch-manifest@2026.09.0
+        with:
+          architectures: ${{ needs.publish-prepare.outputs.architectures }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image-name: ${{ needs.publish-prepare.outputs.image_name }}
+          image-tags: |
+            ${{ needs.publish-prepare.outputs.version }}
+            latest
+          registry-prefix: ${{ needs.publish-prepare.outputs.registry_prefix }}
+          skip-existing: ${{ needs.publish-prepare.outputs.version }}

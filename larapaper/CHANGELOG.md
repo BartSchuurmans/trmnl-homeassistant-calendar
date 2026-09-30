@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.0-4
+
+- The app is now installed from a prebuilt image (`ghcr.io/bartschuurmans/larapaper-local`)
+  instead of being built on your Home Assistant, so installs and updates are faster
+  and no longer download the framework, fonts and FullCalendar on your system.
+
 ## 0.43.0-3
 
 - Include the license texts of the bundled TRMNL framework, fonts and FullCalendar

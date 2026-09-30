@@ -259,7 +259,9 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
 - **App** (`.github/workflows/app.yml`, on changes to `larapaper/` or the recipe): lints
   the app, builds the image (amd64) and starts it with a fake `/data`. It checks that
   LaraPaper comes up, serves the bundled framework, fonts and FullCalendar, applied the
-  app options, and keeps its key and database across a restart.
+  app options, and keeps its key and database across a restart. On main it then
+  publishes the image (amd64 and aarch64) to `ghcr.io/bartschuurmans/larapaper-local`
+  when the app version is new; Home Assistant installs the app from there.
 - **End-to-end** (`e2e/run.mjs`, part of the App workflow): imports the recipe ZIP into
   that LaraPaper, points it at a fake Home Assistant (`e2e/fake-ha.mjs`) and fetches
   the screen like a TRMNL X does (`GET /api/display`). It checks the polled URLs and

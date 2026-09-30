@@ -1,8 +1,0 @@
-# The official LaraPaper image is multi-arch (linux/amd64 + linux/arm64). To update
-# LaraPaper, bump both tags and the version in config.yaml.
-build_from:
-  aarch64: ghcr.io/usetrmnl/larapaper:0.43.0
-  amd64: ghcr.io/usetrmnl/larapaper:0.43.0
-labels:
-  org.opencontainers.image.title: LaraPaper (local)
-  org.opencontainers.image.source: https://github.com/BartSchuurmans/trmnl-homeassistant-calendar
