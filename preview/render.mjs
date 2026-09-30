@@ -22,7 +22,7 @@
 // --native serves the events as TRMNL's Plugin Data API returns a native calendar plugin's
 // data ({ data: { events: [...] } }) and fills in trmnl_plugins, which switches to that source.
 //
-// --size half_horizontal|half_vertical renders that view as one half of a mashup.
+// --size half_horizontal|half_vertical|quadrant renders that view as part of a mashup.
 //
 // --expect-events fails the render when no event made it onto the grid.
 //
@@ -243,12 +243,12 @@ if (dumpContext) fs.writeFileSync(dumpContext, JSON.stringify(context, null, 1))
 const engine = new Liquid();
 // The view wrapper comes from the platform, as on TRMNL: LaraPaper adds it to each view
 // on import (PluginImportService::ensureLiquidViewWrapper) and prepends shared.liquid.
-const MASHUPS = { full: null, half_horizontal: 'mashup--1Tx1B', half_vertical: 'mashup--1Lx1R' };
+const MASHUPS = { full: null, half_horizontal: 'mashup--1Tx1B', half_vertical: 'mashup--1Lx1R', quadrant: 'mashup--2x2' };
 if (!(size in MASHUPS)) throw new Error(`unknown size ${size}`);
 const view = `<div class="view view--${size}">\n${fs.readFileSync(path.join(src, `${size}.liquid`), 'utf8')}\n</div>`;
 const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n' + (MASHUPS[size]
-  // A half is one of two views in a mashup; the other one is left empty here
-  ? `<div class="mashup ${MASHUPS[size]}">${view}<div class="view view--${size}"></div></div>` : view);
+  // A half or quadrant is one view in a mashup; the others are left empty here
+  ? `<div class="mashup ${MASHUPS[size]}">${view}${`<div class="view view--${size}"></div>`.repeat(size === 'quadrant' ? 3 : 1)}</div>` : view);
 const body = bodyFile ? fs.readFileSync(bodyFile, 'utf8') : await engine.parseAndRender(markup, context);
 
 // LaraPaper's resources/views/vendor/trmnl/components/screen.blade.php

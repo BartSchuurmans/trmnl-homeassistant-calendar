@@ -442,6 +442,8 @@
           height: '100%',
           initialView: 'rollingMonth',
           initialDate: settings.today,
+          // weekday names only, also on a one-week grid, where FullCalendar adds the date
+          dayHeaderFormat: { weekday: 'short' },
           firstDay: settings.firstDay,
           eventTimeFormat: { hour: 'numeric', minute: '2-digit', hour12: settings.hour12, meridiem: false },
           views: { rollingMonth: rollingMonthView },
@@ -550,8 +552,14 @@
               var numEl = top && top.querySelector('.fc-daygrid-day-number');
               if (!top || !numEl) return;
 
-              // FullCalendar marks certain day numbers as month-start
-              if (!numEl.classList.contains('fc-daygrid-month-start')) return;
+              // Label the grid's first day and the 1st of a month when the grid spans two
+              // months, as FullCalendar's month-start does. FullCalendar skips that on a
+              // one-week grid (it hides day numbers there), so check it here and add its class.
+              var gridStart = arg.view.currentStart;
+              var gridEnd = new Date(arg.view.currentEnd.getTime() - 86400000);
+              var spansMonths = gridStart.getUTCMonth() !== gridEnd.getUTCMonth() || gridStart.getUTCFullYear() !== gridEnd.getUTCFullYear();
+              if (!spansMonths || (arg.date.getUTCDate() !== 1 && arg.date.getTime() !== gridStart.getTime())) return;
+              numEl.classList.add('fc-daygrid-month-start');
 
               // short month name ("Sep"), which fits next to the number; some locales end it with a dot
               var monthName = arg.date.toLocaleDateString((cfg.locale || 'en'), { month: 'short', timeZone: 'UTC' }).replace(/\.$/, '');

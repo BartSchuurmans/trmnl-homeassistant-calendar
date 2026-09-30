@@ -9,8 +9,9 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 - `plugin/src/` — the recipe (trmnlp format): `settings.yml` (polling URL, custom
   fields), `shared.liquid` (CSS + JS + the markup, captured as `rolling_calendar`;
   prepended to every view by TRMNL and LaraPaper), and the views `full.liquid`,
-  `half_horizontal.liquid`, `half_vertical.liquid`, which only print it. No quadrant yet.
-  Narrow views (under 600 CSS px, the left/right half) get `.trmnl-calendar--narrow`.
+  `half_horizontal.liquid`, `half_vertical.liquid`, `quadrant.liquid`, which only print
+  it. Narrow views (under 600 CSS px: left/right half, quadrant) get
+  `.trmnl-calendar--narrow`.
 - `preview/` — local renderer (`render.mjs`), CI render suite (`ci.sh`), random data
   (`random-data.mjs`), PHP Liquid check (`php/render.php`).
 - `larapaper/` + `repository.yaml` — Home Assistant app: official LaraPaper image plus
@@ -30,7 +31,7 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   `preview/php/`, and `FRAMEWORK_DIR` set up as in `.github/workflows/render.yml`.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
 - `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders;
-  `--size half_horizontal|half_vertical` renders a half inside a mashup.
+  `--size half_horizontal|half_vertical|quadrant` renders that view inside a mashup.
 - `sh preview/docs-images.sh` regenerates the README screenshots in `docs/`.
 - `node e2e/run.mjs` — end-to-end: imports `dist/rolling-month-calendar.zip` into a running app
   container (`app`, started as in `app.yml` with `--add-host

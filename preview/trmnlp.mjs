@@ -1,8 +1,8 @@
 // Renders plugin/src with trmnlp, TRMNL's own preview tool (Ruby Liquid, as on TRMNL and
 // Terminus), and writes the markup of one view (full by default, or a half inside trmnlp's
-// mashup) for render.mjs --body to screenshot.
+// mashup, or the quadrant) for render.mjs --body to screenshot.
 //
-//   node trmnlp.mjs <context.json> <body.html> [full|half_horizontal|half_vertical]
+//   node trmnlp.mjs <context.json> <body.html> [full|half_horizontal|half_vertical|quadrant]
 //                                                   (context from render.mjs --dump-context)
 //
 // Needs Docker (the trmnl/trmnlp image). The context's custom fields and payload go into
