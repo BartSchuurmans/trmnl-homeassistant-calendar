@@ -10,7 +10,9 @@
 //
 // For CI: --dump-context <file> writes the Liquid render context as JSON, --body <file>
 // screenshots markup rendered elsewhere (e.g. by LaraPaper's PHP Liquid, php/render.php),
-// and --strict exits non-zero on JavaScript errors in the page.
+// and --strict exits non-zero on JavaScript errors in the page. --now YYYY-MM-DD renders
+// as if it were noon on that day (sample events and the recipe's "today"), so
+// screenshots don't change from one day to the next.
 //
 // Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
 // reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
@@ -47,6 +49,7 @@ let dataFile = null;
 let dumpContext = null;
 let bodyFile = null;
 let strict = false;
+let now = new Date();
 let out = path.join(outDir, 'preview.png');
 let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
 for (let i = 0; i < args.length; i++) {
@@ -59,6 +62,7 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--strict') strict = true;
   else if (args[i] === '--out') out = path.resolve(args[++i]);
   else if (args[i] === '--tz') timeZone = args[++i];
+  else if (args[i] === '--now') now = new Date(`${args[++i]}T12:00:00`);
 }
 const device = DEVICES[deviceName];
 if (!device) throw new Error(`unknown device ${deviceName}`);
@@ -74,7 +78,7 @@ const addDays = (d, n) => new Date(d.getTime() + n * 86400000);
 
 async function liveData() {
   const base = process.env.HA_URL.replace(/\/$/, '');
-  const today = new Date();
+  const today = new Date(now);
   const q = `start=${iso(addDays(today, -7))}&end=${iso(addDays(today, 43))}`;
   const cals = (customFields.calendars || '').split(',').map((c) => c.trim()).filter(Boolean);
   const results = await Promise.all(cals.map(async (cal) => {
@@ -91,7 +95,7 @@ async function liveData() {
 
 // Sample events relative to today, in HA's /api/calendars response format.
 function sampleData() {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const today = new Date(now); today.setHours(0, 0, 0, 0);
   // UTC offset of the preview time zone, as HA would send it
   const offset = (() => {
     const name = new Intl.DateTimeFormat('en-US', { timeZone: timeZone, timeZoneName: 'longOffset' })
@@ -155,7 +159,7 @@ const context = {
   config: customFields,
   ...payload,
   trmnl: {
-    system: { timestamp_utc: Math.floor(Date.now() / 1000) },
+    system: { timestamp_utc: Math.floor(now.getTime() / 1000) },
     user: { locale: 'en', time_zone_iana: timeZone, utc_offset: '0', name: 'Preview' },
     device: { width: device.width, height: device.height },
     plugin_settings: { instance_name: settings.name, custom_fields_values: customFields },
