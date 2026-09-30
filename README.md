@@ -102,9 +102,14 @@ settings; the calendar uses it unless you set one on the plugin.
 
 ### 2. Point the TRMNL X at it
 
-Firmware 1.4.6 or newer: hold the button on the back for 5 s to open the setup portal,
-enter Wi-Fi, choose **Custom Server** and enter `http://<server-ip>:4567`. With
-**Permit Auto-Join** switched on in LaraPaper's header, the device shows up by itself.
+A new TRMNL X starts in Wi-Fi pairing mode. To get back to it on one that is already set
+up, hold the left and right ends of the touch bar until the screen flashes (the X has no
+button on the back). Connect to the **TRMNL** Wi-Fi network it opens, tap **Advanced** →
+**Custom Server** → **Yes** and enter `http://<server-ip>:4567`, without a trailing
+slash. Then go **Back to Wi-Fi**, pick your network and **Connect**.
+
+With the **Auto-Join** toggle in LaraPaper's header switched on (it then reads **Auto-Join
+Permitted**; only the first registered user sees it), the device shows up by itself.
 Check that its device model is **TRMNL X**.
 
 ### 3. Create a Home Assistant token

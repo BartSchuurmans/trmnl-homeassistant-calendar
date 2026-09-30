@@ -22,10 +22,14 @@ checked against a pinned SHA-256.
    an IP address or a name the device can resolve (`.local` names usually don't work).
 2. Start the app and open the web UI. Register your account, then turn off
    **Allow registration**.
-3. Point the TRMNL at the server. On firmware 1.4.6 or newer, hold the button on the
-   back for 5 seconds, enter Wi-Fi, choose **Custom Server** and enter the App URL.
-   With **Permit Auto-Join** switched on in LaraPaper's header, the device appears by
-   itself.
+3. Point the TRMNL at the server. A new device starts in Wi-Fi pairing mode; to get
+   back to it, hold the left and right ends of the touch bar until the screen flashes
+   (TRMNL X) or hold the button on the back for 6 to 8 seconds (TRMNL OG). Connect to
+   the **TRMNL** Wi-Fi network, tap **Advanced** → **Custom Server** → **Yes** and enter
+   the App URL without a trailing slash, then go **Back to Wi-Fi**, pick your network
+   and **Connect**. With the **Auto-Join** toggle in LaraPaper's header switched on, the
+   device appears by itself. A TRMNL OG on firmware older than 1.4.6 has no
+   **Custom Server** option and needs a firmware update first.
 4. Import the calendar recipe: `ha-calendar.zip` from the latest release
    (<https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/releases/latest/download/ha-calendar.zip>),
    see the repository README. For **Home Assistant URL**, use
