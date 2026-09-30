@@ -9,6 +9,7 @@
   category: calendar
   description: Rolling month calendar fed by your TRMNL calendar plugins.
   github_url: https://github.com/BartSchuurmans/trmnl-rolling-month-calendar
+  email_address: bart@minnozz.com
 - keyname: calendar_1
   field_type: plugin_instance_select
   name: Calendar
