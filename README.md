@@ -1,4 +1,4 @@
-# trmnl-homeassistant-calendar
+# trmnl-rolling-month-calendar
 
 A rolling-month calendar for a **TRMNL X**, fed by **ICS feeds** (Google, iCloud,
 Outlook, Fastmail, Nextcloud…) or **Home Assistant** calendar entities, and rendered by a
@@ -15,7 +15,7 @@ flowchart LR
             HA["<b>Home Assistant</b><br>calendar entities"]
         end
         subgraph app["LaraPaper (local) app container"]
-            LP["<b>LaraPaper</b><br>polls HA every 15 min,<br>runs the ha-calendar recipe"]
+            LP["<b>LaraPaper</b><br>polls HA every 15 min,<br>runs the calendar recipe"]
             CR["<b>Headless Chromium</b><br>TRMNL framework and<br>FullCalendar bundled"]
             LP -- "renders to PNG" --> CR
         end
@@ -32,7 +32,7 @@ flowchart LR
 - **The calendar recipe** (`plugin/src/`): a LaraPaper recipe that polls ICS feeds or
   Home Assistant's calendar API and draws the events with FullCalendar inside the TRMNL
   framework. Each
-  release has it as `ha-calendar.zip`, ready to import into LaraPaper.
+  release has it as `rolling-month-calendar.zip`, ready to import into LaraPaper.
 - **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
   the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
   in, so rendering a screen needs no internet access. See
@@ -85,7 +85,7 @@ the changes in detail.
 
 **As a Home Assistant app (recommended).** This repository is an app repository. Go to
 Settings → Apps → store → ⋮ → Repositories, add
-`https://github.com/BartSchuurmans/trmnl-homeassistant-calendar`, and install
+`https://github.com/BartSchuurmans/trmnl-rolling-month-calendar`, and install
 **LaraPaper (local)**. It bundles the TRMNL framework and FullCalendar, so rendering
 needs no internet access, and it reads your calendars with its own Home Assistant
 access, so you don't need an access token. Setup steps are in
@@ -148,15 +148,15 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ### 4. Import the plugin
 
-Download [`ha-calendar.zip`](https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/releases/latest/download/ha-calendar.zip) from the latest
-[release](https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/releases), or
+Download [`rolling-month-calendar.zip`](https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/releases/latest/download/rolling-month-calendar.zip) from the latest
+[release](https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/releases), or
 build it from a checkout:
 
 ```sh
-./scripts/build-zip.sh        # → dist/ha-calendar.zip
+./scripts/build-zip.sh        # → dist/rolling-month-calendar.zip
 ```
 
-LaraPaper → **Plugins** → add menu → **Import Recipe Archive** → upload `ha-calendar.zip`. Then
+LaraPaper → **Plugins** → add menu → **Import Recipe Archive** → upload `rolling-month-calendar.zip`. Then
 open the settings of the **Rolling Month Calendar** recipe and fill in either:
 
 - **ICS feed URLs**, one per calendar. When these are set, the Home Assistant fields are
@@ -326,7 +326,7 @@ To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
   the current week plus 6 weeks. The dates are computed from a timestamp
   (`"now" | date: "%s" | minus: 604800`), which LaraPaper's PHP Liquid and the Ruby
   Liquid of TRMNL's own servers both read the same way.
-- The recipe loads FullCalendar from `/ha-calendar/...`, which the LaraPaper (local)
+- The recipe loads FullCalendar from `/rolling-month-calendar/...`, which the LaraPaper (local)
   app serves, and falls back to jsDelivr on any other server. With plain LaraPaper,
   rendering also loads the TRMNL framework from trmnl.com, so the container needs
   internet access. The app avoids both. How: screens render from a temporary

@@ -69,5 +69,5 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: ha-calendar
-          path: dist/ha-calendar.zip
+          name: rolling-month-calendar
+          path: dist/rolling-month-calendar.zip

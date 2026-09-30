@@ -26,7 +26,7 @@ The Home Assistant app image adds these files to the official LaraPaper image
 | Inter (`Inter.ttf`, `Inter-Italic.ttf`) | The Inter Project Authors | SIL OFL 1.1 | `/fonts/OFL-trmnl.txt`, `/fonts/OFL-classic.txt` |
 | NicoPups, NicoClean fonts | Emily Huo | SIL OFL 1.1 | `/fonts/OFL-classic.txt` |
 | BlockKie font | JoohnFonts | CC BY 3.0 | `/fonts/CC-BY-3.0.txt` |
-| FullCalendar 6.1.21 (`index.global.min.js`, `locales-all.global.min.js`) | Adam Shaw | MIT | `/ha-calendar/fullcalendar/6.1.21/LICENSE.md` |
+| FullCalendar 6.1.21 (`index.global.min.js`, `locales-all.global.min.js`) | Adam Shaw | MIT | `/rolling-month-calendar/fullcalendar/6.1.21/LICENSE.md` |
 
 The fonts come unmodified from the TRMNL framework's
 [font bundles](https://github.com/usetrmnl/trmnl-framework/tree/v3.3.1/public/fonts/bundles),

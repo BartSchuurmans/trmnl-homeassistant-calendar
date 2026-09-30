@@ -1,6 +1,6 @@
 // End-to-end test: recipe ZIP → LaraPaper → fake Home Assistant → device screen.
 //
-//   node e2e/run.mjs [--container app] [--url http://localhost:4567] [--zip dist/ha-calendar.zip]
+//   node e2e/run.mjs [--container app] [--url http://localhost:4567] [--zip dist/rolling-month-calendar.zip]
 //
 // Needs a running app container (see .github/workflows/app.yml) that reaches this
 // machine as http://homeassistant:8123 (docker run --add-host homeassistant:host-gateway),
@@ -19,7 +19,7 @@ import path from 'node:path';
 import { FEEDS, startFakeHa, SUPERVISOR_TOKEN, TOKEN } from './fake-ha.mjs';
 
 const dir = path.dirname(new URL(import.meta.url).pathname);
-const opt = { container: 'app', url: 'http://localhost:4567', zip: path.join(dir, '../dist/ha-calendar.zip'),
+const opt = { container: 'app', url: 'http://localhost:4567', zip: path.join(dir, '../dist/rolling-month-calendar.zip'),
   local: null, ha: 'http://homeassistant:8123', tz: 'Europe/Amsterdam' };
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i += 2) opt[argv[i].replace(/^--/, '')] = argv[i + 1];
@@ -43,11 +43,11 @@ if (opt.local) {
 } else {
   execFileSync('docker', ['exec', opt.container, 'mkdir', '-p', '/tmp/e2e']);
   execFileSync('docker', ['cp', path.join(dir, 'larapaper.php'), `${opt.container}:/tmp/e2e/larapaper.php`]);
-  execFileSync('docker', ['cp', opt.zip, `${opt.container}:/tmp/e2e/ha-calendar.zip`]);
+  execFileSync('docker', ['cp', opt.zip, `${opt.container}:/tmp/e2e/rolling-month-calendar.zip`]);
   execFileSync('docker', ['exec', opt.container, 'chmod', '-R', 'a+rX', '/tmp/e2e']);
   helper = (...args) => execFileSync('docker', ['exec', '-u', 'www-data', '-w', '/var/www/html', opt.container,
     'php', '/tmp/e2e/larapaper.php', ...args], { encoding: 'utf8' });
-  zip = '/tmp/e2e/ha-calendar.zip';
+  zip = '/tmp/e2e/rolling-month-calendar.zip';
 }
 const php = (...args) => JSON.parse(helper(...args));
 

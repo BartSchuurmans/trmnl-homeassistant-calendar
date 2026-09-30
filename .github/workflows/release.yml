@@ -1,8 +1,8 @@
 name: Release
 
 # Pushing a tag like v1.2.0 runs the render checks and publishes a GitHub release
-# with the recipe ZIP (dist/ha-calendar.zip) and its SHA-256. The asset name stays the
-# same, so the README can link to releases/latest/download/ha-calendar.zip.
+# with the recipe ZIP (dist/rolling-month-calendar.zip) and its SHA-256. The asset name stays the
+# same, so the README can link to releases/latest/download/rolling-month-calendar.zip.
 #
 # The Home Assistant app is released separately: Home Assistant offers an update
 # whenever `version` in larapaper/config.yaml changes on main.
@@ -39,11 +39,11 @@ jobs:
       - name: Build recipe ZIP
         run: |
           sh scripts/build-zip.sh
-          cd dist && sha256sum ha-calendar.zip > ha-calendar.zip.sha256 && cat ha-calendar.zip.sha256
+          cd dist && sha256sum rolling-month-calendar.zip > rolling-month-calendar.zip.sha256 && cat rolling-month-calendar.zip.sha256
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/ha-calendar.zip dist/ha-calendar.zip.sha256 \
+          gh release create "$GITHUB_REF_NAME" dist/rolling-month-calendar.zip dist/rolling-month-calendar.zip.sha256 \
             --verify-tag --title "$GITHUB_REF_NAME" --generate-notes

@@ -9,7 +9,7 @@
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 mkdir -p "$root/dist"
-out="$root/dist/ha-calendar.zip"
+out="$root/dist/rolling-month-calendar.zip"
 rm -f "$out"
 
 epoch=${SOURCE_DATE_EPOCH:-$(git -C "$root" log -1 --format=%ct -- plugin/src 2>/dev/null || true)}

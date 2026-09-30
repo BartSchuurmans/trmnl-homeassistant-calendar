@@ -14,7 +14,7 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   bundled TRMNL framework, fonts and FullCalendar (`assets.txt`, pinned by SHA-256).
 - `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
   in-container helper.
-- `scripts/build-zip.sh` — builds `dist/ha-calendar.zip` for LaraPaper's recipe import.
+- `scripts/build-zip.sh` — builds `dist/rolling-month-calendar.zip` for LaraPaper's recipe import.
 - `LICENSE` (MIT, own code) and `THIRD_PARTY_NOTICES.md` (upstream plugin, bundled
   assets) — keep the notices table in step with `assets.txt`.
 
@@ -27,7 +27,7 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
 - `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders.
 - `sh preview/docs-images.sh` regenerates the README screenshots in `docs/`.
-- `node e2e/run.mjs` — end-to-end: imports `dist/ha-calendar.zip` into a running app
+- `node e2e/run.mjs` — end-to-end: imports `dist/rolling-month-calendar.zip` into a running app
   container (`app`, started as in `app.yml` with `--add-host
   homeassistant:host-gateway`), polls the fake HA in `e2e/fake-ha.mjs`, fetches the
   TRMNL X screen via `/api/display` and checks payloads and pixels; screens in
@@ -56,7 +56,7 @@ renders in `ci.sh` exist to catch that; keep them passing after layout changes.
 **Browsershot content filter.** `setHtml` rejects any page containing `file:`,
 `view-source`, `//localhost`, `//127.` etc. So assets can't be inlined (FullCalendar's
 bundle contains `file:`) and can't point at localhost. Screens render from a temporary
-`file://` page, so root-relative paths (`/fonts/...`, `/ha-calendar/...`) resolve to the
+`file://` page, so root-relative paths (`/fonts/...`, `/rolling-month-calendar/...`) resolve to the
 filesystem there and to nginx in the browser preview — that is how the app serves
 assets locally.
 
@@ -105,7 +105,7 @@ dates with `getUTC*`.
 ## Releasing
 
 - Recipe: tag `vX.Y.Z` on main and push the tag. `release.yml` reruns the render suite
-  and publishes a GitHub release with `ha-calendar.zip` (+ `.sha256`). The ZIP is
+  and publishes a GitHub release with `rolling-month-calendar.zip` (+ `.sha256`). The ZIP is
   reproducible (`build-zip.sh` dates it by the last `plugin/src` commit). Every render
   run also uploads the ZIP as an artifact.
 - Home Assistant app: bump `version` in `larapaper/config.yaml` (`<LaraPaper
