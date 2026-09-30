@@ -9,11 +9,12 @@
 {% endcomment %}
 {% assign merge_values = trmnl.plugin_settings.custom_fields_values %}
 {% assign merge_sources = false %}
+{% comment %} Field names spelled out: TRMNL's publish check flags fields it can't find in the markup. {% endcomment %}
+{% assign merge_fields = "calendar_1,calendar_2,calendar_3,calendar_4" | split: "," %}
 {% capture merge_json %}{
-{%- for i in (1..4) -%}
-  {%- assign merge_field = "calendar_" | append: i -%}
+{%- for merge_field in merge_fields -%}
   {%- assign merge_key = merge_values[merge_field] | default: "" | strip -%}
   {%- unless forloop.first %}, {% endunless -%}
-  "IDX_{{ i | minus: 1 }}": {% if merge_key != "" %}{% assign merge_sources = true %}{{ [merge_key] | json | default: "null" }}{% else %}null{% endif %}
+  "IDX_{{ forloop.index0 }}": {% if merge_key != "" %}{% assign merge_sources = true %}{{ [merge_key] | json | default: "null" }}{% else %}null{% endif %}
 {%- endfor -%}
 }{% endcapture %}
