@@ -33,7 +33,7 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   `e2e/out/`. `e2e/larapaper.php` runs inside the container through LaraPaper's own
   services. `--local <larapaper checkout>` runs it without Docker.
 - CI: `.github/workflows/render.yml` (recipe) and `app.yml` (builds and smoke-tests
-  the Home Assistant app, then runs the end-to-end test).
+  the Home Assistant app, then runs the end-to-end test; on main it publishes the image).
 
 ## Things that are easy to get wrong
 
@@ -102,7 +102,9 @@ dates with `getUTC*`.
   version>-N`) with any change to the image; `app.yml` fails PRs that change app files
   other than DOCS.md/translations without a bump. Add an entry to
   `larapaper/CHANGELOG.md` (shown in HA's update dialog). HA offers the update once
-  it's on main.
+  it's on main; `app.yml` then publishes the image (amd64 + aarch64, `image:` in
+  config.yaml) to GHCR, skipping versions that already exist. HA pulls that image, it
+  doesn't build locally, so a version on main without a published image can't install.
 
 ## Conventions
 
@@ -111,7 +113,7 @@ dates with `getUTC*`.
 - Sizes in CSS scale with `--cal-u` (`--ui-scale`); colours use framework palette vars.
 - After changing `plugin/src/`, rebuild with `scripts/build-zip.sh`; re-importing the
   ZIP updates the recipe in LaraPaper in place (same `id`).
-- Bumping LaraPaper: `larapaper/build.yaml` + `version` in `config.yaml`. Bumping the
+- Bumping LaraPaper: `BUILD_FROM` in `larapaper/Dockerfile` + `version` in `config.yaml`. Bumping the
   framework or FullCalendar: update `assets.txt` hashes (a tarball member is pinned by
   the tarball's hash) and the license texts listed there, and the paths in the
   Dockerfile, `shared.liquid` and `settings.yml`.

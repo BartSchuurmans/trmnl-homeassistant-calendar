@@ -1,10 +1,12 @@
 name: LaraPaper (local)
-version: "0.43.0-4"
+version: "0.43.0-5"
 slug: larapaper_local
 description: >-
   TRMNL BYOS server (LaraPaper) that renders screens without internet access:
   the TRMNL framework and FullCalendar are bundled in the image.
 url: https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/tree/main/larapaper
+# Built and published by .github/workflows/app.yml when the version changes on main
+image: ghcr.io/bartschuurmans/larapaper-local
 arch:
   - aarch64
   - amd64
