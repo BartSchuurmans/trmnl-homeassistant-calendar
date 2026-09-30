@@ -29,6 +29,9 @@ render ics-x --ics
 render ics-og --device og --ics --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:
 render ics-options-x --ics --set rolling_advancement=day --set first_day=0 --set week_overflow=more
 
+# Several calendars as TRMNL and trmnlp pass them: IDX_0, IDX_1, ... without `data`
+render trmnl-x --trmnl --expect-events
+
 # Same input through LaraPaper's Liquid engine (keepsuit/liquid, PHP)
 render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
 php php/render.php "$out/context.json" > "$out/php-body.html"

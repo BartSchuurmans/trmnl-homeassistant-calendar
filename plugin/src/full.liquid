@@ -15,6 +15,13 @@
 {% assign locale = s.locale | default: "en" | strip %}
 {% comment %} ICS feeds replace the HA entities when set (see polling_url in settings.yml) {% endcomment %}
 {% assign source = "ha" %}{% if s.ics_urls contains "/" %}{% assign source = "ics" %}{% endif %}
+{% comment %}
+  LaraPaper passes the payload as `data` (several URLs as {IDX_0: ..., IDX_1: ...}). TRMNL
+  and trmnlp only put IDX_0, IDX_1, ... at the top level for several URLs, with no `data`,
+  so rebuild that object here (Liquid can't look variables up by name, hence the list).
+{% endcomment %}
+{% assign events_json = data | json %}
+{% unless data %}{% if IDX_0 %}{% assign sep = "" %}{% capture events_json %}{ {% if IDX_0 %}{{ sep }}"IDX_0": {{ IDX_0 | json }}{% assign sep = "," %}{% endif %}{% if IDX_1 %}{{ sep }}"IDX_1": {{ IDX_1 | json }}{% assign sep = "," %}{% endif %}{% if IDX_2 %}{{ sep }}"IDX_2": {{ IDX_2 | json }}{% assign sep = "," %}{% endif %}{% if IDX_3 %}{{ sep }}"IDX_3": {{ IDX_3 | json }}{% assign sep = "," %}{% endif %}{% if IDX_4 %}{{ sep }}"IDX_4": {{ IDX_4 | json }}{% assign sep = "," %}{% endif %}{% if IDX_5 %}{{ sep }}"IDX_5": {{ IDX_5 | json }}{% assign sep = "," %}{% endif %}{% if IDX_6 %}{{ sep }}"IDX_6": {{ IDX_6 | json }}{% assign sep = "," %}{% endif %}{% if IDX_7 %}{{ sep }}"IDX_7": {{ IDX_7 | json }}{% assign sep = "," %}{% endif %}{% if IDX_8 %}{{ sep }}"IDX_8": {{ IDX_8 | json }}{% assign sep = "," %}{% endif %}{% if IDX_9 %}{{ sep }}"IDX_9": {{ IDX_9 | json }}{% assign sep = "," %}{% endif %} }{% endcapture %}{% endif %}{% endunless %}
 
 {% if s.dither_greys == "yes" %}
   {% comment %}
@@ -27,7 +34,7 @@
 <div class="layout layout--col layout--stretch">
   <div id="calendar-full-month"
        class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends != 'no' %} shade-weekends{% endif %}{% if s.fade_past_events != 'no' %} fade-past{% endif %}{% if s.dither_greys == 'yes' %} dither-greys{% endif %}"
-       data-events="{{ data | json | escape }}"
+       data-events="{{ events_json | escape }}"
        data-calendar-config='{
          "timeZoneName": {{ time_zone | json | escape }},
          "nowUtc": {{ trmnl.system.timestamp_utc | default: 0 }},

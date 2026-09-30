@@ -65,7 +65,9 @@ assets locally.
 `data`, but its keys are also spread on top, so one calendar's `{data: [...]}` makes
 `data` the bare list; several calendars are `{IDX_0: ..., IDX_1: ...}`. One calendar
 with no events is stored as a bare `[]` (LaraPaper's list check fails on empty arrays). The JS
-normalises all shapes. LaraPaper uses keepsuit/liquid (PHP) with its own filters
+normalises all shapes. TRMNL and trmnlp have no `data` for several URLs, only top-level
+`IDX_n`, so `full.liquid` rebuilds that object (`render.mjs --trmnl` checks it).
+LaraPaper uses keepsuit/liquid (PHP) with its own filters
 (`json` etc.) and regex preprocessing of `date:` filters — test with `php/render.php`,
 liquidjs alone is not proof.
 

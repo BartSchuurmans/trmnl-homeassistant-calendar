@@ -19,6 +19,10 @@
 // from 7 days back to 30 days ahead, dates as ISO strings with an offset (all-day ones
 // at midnight UTC). It also fills in ics_urls, which switches the recipe to ICS.
 //
+// --trmnl builds the context the way TRMNL and trmnlp do: the payload's keys at the top
+// level and no `data` of its own, so several calendars arrive only as IDX_0, IDX_1, ...
+// --expect-events fails the render when no event made it onto the grid.
+//
 // Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
 // reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
 // 1-/2-bit only when the page contains <img class="image-dither">. --raw skips this.
@@ -55,6 +59,8 @@ let dumpContext = null;
 let bodyFile = null;
 let strict = false;
 let ics = false;
+let trmnlContext = false;
+let expectEvents = false;
 let now = new Date();
 let out = path.join(outDir, 'preview.png');
 let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -70,6 +76,8 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--tz') timeZone = args[++i];
   else if (args[i] === '--now') now = new Date(`${args[++i]}T12:00:00`);
   else if (args[i] === '--ics') ics = true;
+  else if (args[i] === '--trmnl') trmnlContext = true;
+  else if (args[i] === '--expect-events') expectEvents = true;
 }
 const device = DEVICES[deviceName];
 if (!device) throw new Error(`unknown device ${deviceName}`);
@@ -205,6 +213,7 @@ const context = {
     plugin_settings: { instance_name: settings.name, custom_fields_values: customFields },
   },
 };
+if (trmnlContext && !Object.hasOwn(payload, 'data')) delete context.data;
 
 if (dumpContext) fs.writeFileSync(dumpContext, JSON.stringify(context, null, 1));
 
@@ -251,6 +260,10 @@ if (strict && pageErrors.length) {
   throw new Error(`JavaScript errors in the page: ${pageErrors.join('; ')}`);
 }
 await page.waitForTimeout(300);
+if (expectEvents && !(await page.locator('.fc-event').count())) {
+  await browser.close();
+  throw new Error('no events on the grid');
+}
 const shot = await page.screenshot();
 if (raw) {
   fs.writeFileSync(out, shot);
