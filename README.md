@@ -268,6 +268,8 @@ show, with week numbers on.
     colors on color panels.
   - Hex colors are painted as-is. Without dithering, a 1-bit screen snaps them to black
     or white.
+  - `white` (or `#fff`) gets a thin grey outline, dotted on 1-/2-bit screens, like the
+    grid lines, so its events don't vanish on a white day.
 - Events without a calendar color get a grey bar on the left with a bold title, and
   timed events the time in grey below it (upstream's look). Single-day all-day events
   are drawn the same way; multi-day events are a light grey band across their days.
