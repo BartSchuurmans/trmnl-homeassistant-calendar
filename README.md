@@ -32,8 +32,9 @@ flowchart LR
 
 - **The calendar recipe** (`plugin/src/`): a LaraPaper recipe that polls ICS feeds or
   Home Assistant's calendar API and draws the events with FullCalendar inside the TRMNL
-  framework. Each
-  release has it as `rolling-month-calendar.zip`, ready to import into LaraPaper.
+  framework. LaraPaper installs it from the
+  [TRMNL recipe catalog](https://bnussbau.github.io/trmnl-recipe-catalog/); each release
+  also has it as `rolling-month-calendar.zip`.
 - **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
   the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
   in, so rendering a screen needs no internet access. See
@@ -161,17 +162,10 @@ curl -H "Authorization: Bearer $TOKEN" \
   "http://homeassistant.local:8123/api/calendars/calendar.family?start=2026-09-21&end=2026-11-10"
 ```
 
-### 4. Import the plugin
+### 4. Install the recipe
 
-Download [`rolling-month-calendar.zip`](https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/releases/latest/download/rolling-month-calendar.zip) from the latest
-[release](https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/releases), or
-build it from a checkout:
-
-```sh
-./scripts/build-zip.sh        # → dist/rolling-month-calendar.zip
-```
-
-LaraPaper → **Plugins** → add menu → **Import Recipe Archive** → upload `rolling-month-calendar.zip`. Then
+LaraPaper → **Plugins** → add menu → **Import from OSS Catalog** → **Install** on
+**Rolling Month Calendar**. Then
 open the settings of the **Rolling Month Calendar** recipe and fill in either:
 
 - **ICS feed URLs**, one per calendar. When these are set, the other sources are not
@@ -186,9 +180,14 @@ open the settings of the **Rolling Month Calendar** recipe and fill in either:
 
 Add the recipe to the device's playlist (**Add to Playlist** on the recipe page).
 
-**Updating:** import the ZIP from a newer release, or after changing anything under
-`plugin/src`, rebuild and import it again. The recipe keeps the same `id` (`settings.yml`), so LaraPaper updates it in
-place and keeps your settings.
+**Updating:** installing from the catalog again adds a second copy. To update in place
+and keep your settings, download
+[`rolling-month-calendar.zip`](https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/releases/latest/download/rolling-month-calendar.zip)
+from the latest release and import it with **Plugins** → add menu → **Import Recipe
+Archive**. The recipe keeps the same `id` (`settings.yml`), so LaraPaper replaces the
+installed copy. After changing anything under `plugin/src`, build the ZIP with
+`./scripts/build-zip.sh` (→ `dist/rolling-month-calendar.zip`) and import that the same
+way.
 
 ## Settings
 
