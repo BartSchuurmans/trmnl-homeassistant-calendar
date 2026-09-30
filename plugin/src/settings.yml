@@ -1,7 +1,7 @@
 ---
 # TRMNL recipe settings (trmnlp format). Import into LaraPaper as a ZIP, see README.md.
 name: Rolling Month Calendar
-id: ha-calendar-rolling-month
+id: rolling-month-calendar
 refresh_interval: 15
 strategy: polling
 polling_verb: get
@@ -25,7 +25,7 @@ custom_fields:
   - keyname: about
     field_type: author_bio
     name: About
-    description: Rolling month calendar fed by ICS feeds (Google, iCloud, Outlook, Fastmail, Nextcloud, ...) or Home Assistant calendar entities. Forked from the TRMNL native calendar plugin. <a href="https://github.com/BartSchuurmans/trmnl-homeassistant-calendar" class="underline">github.com/BartSchuurmans/trmnl-homeassistant-calendar</a>
+    description: Rolling month calendar fed by ICS feeds (Google, iCloud, Outlook, Fastmail, Nextcloud, ...) or Home Assistant calendar entities. Forked from the TRMNL native calendar plugin. <a href="https://github.com/BartSchuurmans/trmnl-rolling-month-calendar" class="underline">github.com/BartSchuurmans/trmnl-rolling-month-calendar</a>
   - keyname: ics_urls
     field_type: multi_string
     name: ICS feed URLs

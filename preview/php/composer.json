@@ -1,5 +1,5 @@
 {
-    "name": "ha-calendar/liquid-check",
+    "name": "rolling-month-calendar/liquid-check",
     "description": "Renders the recipe with the Liquid engine LaraPaper uses",
     "type": "project",
     "license": "MIT",

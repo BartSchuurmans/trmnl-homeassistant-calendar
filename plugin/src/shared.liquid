@@ -3,17 +3,17 @@
   what the month layouts use, plus the ICS / Home Assistant → FullCalendar event mapping.
 
   Upstream loads a private FullCalendar build from trmnl.com; the open-source build is
-  enough for dayGrid. It loads from /ha-calendar/..., which the LaraPaper (local) app
+  enough for dayGrid. It loads from /rolling-month-calendar/..., which the LaraPaper (local) app
   in this repo serves so rendering needs no internet, and falls back to jsDelivr on
   any other server. The stylesheets upstream links (plugins/calendars,
   plugins/calendars_full_month) aren't published, so the styles below are a
   re-creation.
 {% endcomment %}
-{% assign ha_locale = trmnl.plugin_settings.custom_fields_values.locale | default: "en" | strip | downcase %}
-<script src="/ha-calendar/fullcalendar/6.1.21/index.global.min.js"></script>
+{% assign cal_locale = trmnl.plugin_settings.custom_fields_values.locale | default: "en" | strip | downcase %}
+<script src="/rolling-month-calendar/fullcalendar/6.1.21/index.global.min.js"></script>
 <script>window.FullCalendar || document.write('<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"><\/script>');</script>
-{% if ha_locale != "en" and ha_locale != "" %}
-<script src="/ha-calendar/fullcalendar/6.1.21/locales-all.global.min.js"></script>
+{% if cal_locale != "en" and cal_locale != "" %}
+<script src="/rolling-month-calendar/fullcalendar/6.1.21/locales-all.global.min.js"></script>
 <script>(window.FullCalendar && FullCalendar.globalLocales && FullCalendar.globalLocales.length) || document.write('<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"><\/script>');</script>
 {% endif %}
 
@@ -191,7 +191,7 @@
   // FullCalendar events.
   // Stands in for the closed-source Calendar::Helper of the native plugin and mirrors
   // the filtering of Plugins::GoogleCalendar#prepare_events.
-  window.trmnlHaCalendar = (function() {
+  window.trmnlRollingCalendar = (function() {
     function splitList(value) {
       return String(value || '').split(',').map(function(v) { return v.trim(); }).filter(Boolean);
     }
@@ -386,42 +386,42 @@
       var scope = root || document;
       var nodes = scope.querySelectorAll('.trmnl-calendar:not([data-initialized])');
       nodes.forEach(function(node){
-        var ha = {};
-        try { ha = JSON.parse(node.getAttribute('data-calendar-config') || '{}'); } catch(e) { console.warn('Invalid calendar config', e); }
+        var settings = {};
+        try { settings = JSON.parse(node.getAttribute('data-calendar-config') || '{}'); } catch(e) { console.warn('Invalid calendar config', e); }
         var payload = null;
         try { payload = JSON.parse(node.getAttribute('data-events') || 'null'); } catch(e) { console.warn('Invalid calendar data', e); }
 
-        var nowDate = ha.nowUtc ? new Date(ha.nowUtc * 1000) : new Date();
-        ha.today = window.trmnlHaCalendar.wallClock(nowDate, ha.timeZoneName).slice(0, 10);
-        ha.calendarEntities = window.trmnlHaCalendar.splitList(ha.calendarEntities);
-        ha.calendarPrefixes = window.trmnlHaCalendar.splitAligned(ha.calendarPrefixes);
-        ha.calendarColors = window.trmnlHaCalendar.splitAligned(ha.calendarColors);
-        ha.ignoredPhrases = window.trmnlHaCalendar.splitList(ha.ignoredPhrases);
-        ha.ignoredPhrasesExactMatch = window.trmnlHaCalendar.splitList(ha.ignoredPhrasesExactMatch);
-        var built = window.trmnlHaCalendar.buildEvents(payload, ha);
+        var nowDate = settings.nowUtc ? new Date(settings.nowUtc * 1000) : new Date();
+        settings.today = window.trmnlRollingCalendar.wallClock(nowDate, settings.timeZoneName).slice(0, 10);
+        settings.calendarEntities = window.trmnlRollingCalendar.splitList(settings.calendarEntities);
+        settings.calendarPrefixes = window.trmnlRollingCalendar.splitAligned(settings.calendarPrefixes);
+        settings.calendarColors = window.trmnlRollingCalendar.splitAligned(settings.calendarColors);
+        settings.ignoredPhrases = window.trmnlRollingCalendar.splitList(settings.ignoredPhrases);
+        settings.ignoredPhrasesExactMatch = window.trmnlRollingCalendar.splitList(settings.ignoredPhrasesExactMatch);
+        var built = window.trmnlRollingCalendar.buildEvents(payload, settings);
 
         // Everything below follows upstream _full_month + _common; `cfg` is the object
         // upstream renders server-side into data-calendar-config.
         var rollingMonthView = { type: 'dayGridMonth', duration: { weeks: 4 }, fixedWeekCount: false };
-        if (ha.rollingAdvancement === 'day') rollingMonthView.dateAlignment = 'day';
+        if (settings.rollingAdvancement === 'day') rollingMonthView.dateAlignment = 'day';
 
         var cfg = {
-          timeZone: 'UTC', // event strings are already wall-clock in ha.timeZoneName
-          now: ha.today,
+          timeZone: 'UTC', // event strings are already wall-clock in settings.timeZoneName
+          now: settings.today,
           headerToolbar: false, // the title bar (month_header) is the framework's .title_bar
           height: '100%',
           initialView: 'rollingMonth',
-          initialDate: ha.today,
-          firstDay: ha.firstDay,
-          eventTimeFormat: { hour: 'numeric', minute: '2-digit', hour12: ha.hour12, meridiem: false },
+          initialDate: settings.today,
+          firstDay: settings.firstDay,
+          eventTimeFormat: { hour: 'numeric', minute: '2-digit', hour12: settings.hour12, meridiem: false },
           views: { rollingMonth: rollingMonthView },
           events: built.events,
-          displayEventTime: ha.displayEventTime,
+          displayEventTime: settings.displayEventTime,
           dayMaxEventRows: false,
-          displayEventEnd: ha.displayEventEnd, // FullCalendar defaults this off in dayGrid
-          weekNumbers: ha.weekNumbers,
+          displayEventEnd: settings.displayEventEnd, // FullCalendar defaults this off in dayGrid
+          weekNumbers: settings.weekNumbers,
           weekNumberCalculation: 'ISO',
-          locale: ha.locale || 'en'
+          locale: settings.locale || 'en'
         };
 
         // Base options shared by all calendars
@@ -436,14 +436,14 @@
         var textSmall = function() { return ['text--small']; };
         var isWeekend = function(arg) { return arg.dow === 0 || arg.dow === 6; };
         var shadeClass = function(arg) {
-          return (isWeekend(arg) && ha.shadeWeekends && !ha.ditherGreys) ? ['bg--gray-75'] : [];
+          return (isWeekend(arg) && settings.shadeWeekends && !settings.ditherGreys) ? ['bg--gray-75'] : [];
         };
         var screenStyles = function() { return getComputedStyle(node.closest('.screen') || document.documentElement); };
         // 1-/2-bit screens print grey as a dot pattern, which breaks up the pixel fonts of the
         // events on top of it: there the weekend is shaded in the header row only.
-        var patternedGreys = (parseInt(screenStyles().getPropertyValue('--framework-bit-depth'), 10) || 4) <= 2 && !ha.ditherGreys;
+        var patternedGreys = (parseInt(screenStyles().getPropertyValue('--framework-bit-depth'), 10) || 4) <= 2 && !settings.ditherGreys;
         // today's weekday column; the rolling grid always starts in today's week
-        var todayDow = new Date(ha.today + 'T00:00:00Z').getUTCDay();
+        var todayDow = new Date(settings.today + 'T00:00:00Z').getUTCDay();
         baseOpts.dayHeaderClassNames = function(arg) {
           return ['text--small'].concat(arg.dow === todayDow ? ['trmnl-today-col'] : shadeClass(arg));
         };
@@ -456,7 +456,7 @@
         // Paint a palette token: its bg--* class (solid on 4-bit, dither pattern on 1-/2-bit),
         // or in "Dither" mode the raw colour, which LaraPaper then dithers with the rest.
         var paint = function(el, token, raw) {
-          if (ha.ditherGreys) el.style.backgroundColor = raw;
+          if (settings.ditherGreys) el.style.backgroundColor = raw;
           else el.classList.add('bg--' + token);
         };
         baseOpts.eventDidMount = function(info) {
@@ -472,7 +472,7 @@
             if (bar) paint(bar, 'gray-50', styles.getPropertyValue('--gray-50').trim());
             var time = info.el.querySelector('.fc-event-time');
             // (grey on 4-bit; a muted pattern on 1-/2-bit is hard to read, so solid black there)
-            if (time && bar && !ha.ditherGreys && !patternedGreys) time.classList.add('text--muted');
+            if (time && bar && !settings.ditherGreys && !patternedGreys) time.classList.add('text--muted');
             if (main) paint(main, 'gray-70', styles.getPropertyValue('--gray-70').trim());
             return;
           }
@@ -488,7 +488,7 @@
           else paint(main, color.token, raw);
           if (color.token === 'white' || /^#f{3}(f{3})?$/i.test(raw)) main.style.boxShadow = 'inset 0 0 0 1px var(--black)';
           var depth = parseInt(styles.getPropertyValue('--framework-bit-depth'), 10) || 4;
-          var patterned = depth <= 2 && !ha.ditherGreys && color.token && color.token !== 'black' && color.token !== 'white';
+          var patterned = depth <= 2 && !settings.ditherGreys && color.token && color.token !== 'black' && color.token !== 'white';
           main.style.color = patterned || !isDark(raw) ? 'var(--black)' : 'var(--white)';
           if (patterned) main.classList.add('text-stroke', 'text-stroke--small');
         };
@@ -500,7 +500,7 @@
         if (node.classList.contains('trmnl-calendar--month')) {
           baseOpts.dayCellContent = function(arg) {
             try {
-              var cls = 'trmnl-day-number text--small' + (arg.isPast ? ' is-past' + (ha.ditherGreys ? '' : ' text--muted') : '');
+              var cls = 'trmnl-day-number text--small' + (arg.isPast ? ' is-past' + (settings.ditherGreys ? '' : ' text--muted') : '');
               return { html: '<span class="' + cls + '">' + arg.date.getUTCDate() + '</span>' };
             } catch (e) {
               return { html: '' };
@@ -520,7 +520,7 @@
               var monthName = arg.date.toLocaleDateString((cfg.locale || 'en'), { month: 'short', timeZone: 'UTC' }).replace(/\.$/, '');
               var label = document.createElement('span');
               // past days: the label is muted like the number next to it
-              label.className = 'trmnl-month-label text--small' + (arg.isPast ? ' is-past' + (ha.ditherGreys ? '' : ' text--muted') : '');
+              label.className = 'trmnl-month-label text--small' + (arg.isPast ? ' is-past' + (settings.ditherGreys ? '' : ' text--muted') : '');
               // FullCalendar bolds the number of every labelled day; keep that for the 1st
               // of a month, not for the grid's first day, which is labelled mid-month
               if (arg.date.getUTCDate() !== 1) numEl.classList.add('trmnl-mid-month');
@@ -538,11 +538,11 @@
         // events up to 30 days ahead (see fromIcal), so there the grid stops at the last
         // whole week before that: a later day would look free when it may not be.
         var maxWeeks = 6;
-        if (ha.source === 'ics') {
-          var gridStart = new Date(ha.today + 'T00:00:00Z');
-          if (ha.rollingAdvancement !== 'day') gridStart.setUTCDate(gridStart.getUTCDate() - (gridStart.getUTCDay() - ha.firstDay + 7) % 7);
+        if (settings.source === 'ics') {
+          var gridStart = new Date(settings.today + 'T00:00:00Z');
+          if (settings.rollingAdvancement !== 'day') gridStart.setUTCDate(gridStart.getUTCDate() - (gridStart.getUTCDay() - settings.firstDay + 7) % 7);
           // the feed is cut 30 days after the poll, so day +29 is the last one complete
-          var coveredDays = Math.round((Date.parse(ha.today + 'T00:00:00Z') - gridStart.getTime()) / 86400000) + 30;
+          var coveredDays = Math.round((Date.parse(settings.today + 'T00:00:00Z') - gridStart.getTime()) / 86400000) + 30;
           maxWeeks = Math.max(1, Math.min(6, Math.floor(coveredDays / 7)));
         }
         var rollingMonth = cfg.initialView === 'rollingMonth' && cfg.views && cfg.views.rollingMonth;
@@ -565,8 +565,8 @@
           // Upstream keeps at least 4 weeks, so a busy month is cut off at the bottom.
           // "Busy weeks" setting: show only the weeks that fit, so every event stays
           // visible, or keep at least 3 and let each day end in "+N more".
-          var capDays = ha.weekOverflow === 'more' && fitWeeks < 3;
-          fitWeeks = Math.min(maxWeeks, Math.max(ha.weekOverflow === 'more' ? 3 : 1, fitWeeks));
+          var capDays = settings.weekOverflow === 'more' && fitWeeks < 3;
+          fitWeeks = Math.min(maxWeeks, Math.max(settings.weekOverflow === 'more' ? 3 : 1, fitWeeks));
           if (fitWeeks < weekRows.length) {
             calendar.destroy();
             cfg.views.rollingMonth.duration = { weeks: fitWeeks };

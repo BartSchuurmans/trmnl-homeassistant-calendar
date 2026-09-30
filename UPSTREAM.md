@@ -9,7 +9,7 @@ treats its native plugins as source-available and is fine with them being remixe
 |---|---|
 | `lib/calendars/_full_month.html.erb` (`event_layout == 'rolling_month'`) | `plugin/src/full.liquid` and the `cfg` object in `shared.liquid` |
 | `lib/calendars/_common.html.erb` (`trmnlInitCalendars`) | `plugin/src/shared.liquid` |
-| `lib/google_calendar/google_calendar.rb` (`prepare_events`, filters, `time_min`/`time_max`) | `trmnlHaCalendar` in `shared.liquid` (incl. `fromIcal`), `polling_url` in `settings.yml` |
+| `lib/google_calendar/google_calendar.rb` (`prepare_events`, filters, `time_min`/`time_max`) | `trmnlRollingCalendar` in `shared.liquid` (incl. `fromIcal`), `polling_url` in `settings.yml` |
 
 ## Kept as upstream
 
@@ -35,7 +35,7 @@ treats its native plugins as source-available and is fine with them being remixe
   given to FullCalendar with `timeZone: 'UTC'`, so the result doesn't depend on the
   renderer's system zone. Day numbers and month labels read UTC dates to match.
 - **FullCalendar**: the open-source 6.1 build instead of the private build at
-  trmnl.com, loaded from `/ha-calendar/...` (served by the LaraPaper (local) app) with
+  trmnl.com, loaded from `/rolling-month-calendar/...` (served by the LaraPaper (local) app) with
   jsDelivr as fallback. No `schedulerLicenseKey`, since dayGrid doesn't need one.
 - **Styles**: upstream links `plugins/calendars` and `plugins/calendars_full_month`
   stylesheets that aren't published. Here fonts, text sizes and greys come from TRMNL

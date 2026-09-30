@@ -36,8 +36,8 @@ listed in `assets.txt`, each checked against a pinned SHA-256.
    comes from the firmware and can be ignored; the device picks up its playlist at the
    next refresh. A TRMNL OG on firmware older than 1.4.6 has no
    **Custom Server** option and needs a firmware update first.
-4. Import the calendar recipe: `ha-calendar.zip` from the latest release
-   (<https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/releases/latest/download/ha-calendar.zip>),
+4. Import the calendar recipe: `rolling-month-calendar.zip` from the latest release
+   (<https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/releases/latest/download/rolling-month-calendar.zip>),
    see the repository README. Fill in your calendar entities and leave **Home
    Assistant URL** at `http://127.0.0.1:8124` and the access token empty: the app
    reads your calendars with its own Home Assistant access, so you don't need to create

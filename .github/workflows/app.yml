@@ -103,16 +103,16 @@ jobs:
           fw="$(yq '.framework_version' plugin/src/settings.yml)"
           for path in "/trmnl-framework/$fw/plugins.min.css" "/trmnl-framework/$fw/plugins.min.js" \
                       /fonts/Inter.ttf /fonts/TRMNL16-Regular.woff2 \
-                      /ha-calendar/fullcalendar/6.1.21/index.global.min.js \
-                      /ha-calendar/fullcalendar/6.1.21/locales-all.global.min.js; do
+                      /rolling-month-calendar/fullcalendar/6.1.21/index.global.min.js \
+                      /rolling-month-calendar/fullcalendar/6.1.21/locales-all.global.min.js; do
             curl -fsS -o /dev/null -w "%{http_code} $path\n" "http://localhost:4567$path"
           done
 
       - name: Check the render paths, framework settings and options
         run: |
           # screens render from a file:// page, so the assets must exist at the filesystem root
-          docker exec app sh -c 'test -s /trmnl-framework/3.3.1/plugins.min.css && test -s /fonts/Inter.ttf && test -s /ha-calendar/fullcalendar/6.1.21/index.global.min.js'
-          docker exec app sh -c 'for f in /trmnl-framework/3.3.1/LICENSE /fonts/OFL-trmnl.txt /fonts/OFL-classic.txt /fonts/CC-BY-3.0.txt /ha-calendar/fullcalendar/6.1.21/LICENSE.md; do test -s "$f" || { echo "missing $f"; exit 1; }; done'
+          docker exec app sh -c 'test -s /trmnl-framework/3.3.1/plugins.min.css && test -s /fonts/Inter.ttf && test -s /rolling-month-calendar/fullcalendar/6.1.21/index.global.min.js'
+          docker exec app sh -c 'for f in /trmnl-framework/3.3.1/LICENSE /fonts/OFL-trmnl.txt /fonts/OFL-classic.txt /fonts/CC-BY-3.0.txt /rolling-month-calendar/fullcalendar/6.1.21/LICENSE.md; do test -s "$f" || { echo "missing $f"; exit 1; }; done'
           docker exec app sh -c '! grep -q "fonts.bunny.net" /var/www/html/resources/views/vendor/trmnl/components/screen.blade.php'
           docker exec app printenv TRMNL_BLADE_FRAMEWORK_CSS_URL | grep -qx '/trmnl-framework/3.3.1/plugins.min.css'
           docker exec app sh -c 'f=/var/www/html/bootstrap/cache/config.php; ! test -f "$f" || grep -q "/trmnl-framework/3.3.1/plugins.min.css" "$f"'
@@ -141,7 +141,7 @@ jobs:
       - name: End-to-end (recipe ZIP → LaraPaper → fake Home Assistant → TRMNL X screen)
         run: |
           sh scripts/build-zip.sh
-          node e2e/run.mjs --container app --url http://localhost:4567 --zip dist/ha-calendar.zip
+          node e2e/run.mjs --container app --url http://localhost:4567 --zip dist/rolling-month-calendar.zip
 
       - uses: actions/upload-artifact@v7
         if: always()
@@ -230,7 +230,7 @@ jobs:
           labels: |
             io.hass.type=app
             io.hass.name=LaraPaper (local)
-            io.hass.url=https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/tree/main/larapaper
+            io.hass.url=https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/tree/main/larapaper
           push: true
           skip-existing: ${{ needs.publish-prepare.outputs.version }}
           version: ${{ needs.publish-prepare.outputs.version }}

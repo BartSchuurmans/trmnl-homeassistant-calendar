@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.43.0-6
+
+- The project is now called Rolling Month Calendar
+  (`github.com/BartSchuurmans/trmnl-rolling-month-calendar`), because the calendar
+  recipe also reads ICS feeds now. The app serves FullCalendar under
+  `/rolling-month-calendar/` instead of `/ha-calendar/`, and the recipe ZIP is now
+  `rolling-month-calendar.zip`. Import that ZIP from the latest release: it installs as
+  a new recipe, so set it up again and remove the old one.
+
 ## 0.43.0-5
 
 - The app is now installed from a prebuilt image (`ghcr.io/bartschuurmans/larapaper-local`)

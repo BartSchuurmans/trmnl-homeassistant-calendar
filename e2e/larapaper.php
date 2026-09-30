@@ -25,7 +25,7 @@ require "$root/vendor/autoload.php";
 $app = require "$root/bootstrap/app.php";
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-const TRMNLP_ID = 'ha-calendar-rolling-month';
+const TRMNLP_ID = 'rolling-month-calendar';
 const API_KEY = 'e2e-access-token';
 
 function out(array $value): never

@@ -1,5 +1,5 @@
 {
-  "name": "trmnl-ha-calendar-preview",
+  "name": "trmnl-rolling-month-calendar-preview",
   "private": true,
   "type": "module",
   "description": "Render the plugin locally with sample or live Home Assistant data",
