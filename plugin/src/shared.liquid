@@ -70,7 +70,9 @@
   /* day number, right aligned; month label sits left of the number on the 1st */
   .trmnl-calendar .fc-daygrid-day-top { align-items: center; }
   .trmnl-calendar .fc-daygrid-day-top.trmnl-has-month-label { flex-direction: row; justify-content: flex-end; align-items: baseline; }
-  .trmnl-calendar .fc-daygrid-day-number { padding: calc(3px * var(--cal-u)) calc(4px * var(--cal-u)) calc(1px * var(--cal-u)); }
+  /* font-size 0 drops the link's own (browser default) line box, so the number's text starts
+     right below the padding, where the week number's does too */
+  .trmnl-calendar .fc-daygrid-day-number { padding: calc(3px * var(--cal-u)) calc(4px * var(--cal-u)) calc(1px * var(--cal-u)); font-size: 0; }
   .trmnl-calendar .trmnl-day-number {
     display: inline-block;
     min-width: 1.5em;
@@ -78,12 +80,9 @@
     border-radius: 999px;
     text-align: center;
   }
-  /* today: the top of the cell (number and month label) as a black band */
-  .trmnl-calendar.highlight-today .fc-day-today .fc-daygrid-day-top { background: var(--black); }
-  .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number,
-  .trmnl-calendar.highlight-today .fc-day-today .trmnl-month-label { background: transparent !important; color: var(--white); }
-  .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number { font-weight: 700; }
-  .trmnl-calendar.highlight-today .fc-day-today .fc-daygrid-week-number { color: var(--white); }
+  /* today: its weekday in the header row inverted, and the day number in a black pill */
+  .trmnl-calendar.highlight-today .fc-col-header-cell.trmnl-today-col { background: var(--black) !important; color: var(--white); }
+  .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number { background: var(--black); color: var(--white); font-weight: 700; }
   .trmnl-calendar .trmnl-month-label {
     min-width: 0;
     overflow: hidden;
@@ -149,7 +148,7 @@
   /* "+N more" (Busy weeks setting), at the events' size */
   .trmnl-calendar .fc-daygrid-day-bottom { font-size: inherit; } /* FullCalendar shrinks it to .85em */
   .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; font-size: var(--fc-small-font-size); margin-left: calc(3px * var(--cal-u)); }
-  .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; }
+  .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; padding: calc(3px * var(--cal-u)) calc(4px * var(--cal-u)) 0; }
   /* the week number sits top-left of the week's first cell; keep a month label clear of it */
   .trmnl-calendar .fc-daygrid-day-frame:has(.fc-daygrid-week-number) .trmnl-month-label { padding-left: 2.6em; }
 
@@ -412,7 +411,11 @@
         // 1-/2-bit screens print grey as a dot pattern, which breaks up the pixel fonts of the
         // events on top of it: there the weekend is shaded in the header row only.
         var patternedGreys = (parseInt(screenStyles().getPropertyValue('--framework-bit-depth'), 10) || 4) <= 2 && !ha.ditherGreys;
-        baseOpts.dayHeaderClassNames = function(arg) { return ['text--small'].concat(shadeClass(arg)); };
+        // today's weekday column; the rolling grid always starts in today's week
+        var todayDow = new Date(ha.today + 'T00:00:00Z').getUTCDay();
+        baseOpts.dayHeaderClassNames = function(arg) {
+          return ['text--small'].concat(arg.dow === todayDow ? ['trmnl-today-col'] : shadeClass(arg));
+        };
         baseOpts.eventClassNames = function(arg) {
           var classes = ['text--small'];
           if (!arg.event.allDay) classes.push('trmnl-event--timed');

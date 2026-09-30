@@ -168,7 +168,7 @@ place and keeps your settings.
 | Time format | 24 hour | |
 | Show event times / end times | yes / yes | Times go on their own line below the title. End times only show with event times on |
 | Show past events | yes | Earlier days of the current week |
-| Highlight today | yes | Today's day number sits in a black band across the top of its cell |
+| Highlight today | yes | Today's weekday is inverted in the header row and its day number gets a black pill |
 | Fade past events | yes | Events that are over are drawn faded. Greyscale screens (TRMNL X) and `Dither` only |
 | Shade weekends | yes | |
 | Busy weeks | Show fewer weeks | What happens when the weeks don't all fit, see below |

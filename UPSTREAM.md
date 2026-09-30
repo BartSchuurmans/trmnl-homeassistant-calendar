@@ -55,8 +55,8 @@ treats its native plugins as source-available and is fine with them being remixe
   `dayMaxEvents` ("+N more").
 - **Day headers and today**: weekday names are small, uppercase and letter-spaced
   instead of `text--base`; month labels use the short month name ("Sep") instead of the
-  long one, which got cut off. Today is marked by a black band across the top of its
-  cell rather than a pill around the number. Events that are over are faded
+  long one, which got cut off. Today's weekday is also inverted in the header row,
+  on top of upstream's pill around the number (now bold). Events that are over are faded
   (`fade_past_events`, greyscale screens and `Dither` only).
 - **1-/2-bit screens** (`Adapt styles`): weekend shading only in the header row, and
   event times in solid black instead of `text--muted`, since grey patterns break up
