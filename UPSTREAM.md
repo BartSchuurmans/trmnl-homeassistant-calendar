@@ -43,10 +43,12 @@ treats its native plugins as source-available and is fine with them being remixe
 - **Transform fix**: `getBoundingClientRect()` is corrected inside the calendar, so
   FullCalendar sizes correctly under the framework's `transform: scale(--pixel-ratio)`.
 - **Event look**: matched to upstream's month-layout preview. Timed events use
-  FullCalendar's dot, restyled as a grey bar on the left, with a bold title that wraps
+  FullCalendar's dot, restyled as a grey bar on the left, with a bold title
   and the time in grey below it. Multi-day events get a light grey fill (`bg--gray-70`)
   with a bold title; events from a coloured calendar have bold titles too. Single-day all-day events differ from upstream (which fills them
   too): they are drawn like timed events, with the bar and no time.
+  Titles differ too: every title, of any kind of event, wraps over at most two lines and
+  then ends in an ellipsis, where upstream wraps timed titles in full.
   Grid lines are thin grey (dotted on 1-/2-bit), headers are centred and bold with the
   weekend shaded, and day numbers are small.
 - **Busy weeks**: upstream keeps at least 4 weeks, so a very busy month is cut off at

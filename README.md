@@ -218,6 +218,7 @@ family events get no prefix and a `gray-65` fill, and work events get `W:` and a
 - Events without a calendar color get a grey bar on the left with a bold title, and
   timed events the time in grey below it (upstream's look). Single-day all-day events
   are drawn the same way; multi-day events are a light grey band across their days.
+- Titles wrap over at most two lines, then end in an ellipsis, for every kind of event.
 
 ## TRMNL framework
 

@@ -109,12 +109,22 @@
   .trmnl-calendar .fc-daygrid-event,
   .trmnl-calendar .fc-daygrid-event * { line-height: 1.25; }
   .trmnl-calendar .fc-event-time { margin: 0; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .trmnl-calendar .fc-event-title { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* every title, timed or all-day, bar or fill, band or single day: wraps over at most two
+     lines, then ends in an ellipsis */
+  .trmnl-calendar .fc-daygrid-event .fc-event-title {
+    font-weight: 400;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 
   /* Timed events without a calendar colour, as upstream draws them (and single-day
      all-day events the same way, without the time): a grey bar on the
-     left (FullCalendar's dot, restyled), the title wrapping over as many lines as it
-     needs, and the time below it in grey. */
+     left (FullCalendar's dot, restyled), the title (up to two lines, see above), and the
+     time below it in grey. */
   .trmnl-calendar .fc-daygrid-dot-event {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -137,12 +147,7 @@
   }
   .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { grid-column: 2; grid-row: 1; }
   .trmnl-calendar .fc-daygrid-dot-event .fc-event-time { grid-column: 2; grid-row: 2; }
-  .trmnl-calendar .fc-daygrid-dot-event .fc-event-title,
-  .trmnl-calendar .trmnl-event--timed .fc-event-title {
-    font-weight: 700;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
+  .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { font-weight: 700; }
   /* filled events (multi-day, or any from a coloured calendar) get a bold title to match */
   .trmnl-calendar .fc-daygrid-block-event .fc-event-title { font-weight: 700; }
   .trmnl-calendar .fc-daygrid-day-events { margin-bottom: calc(3px * var(--cal-u)); }
