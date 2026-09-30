@@ -26,6 +26,7 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   `preview/php/`, and `FRAMEWORK_DIR` set up as in `.github/workflows/render.yml`.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
 - `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders.
+- `sh preview/docs-images.sh` regenerates the README screenshots in `docs/`.
 - `node e2e/run.mjs` — end-to-end: imports `dist/ha-calendar.zip` into a running app
   container (`app`, started as in `app.yml` with `--add-host
   homeassistant:host-gateway`), polls the fake HA in `e2e/fake-ha.mjs`, fetches the
@@ -111,6 +112,8 @@ dates with `getUTC*`.
 - Keep upstream's behaviour and comments where the code is forked (see UPSTREAM.md) and
   update UPSTREAM.md when diverging.
 - Sizes in CSS scale with `--cal-u` (`--ui-scale`); colours use framework palette vars.
+- After a change that alters how the calendar looks, regenerate the README screenshots
+  in `docs/` with `sh preview/docs-images.sh` and commit them in the same PR.
 - After changing `plugin/src/`, rebuild with `scripts/build-zip.sh`; re-importing the
   ZIP updates the recipe in LaraPaper in place (same `id`).
 - Bumping LaraPaper: `BUILD_FROM` in `larapaper/Dockerfile` + `version` in `config.yaml`. Bumping the
