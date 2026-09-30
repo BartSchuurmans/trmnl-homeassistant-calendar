@@ -83,6 +83,7 @@
   /* today: its weekday in the header row inverted, and the day number in a black pill */
   .trmnl-calendar.highlight-today .fc-col-header-cell.trmnl-today-col { background: var(--black) !important; color: var(--white); }
   .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number { background: var(--black); color: var(--white); font-weight: 700; }
+  .trmnl-calendar .fc-daygrid-month-start.trmnl-mid-month { font-weight: 400; }
   .trmnl-calendar .trmnl-month-label {
     min-width: 0;
     overflow: hidden;
@@ -164,6 +165,7 @@
   .trmnl-calendar.dither-greys.shade-weekends .fc-col-header-cell.fc-day-sat,
   .trmnl-calendar.dither-greys.shade-weekends .fc-col-header-cell.fc-day-sun { background: var(--gray-75); }
   .trmnl-calendar.dither-greys .trmnl-day-number.is-past,
+  .trmnl-calendar.dither-greys .trmnl-month-label.is-past,
   .trmnl-calendar.dither-greys .fc-daygrid-week-number,
   .trmnl-calendar.dither-greys .fc-daygrid-dot-event .fc-event-time { color: var(--gray-30); }
   .trmnl-calendar.dither-greys .fc-daygrid-event-dot { background: var(--gray-50); }
@@ -488,7 +490,11 @@
               // short month name ("Sep"), which fits next to the number; some locales end it with a dot
               var monthName = arg.date.toLocaleDateString((cfg.locale || 'en'), { month: 'short', timeZone: 'UTC' }).replace(/\.$/, '');
               var label = document.createElement('span');
-              label.className = 'trmnl-month-label text--small';
+              // past days: the label is muted like the number next to it
+              label.className = 'trmnl-month-label text--small' + (arg.isPast ? ' is-past' + (ha.ditherGreys ? '' : ' text--muted') : '');
+              // FullCalendar bolds the number of every labelled day; keep that for the 1st
+              // of a month, not for the grid's first day, which is labelled mid-month
+              if (arg.date.getUTCDate() !== 1) numEl.classList.add('trmnl-mid-month');
               label.textContent = monthName;
               // Mark parent so CSS can align the pair to the right without :has()
               top.classList.add('trmnl-has-month-label');
