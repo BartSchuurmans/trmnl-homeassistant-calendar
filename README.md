@@ -262,7 +262,8 @@ show, with week numbers on.
 
 - **Prefix**: shown before the title, followed by a space (`S: Standup`).
 - **Color**: fills every event of that calendar, timed ones included, instead of a dot.
-  Text turns black or white depending on how light the color is.
+  Text turns black or white depending on how light the color is (white on `gray-35`
+  and darker).
   - Color names use the framework's classes: solid greys on the TRMNL X (hues fall back
     to a grey), dither patterns with outlined text on 1-/2-bit screens, and real
     colors on color panels.

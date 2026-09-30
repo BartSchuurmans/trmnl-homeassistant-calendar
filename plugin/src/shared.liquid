@@ -414,7 +414,7 @@
     if (!m) return true;
     var h = m[1].length === 3 ? m[1].replace(/./g, '$&$&') : m[1];
     var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 110; // gray-35 (#666) and darker
   }
 
   // Shared initializer: bootstrap any .trmnl-calendar element with data-calendar-config JSON
