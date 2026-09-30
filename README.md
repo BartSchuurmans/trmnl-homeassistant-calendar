@@ -110,7 +110,11 @@ slash. Then go **Back to Wi-Fi**, pick your network and **Connect**.
 
 With the **Auto-Join** toggle in LaraPaper's header switched on (it then reads **Auto-Join
 Permitted**; only the first registered user sees it), the device shows up by itself.
-Check that its device model is **TRMNL X**.
+Check that its device model is **TRMNL X**. The device then shows "Please visit
+trmnl.com/start with Friendly ID … to finish setup". The firmware always shows that text
+after pairing, also with a custom server, so ignore it: the device is paired once it is
+listed in LaraPaper, and it shows your playlist from its next refresh (tap the middle of
+the touch bar to refresh now).
 
 ### 3. Create a Home Assistant token
 

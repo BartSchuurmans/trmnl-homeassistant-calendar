@@ -28,7 +28,9 @@ checked against a pinned SHA-256.
    the **TRMNL** Wi-Fi network, tap **Advanced** → **Custom Server** → **Yes** and enter
    the App URL without a trailing slash, then go **Back to Wi-Fi**, pick your network
    and **Connect**. With the **Auto-Join** toggle in LaraPaper's header switched on, the
-   device appears by itself. A TRMNL OG on firmware older than 1.4.6 has no
+   device appears by itself. The "Please visit trmnl.com/start" screen it then shows
+   comes from the firmware and can be ignored; the device picks up its playlist at the
+   next refresh. A TRMNL OG on firmware older than 1.4.6 has no
    **Custom Server** option and needs a firmware update first.
 4. Import the calendar recipe: `ha-calendar.zip` from the latest release
    (<https://github.com/BartSchuurmans/trmnl-homeassistant-calendar/releases/latest/download/ha-calendar.zip>),
