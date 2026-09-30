@@ -27,7 +27,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 - `sh preview/ci.sh` — renders sample and random calendars (TRMNL X, OG 1-/2-bit) and
   once each through LaraPaper's PHP Liquid engine and trmnlp (TRMNL's Ruby Liquid, via
   Docker, `preview/trmnlp.mjs`); fails on template/JS errors or renders
-  that don't finish. Needs `npm ci` in `preview/`, `composer install` in
+  that don't finish. Renders run in parallel (`JOBS`, default one per CPU); each
+  one's output is printed as it finishes. Needs `npm ci` in `preview/`, `composer install` in
   `preview/php/`, and `FRAMEWORK_DIR` set up as in `.github/workflows/render.yml`.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
 - `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders;

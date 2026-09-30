@@ -33,11 +33,14 @@ jobs:
           cache: npm
           cache-dependency-path: preview/package-lock.json
 
+      # Only the headless shell, and without --with-deps: the runner image already has
+      # its libraries (it ships Chrome), and apt installing the fallback fonts and xvfb
+      # that --with-deps adds took one to four minutes of every run
       - name: Install preview dependencies and Chromium
         working-directory: preview
         run: |
           npm ci
-          npx playwright-core install --with-deps chromium
+          npx playwright-core install --only-shell chromium
 
       - name: Install PHP Liquid engine
         working-directory: preview/php
