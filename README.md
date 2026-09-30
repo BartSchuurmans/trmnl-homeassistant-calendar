@@ -84,8 +84,9 @@ the changes in detail.
 Settings → Apps → store → ⋮ → Repositories, add
 `https://github.com/BartSchuurmans/trmnl-homeassistant-calendar`, and install
 **LaraPaper (local)**. It bundles the TRMNL framework and FullCalendar, so rendering
-needs no internet access. Setup steps are in [larapaper/DOCS.md](larapaper/DOCS.md). In
-the recipe settings, use `http://homeassistant:8123` as the Home Assistant URL.
+needs no internet access, and it reads your calendars with its own Home Assistant
+access, so you don't need an access token. Setup steps are in
+[larapaper/DOCS.md](larapaper/DOCS.md).
 
 **Or with Docker Compose** on any machine:
 
@@ -116,13 +117,14 @@ after pairing, also with a custom server, so ignore it: the device is paired onc
 listed in LaraPaper, and it shows your playlist from its next refresh (tap the middle of
 the touch bar to refresh now).
 
-### 3. Create a Home Assistant token
+### 3. Find your calendars
 
-HA → your profile → **Security** → **Long-lived access tokens** → Create. Find your
-calendar entity IDs under Settings → Devices & services → Entities (filter on
-`calendar.`). Any calendar integration works (Local Calendar, Google, CalDAV, iCloud…).
+Find your calendar entity IDs under Settings → Devices & services → Entities (filter
+on `calendar.`). Any calendar integration works (Local Calendar, Google, CalDAV,
+iCloud…).
 
-Check it from the LaraPaper host:
+**Docker Compose only:** LaraPaper needs a token to read them. HA → your profile →
+**Security** → **Long-lived access tokens** → Create. Check it from the LaraPaper host:
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \
@@ -142,10 +144,11 @@ build it from a checkout:
 LaraPaper → **Plugins** → add menu → **Import Recipe Archive** → upload `ha-calendar.zip`. Then
 open the recipe's settings and fill in:
 
-- **Home Assistant URL**, e.g. `http://homeassistant.local:8123` (must be reachable
-  from the LaraPaper container)
-- **Access token**
 - **Calendar entities**, e.g. `calendar.family`, `calendar.work`
+- With Docker Compose also **Home Assistant URL**, e.g. `http://homeassistant.local:8123`
+  (must be reachable from the LaraPaper container), and **Access token**. With the
+  Home Assistant app, leave the URL at its default `http://127.0.0.1:8124` and the
+  token empty: that is the app's own access to Home Assistant.
 
 Add the recipe to the device's playlist (**Add to Playlist** on the recipe page).
 

@@ -4,6 +4,8 @@
 import http from 'node:http';
 
 export const TOKEN = 'e2e-token';
+// what the app's calendar proxy adds (SUPERVISOR_TOKEN in app.yml)
+export const SUPERVISOR_TOKEN = 'e2e-supervisor-token';
 
 const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 
@@ -38,7 +40,9 @@ export function startFakeHa(port = 8123) {
       res.writeHead(status, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(body));
     };
-    if (req.headers.authorization !== `Bearer ${TOKEN}`) return send(401, { message: 'Unauthorized' });
+    if (![TOKEN, SUPERVISOR_TOKEN].some((t) => req.headers.authorization === `Bearer ${t}`)) {
+      return send(401, { message: 'Unauthorized' });
+    }
     const list = entity && events(entity);
     if (!list) return send(404, { message: 'Entity not found' });
     send(200, list);
