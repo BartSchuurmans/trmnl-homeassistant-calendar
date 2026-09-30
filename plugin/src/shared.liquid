@@ -1,6 +1,6 @@
 {% comment %}
   Shared CSS + JS. Fork of usetrmnl/plugins lib/calendars/_common.html.erb, trimmed to
-  what the month layouts use, plus the Home Assistant → FullCalendar event mapping.
+  what the month layouts use, plus the ICS / Home Assistant → FullCalendar event mapping.
 
   Upstream loads a private FullCalendar build from trmnl.com; the open-source build is
   enough for dayGrid. It loads from /ha-calendar/..., which the LaraPaper (local) app
@@ -187,7 +187,8 @@
 </style>
 
 <script>
-  // Home Assistant REST (/api/calendars/<entity>) → FullCalendar events.
+  // Home Assistant REST (/api/calendars/<entity>) and server-parsed ICS feeds →
+  // FullCalendar events.
   // Stands in for the closed-source Calendar::Helper of the native plugin and mirrors
   // the filtering of Plugins::GoogleCalendar#prepare_events.
   window.trmnlHaCalendar = (function() {
@@ -215,6 +216,28 @@
       return null;
     }
 
+    // LaraPaper parses an ICS feed into { ical: [{ SUMMARY, DTSTART, DTEND, ... }] }, with
+    // recurring events expanded, events from 7 days back to 30 days ahead, and every date
+    // as an ISO string with an offset. The all-day flag doesn't survive: all-day events
+    // are the ones running midnight to midnight, and their dates are read as written.
+    // Turned into HA's shape here, so the rest treats both sources alike.
+    var DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+    var MIDNIGHT = /^\d{4}-\d{2}-\d{2}T00:00(:00(\.0+)?)?(Z|[+-]\d{2}:?\d{2})?$/;
+    function fromIcal(ev) {
+      if (!ev || typeof ev !== 'object' || !ev.DTSTART) return null;
+      if (String(ev.STATUS || '').toUpperCase() === 'CANCELLED') return null;
+      var start = String(ev.DTSTART), end = ev.DTEND ? String(ev.DTEND) : null;
+      var allDay = DATE_ONLY.test(start) || (MIDNIGHT.test(start) && (!end || MIDNIGHT.test(end)) && (!end || end.slice(0, 10) > start.slice(0, 10)));
+      var text = function(v) { return v == null ? '' : Array.isArray(v) ? v.join(' ') : String(v); };
+      return {
+        start: allDay ? { date: start.slice(0, 10) } : { dateTime: start },
+        end: end ? (allDay ? { date: end.slice(0, 10) } : { dateTime: end }) : null,
+        summary: text(ev.SUMMARY) || null,
+        description: text(ev.DESCRIPTION),
+        location: text(ev.LOCATION)
+      };
+    }
+
     // LaraPaper stores one polled URL as its JSON (a bare list becomes { data: [...] }, and
     // is also spread into the top-level `data`) and several as { IDX_0: ..., IDX_1: ... }.
     function payloadToCalendars(payload) {
@@ -226,6 +249,7 @@
           .sort(function(a, b) { return parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10); })
           .map(function(k) { return payloadToCalendars(payload[k])[0] || { events: [] }; });
       }
+      if (Array.isArray(payload.ical)) return [{ events: payload.ical.map(fromIcal).filter(Boolean) }];
       if (Array.isArray(payload.data)) return [{ events: payload.data }];
       if (payload.error || payload.message) return [{ events: [], error: payload.error || payload.message }];
       return [];
@@ -510,12 +534,22 @@
 
         // Rolling month fills the screen with as many whole weeks as actually fit.
         // Render the max first — 6, because only 6 weeks of events are fetched ahead
-        // (polling_url in settings.yml); further rows would be blank.
+        // (polling_url in settings.yml); further rows would be blank. ICS feeds only hold
+        // events up to 30 days ahead (see fromIcal), so there the grid stops at the last
+        // whole week before that: a later day would look free when it may not be.
+        var maxWeeks = 6;
+        if (ha.source === 'ics') {
+          var gridStart = new Date(ha.today + 'T00:00:00Z');
+          if (ha.rollingAdvancement !== 'day') gridStart.setUTCDate(gridStart.getUTCDate() - (gridStart.getUTCDay() - ha.firstDay + 7) % 7);
+          // the feed is cut 30 days after the poll, so day +29 is the last one complete
+          var coveredDays = Math.round((Date.parse(ha.today + 'T00:00:00Z') - gridStart.getTime()) / 86400000) + 30;
+          maxWeeks = Math.max(1, Math.min(6, Math.floor(coveredDays / 7)));
+        }
         var rollingMonth = cfg.initialView === 'rollingMonth' && cfg.views && cfg.views.rollingMonth;
         // Capped rows stretch to share the height, so every week count "fits" and counting
         // them proves nothing — a capped grid keeps the weeks the server asked for.
         var expandWeeksToFillHeight = rollingMonth && !cfg.dayMaxEventRows;
-        if (expandWeeksToFillHeight) { cfg.views.rollingMonth.duration = { weeks: 6 }; }
+        if (expandWeeksToFillHeight) { cfg.views.rollingMonth.duration = { weeks: maxWeeks }; }
 
         var calendar = new FullCalendar.Calendar(node, Object.assign(baseOpts, cfg));
         calendar.render();
@@ -532,7 +566,7 @@
           // "Busy weeks" setting: show only the weeks that fit, so every event stays
           // visible, or keep at least 3 and let each day end in "+N more".
           var capDays = ha.weekOverflow === 'more' && fitWeeks < 3;
-          fitWeeks = Math.min(6, Math.max(ha.weekOverflow === 'more' ? 3 : 1, fitWeeks));
+          fitWeeks = Math.min(maxWeeks, Math.max(ha.weekOverflow === 'more' ? 3 : 1, fitWeeks));
           if (fitWeeks < weekRows.length) {
             calendar.destroy();
             cfg.views.rollingMonth.duration = { weeks: fitWeeks };

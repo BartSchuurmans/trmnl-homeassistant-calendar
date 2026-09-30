@@ -1,17 +1,23 @@
 ---
 # TRMNL recipe settings (trmnlp format). Import into LaraPaper as a ZIP, see README.md.
-name: Home Assistant Calendar
+name: Rolling Month Calendar
 id: ha-calendar-rolling-month
 refresh_interval: 15
 strategy: polling
 polling_verb: get
-# One URL per calendar entity. LaraPaper resolves this with Liquid (PHP DateTime
-# understands relative dates like "today -7 days") on every refresh, so the window
-# always covers the rolling month: the current week plus up to 6 weeks ahead.
+# One URL per calendar: the ICS feeds if any are set, otherwise one Home Assistant
+# calendar entity each. The server resolves this with Liquid on every refresh, so the
+# Home Assistant window always covers the rolling month: the current week plus up to 6
+# weeks ahead. The dates are worked out from a timestamp (604800 s = 7 days, 3715200 s =
+# 43 days), which PHP (LaraPaper) and Ruby (TRMNL, Terminus) Liquid read alike. ICS feeds
+# are fetched whole; the server parses them and keeps the events around today.
 polling_url: |-
-  {% assign cals = calendars | split: "," %}{% for cal in cals %}{{ ha_url }}/api/calendars/{{ cal | strip }}?start={{ "today -7 days" | date: "%Y-%m-%d" }}&end={{ "today +43 days" | date: "%Y-%m-%d" }}
-  {% endfor %}
-polling_headers: Authorization=Bearer {{ ha_token }}
+  {% if ics_urls contains "/" %}{% assign feeds = ics_urls | split: "," %}{% for feed in feeds %}{{ feed | strip | replace: "webcal://", "https://" }}
+  {% endfor %}{% else %}{% assign cals = calendars | split: "," %}{% for cal in cals %}{{ ha_url }}/api/calendars/{{ cal | strip }}?start={{ "now" | date: "%s" | minus: 604800 | date: "%Y-%m-%d" }}&end={{ "now" | date: "%s" | plus: 3715200 | date: "%Y-%m-%d" }}
+  {% endfor %}{% endif %}
+# Only Home Assistant gets the token. No "=" in the Liquid here, not even in an assign:
+# LaraPaper's importer turns every "=" into ":".
+polling_headers: '{% unless ics_urls contains "/" %}Authorization=Bearer {{ ha_token }}{% endunless %}'
 static_data: '{}'
 # Framework version this recipe is built and tested against (LaraPaper's default).
 framework_version: 3.3.1
@@ -19,13 +25,20 @@ custom_fields:
   - keyname: about
     field_type: author_bio
     name: About
-    description: Rolling month calendar fed by Home Assistant calendar entities. Forked from the TRMNL native calendar plugin.
+    description: Rolling month calendar fed by ICS feeds (Google, iCloud, Outlook, Fastmail, Nextcloud, ...) or Home Assistant calendar entities. Forked from the TRMNL native calendar plugin. <a href="https://github.com/BartSchuurmans/trmnl-homeassistant-calendar" class="underline">github.com/BartSchuurmans/trmnl-homeassistant-calendar</a>
+  - keyname: ics_urls
+    field_type: multi_string
+    name: ICS feed URLs
+    description: One or more calendar feed links (.ics or webcal://), e.g. Google Calendar's "Secret address in iCal format". When set, the Home Assistant fields below are not used. ICS feeds show events up to 30 days ahead, so the grid stops at the last week that is covered.
+    placeholder: calendar.google.com/calendar/ical/.../basic.ics
+    optional: true
   - keyname: ha_url
     field_type: url
     name: Home Assistant URL
-    description: Base URL of your Home Assistant instance, reachable from the BYOS server. No trailing slash. The default is the LaraPaper (local) Home Assistant app's own calendar access, which needs no token.
+    description: Instead of ICS feeds, Home Assistant calendar entities. Base URL of your Home Assistant instance, reachable from the server. No trailing slash. The default is the LaraPaper (local) Home Assistant app's own calendar access, which needs no token.
     default: http://127.0.0.1:8124
     placeholder: http://homeassistant.local:8123
+    optional: true
   - keyname: ha_token
     field_type: password
     name: Home Assistant access token
@@ -33,18 +46,19 @@ custom_fields:
     optional: true
   - keyname: calendars
     field_type: multi_string
-    name: Calendar entities
+    name: Home Assistant calendar entities
     description: One or more HA calendar entity IDs.
     placeholder: calendar.family
+    optional: true
   - keyname: calendar_labels
     field_type: multi_string
     name: Calendar prefixes
-    description: Optional text shown before each event title, one per calendar in the same order as the entities (e.g. W:, Kids). Use - for a calendar without one.
+    description: Optional text shown before each event title, one per calendar in the same order as the feeds or entities (e.g. W:, Kids). Use - for a calendar without one.
     optional: true
   - keyname: calendar_colors
     field_type: multi_string
     name: Calendar colors
-    description: Optional event background, one per calendar in the same order as the entities. A TRMNL color name (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
+    description: Optional event background, one per calendar in the same order as the feeds or entities. A TRMNL color name (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
     optional: true
   - keyname: time_zone
     field_type: time_zone

@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Rolling-month calendar recipe for a TRMNL X, rendered by LaraPaper (self-hosted TRMNL
-server) from Home Assistant calendar entities. Forked from the native TRMNL calendar
+server) from ICS feeds or Home Assistant calendar entities. Forked from the native TRMNL calendar
 plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 
 ## Layout
@@ -69,10 +69,19 @@ normalises all shapes. LaraPaper uses keepsuit/liquid (PHP) with its own filters
 (`json` etc.) and regex preprocessing of `date:` filters — test with `php/render.php`,
 liquidjs alone is not proof.
 
-**Polling URL.** Resolved by PHP Liquid with only the custom fields as variables; the
-dates rely on PHP `DateTime` wording (`"today -7 days" | date: "%Y-%m-%d"`). Don't use
-`T` in date formats there (PHP treats it as a timezone). HA accepts date-only
-`start`/`end`.
+**Polling URL.** Resolved by PHP Liquid with only the custom fields as variables. The
+dates use timestamp maths (`"now" | date: "%s" | minus: 604800 | date: "%Y-%m-%d"`), which
+PHP and Ruby Liquid (TRMNL, Terminus) agree on; PHP-only wording like `"today -7 days"`
+comes out as text in Ruby. Don't use `T` in date formats there (PHP treats it as a
+timezone). HA accepts date-only `start`/`end`. LaraPaper's importer turns every `=` in
+`polling_headers` into `:`, so the header's Liquid can't use `=`, `==` or `assign`.
+
+**ICS feeds.** Set `ics_urls` and they replace the HA entities (URL, no token). LaraPaper
+parses a feed into `{ical: [{DTSTART, DTEND, SUMMARY, ...}]}` (`IcalResponseParser`):
+recurrences expanded, only events from 7 days back to 30 days ahead, all-day events as
+midnight-to-midnight timestamps (no all-day flag). `fromIcal` in `shared.liquid` maps that
+to HA's shape, and the grid stops at the last week the feed covers. `render.mjs --ics`
+fakes that shape; `e2e/fake-ha.mjs` serves real feeds.
 
 **Home Assistant access.** In the app, the recipe's default URL `http://127.0.0.1:8124`
 is an nginx proxy written by `larapaper/rootfs/etc/entrypoint.d/10-ha-calendar.sh`: it

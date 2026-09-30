@@ -6,7 +6,8 @@
 // machine as http://homeassistant:8123 (docker run --add-host homeassistant:host-gateway),
 // with its calendar proxy pointed there (-e SUPERVISOR_TOKEN=e2e-supervisor-token
 // -e HA_API_URL=http://homeassistant:8123/api).
-// Imports the recipe ZIP into LaraPaper, points it at the fake HA, then fetches the
+// Imports the recipe ZIP into LaraPaper, points it at the fake HA (entities and ICS
+// feeds), then fetches the
 // screen the way a TRMNL X does (GET /api/display) and checks what was polled and
 // rendered. Screens land in e2e/out/.
 //
@@ -15,7 +16,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { startFakeHa, SUPERVISOR_TOKEN, TOKEN } from './fake-ha.mjs';
+import { FEEDS, startFakeHa, SUPERVISOR_TOKEN, TOKEN } from './fake-ha.mjs';
 
 const dir = path.dirname(new URL(import.meta.url).pathname);
 const opt = { container: 'app', url: 'http://localhost:4567', zip: path.join(dir, '../dist/ha-calendar.zip'),
@@ -74,6 +75,11 @@ try {
     // one calendar without events: LaraPaper stores a bare [] (its list check fails on [])
     { name: 'no-events', config: { calendars: 'calendar.empty', calendar_colors: '' },
       keys: [], events: {} },
+    // ICS feeds instead of entities: parsed by LaraPaper, no token sent; ics_urls is
+    // cleared again right after, since configure merges into the settings
+    { name: 'ics-feeds', feeds: ['family', 'work'],
+      config: { ics_urls: `${opt.ha}/feeds/family.ics, ${opt.ha}/feeds/work.ics`, calendar_colors: '-,black' },
+      keys: ['IDX_0', 'IDX_1'] },
     // the app's calendar proxy (the recipe's default URL) instead of a user token;
     // last, since configure merges into the settings
     ...(opt.local ? [] : [{ name: 'app-proxy', token: SUPERVISOR_TOKEN,
@@ -94,19 +100,34 @@ try {
     check(res.ok && display.status === 0 && !!display.image_url, `/api/display returns a screen (${res.status} ${display.image_url})`);
 
     const polled = requests.slice(before);
-    const entities = s.config.calendars.split(',');
-    const token = s.token ?? TOKEN;
-    check(polled.length === entities.length && entities.every((e) => polled.some((r) => r.entity === e)),
-      `polled ${entities.join(', ')} (${polled.map((r) => r.entity).join(', ')})`);
-    check(polled.every((r) => r.authorization === `Bearer ${token}`), `sent the ${s.token ? 'app' : 'user'} access token`);
-    check(polled.every((r) => r.start === dayOffset(-7) && r.end === dayOffset(43)),
-      `window ${dayOffset(-7)} .. ${dayOffset(43)} (${[...new Set(polled.map((r) => `${r.start} .. ${r.end}`))].join(', ')})`);
-
     const state = php('check');
     console.log(JSON.stringify(state.calendars), JSON.stringify(state.image));
     check(JSON.stringify(state.payload_keys) === JSON.stringify(s.keys), `payload shape ${JSON.stringify(state.payload_keys)}`);
-    check(JSON.stringify(state.calendars) === JSON.stringify(Object.fromEntries(
-      Object.entries(s.events).map(([k, n]) => [k, { events: n }]))), 'payload holds the fake events');
+    if (s.feeds) {
+      check(polled.length === s.feeds.length && s.feeds.every((f) => polled.some((r) => r.feed === f)),
+        `fetched feeds ${s.feeds.join(', ')} (${polled.map((r) => r.feed ?? r.entity).join(', ')})`);
+      check(polled.every((r) => !r.authorization), 'sent no access token to the feeds');
+      // what LaraPaper's IcalResponseParser keeps: events overlapping 7 days back to 30
+      // days ahead, recurrences expanded (±1 for an occurrence right on the edge)
+      const from = Date.now() - 7 * 86400000, to = Date.now() + 30 * 86400000;
+      s.feeds.forEach((f, i) => {
+        const want = FEEDS[f].occurrences().filter((o) => (o.start >= from && o.start < to)
+          || (o.end > from && o.end <= to) || (from >= o.start && to <= o.end)).length;
+        const got = state.calendars[`IDX_${i}`]?.ical;
+        check(Math.abs(got - want) <= 1, `${f} feed parsed into ${got} events (expected ${want})`);
+      });
+      php('configure', JSON.stringify({ ics_urls: '' }));
+    } else {
+      const entities = s.config.calendars.split(',');
+      const token = s.token ?? TOKEN;
+      check(polled.length === entities.length && entities.every((e) => polled.some((r) => r.entity === e)),
+        `polled ${entities.join(', ')} (${polled.map((r) => r.entity).join(', ')})`);
+      check(polled.every((r) => r.authorization === `Bearer ${token}`), `sent the ${s.token ? 'app' : 'user'} access token`);
+      check(polled.every((r) => r.start === dayOffset(-7) && r.end === dayOffset(43)),
+        `window ${dayOffset(-7)} .. ${dayOffset(43)} (${[...new Set(polled.map((r) => `${r.start} .. ${r.end}`))].join(', ')})`);
+      check(JSON.stringify(state.calendars) === JSON.stringify(Object.fromEntries(
+        Object.entries(s.events).map(([k, n]) => [k, { events: n }]))), 'payload holds the fake events');
+    }
     // A render error leaves the plugin without an image and shows LaraPaper's error screen
     check(!!state.plugin_image && state.plugin_image === state.device_image, 'device shows the rendered recipe, not an error screen');
     check(state.image?.width === 1872 && state.image?.height === 1404, 'stored screen is 1872×1404');
@@ -126,6 +147,8 @@ try {
   // The empty month still has day numbers and grid lines; the events add far more.
   check(empty > 0.005, `empty month has a grid and day numbers (dark ${empty})`);
   check(full > empty * 2 && full - empty > 0.02, `events are drawn (dark ${full} vs ${empty} without events)`);
+  const ics = results['ics-feeds']?.dark_ratio ?? 0;
+  check(ics > empty * 2 && ics - empty > 0.02, `ICS events are drawn (dark ${ics} vs ${empty} without events)`);
 
   const unauthorized = await fetch(`http://localhost:8123/api/calendars/calendar.family?start=${today}&end=${today}`);
   check(unauthorized.status === 401, 'fake HA rejects requests without the token');

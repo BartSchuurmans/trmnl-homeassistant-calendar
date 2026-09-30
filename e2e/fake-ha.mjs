@@ -1,6 +1,7 @@
 // Fake Home Assistant for the end-to-end test: serves /api/calendars/<entity> like HA
 // does (date-only start/end, bearer token, timed events with an offset) and records
 // every request. The events are placed around today so they land in the rolling month.
+// It also serves ICS feeds under /feeds/<name>.ics (no token, like a secret feed link).
 import http from 'node:http';
 
 export const TOKEN = 'e2e-token';
@@ -28,10 +29,62 @@ function events(entity) {
   return list.map((e, i) => ({ ...e, description: '', location: '', uid: `${entity}-${i}` }));
 }
 
+// ICS feeds: a daily recurring event in Amsterdam time (with its VTIMEZONE, like Google
+// and iCloud send) and a weekly three-day all-day event. `occurrences` lists every
+// start/end, so the test can work out what LaraPaper should keep.
+const ymd = (n) => day(n).replace(/-/g, '');
+export const FEEDS = {
+  family: {
+    ics: [
+      'BEGIN:VEVENT', 'UID:school-run@e2e', `DTSTART;TZID=Europe/Amsterdam:${ymd(-10)}T083000`,
+      `DTEND;TZID=Europe/Amsterdam:${ymd(-10)}T091500`, 'RRULE:FREQ=DAILY;COUNT=60', 'SUMMARY:School run', 'END:VEVENT',
+    ],
+    occurrences: () => Array.from({ length: 60 }, (_, i) => {
+      // Amsterdam is UTC+2 in summer, UTC+1 from the last Sunday of October
+      const at = (hm) => {
+        const d = new Date(`${day(i - 10)}T${hm}:00Z`);
+        const off = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Amsterdam', timeZoneName: 'shortOffset' })
+          .formatToParts(d).find((p) => p.type === 'timeZoneName').value.replace('GMT', '') || '0';
+        return d.getTime() - parseInt(off, 10) * 3600000;
+      };
+      return { start: at('08:30'), end: at('09:15') };
+    }),
+  },
+  work: {
+    ics: [
+      'BEGIN:VEVENT', 'UID:conference@e2e', `DTSTART;VALUE=DATE:${ymd(-7)}`, `DTEND;VALUE=DATE:${ymd(-4)}`,
+      'RRULE:FREQ=WEEKLY;COUNT=8', 'SUMMARY:Conference', 'END:VEVENT',
+    ],
+    // all-day dates are read in the server's zone (UTC in the app)
+    occurrences: () => Array.from({ length: 8 }, (_, i) => ({
+      start: Date.parse(`${day(-7 + 7 * i)}T00:00:00Z`), end: Date.parse(`${day(-4 + 7 * i)}T00:00:00Z`) })),
+  },
+};
+
+const VTIMEZONE = [
+  'BEGIN:VTIMEZONE', 'TZID:Europe/Amsterdam',
+  'BEGIN:DAYLIGHT', 'TZOFFSETFROM:+0100', 'TZOFFSETTO:+0200', 'TZNAME:CEST', 'DTSTART:19700329T020000',
+  'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU', 'END:DAYLIGHT',
+  'BEGIN:STANDARD', 'TZOFFSETFROM:+0200', 'TZOFFSETTO:+0100', 'TZNAME:CET', 'DTSTART:19701025T030000',
+  'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU', 'END:STANDARD', 'END:VTIMEZONE',
+];
+
+function feed(name) {
+  const f = FEEDS[name];
+  return f && ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//e2e//fake-ha//EN', ...VTIMEZONE, ...f.ics, 'END:VCALENDAR', ''].join('\r\n');
+}
+
 export function startFakeHa(port = 8123) {
   const requests = [];
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://ha');
+    const feedMatch = url.pathname.match(/^\/feeds\/(\w+)\.ics$/);
+    if (feedMatch) {
+      requests.push({ feed: feedMatch[1], path: url.pathname, authorization: req.headers.authorization });
+      const body = feed(feedMatch[1]);
+      res.writeHead(body ? 200 : 404, { 'Content-Type': 'text/calendar; charset=utf-8' });
+      return res.end(body || '');
+    }
     const match = url.pathname.match(/^\/api\/calendars\/([\w.]+)$/);
     const entity = match?.[1];
     requests.push({ entity, path: url.pathname, start: url.searchParams.get('start'),
