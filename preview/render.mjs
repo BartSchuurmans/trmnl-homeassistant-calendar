@@ -22,6 +22,8 @@
 // --native serves the events as TRMNL's Plugin Data API returns a native calendar plugin's
 // data ({ data: { events: [...] } }) and fills in trmnl_plugins, which switches to that source.
 //
+// --size half_horizontal|half_vertical|quadrant renders that view as part of a mashup.
+//
 // --expect-events fails the render when no event made it onto the grid.
 //
 // Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
@@ -60,6 +62,7 @@ let dumpContext = null;
 let bodyFile = null;
 let strict = false;
 let ics = false;
+let size = 'full';
 let native = false;
 let expectEvents = false;
 let now = new Date();
@@ -68,6 +71,7 @@ let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().ti
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--set') { const [k, ...v] = args[++i].split('='); overrides[k] = v.join('='); }
   else if (args[i] === '--device') deviceName = args[++i];
+  else if (args[i] === '--size') size = args[++i];
   else if (args[i] === '--raw') raw = true;
   else if (args[i] === '--data') dataFile = args[++i];
   else if (args[i] === '--dump-context') dumpContext = args[++i];
@@ -222,7 +226,7 @@ if (ics) {
 // LaraPaper render context: `data` is the payload, then the payload keys are spread
 // on top (so a single calendar's { data: [...] } turns `data` into the bare list).
 const context = {
-  size: 'full',
+  size,
   data: payload,
   config: customFields,
   ...payload,
@@ -237,9 +241,14 @@ const context = {
 if (dumpContext) fs.writeFileSync(dumpContext, JSON.stringify(context, null, 1));
 
 const engine = new Liquid();
-// The view wrapper comes from the platform, as on TRMNL: LaraPaper adds it to full.liquid
+// The view wrapper comes from the platform, as on TRMNL: LaraPaper adds it to each view
 // on import (PluginImportService::ensureLiquidViewWrapper) and prepends shared.liquid.
-const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n<div class="view view--full">\n' + fs.readFileSync(path.join(src, 'full.liquid'), 'utf8') + '\n</div>';
+const MASHUPS = { full: null, half_horizontal: 'mashup--1Tx1B', half_vertical: 'mashup--1Lx1R', quadrant: 'mashup--2x2' };
+if (!(size in MASHUPS)) throw new Error(`unknown size ${size}`);
+const view = `<div class="view view--${size}">\n${fs.readFileSync(path.join(src, `${size}.liquid`), 'utf8')}\n</div>`;
+const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n' + (MASHUPS[size]
+  // A half or quadrant is one view in a mashup; the others are left empty here
+  ? `<div class="mashup ${MASHUPS[size]}">${view}${`<div class="view view--${size}"></div>`.repeat(size === 'quadrant' ? 3 : 1)}</div>` : view);
 const body = bodyFile ? fs.readFileSync(bodyFile, 'utf8') : await engine.parseAndRender(markup, context);
 
 // LaraPaper's resources/views/vendor/trmnl/components/screen.blade.php

@@ -7,7 +7,11 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 ## Layout
 
 - `plugin/src/` — the recipe (trmnlp format): `settings.yml` (polling URL, custom
-  fields), `full.liquid` (markup), `shared.liquid` (CSS + JS, prepended by LaraPaper).
+  fields), `shared.liquid` (CSS + JS + the markup, captured as `rolling_calendar`;
+  prepended to every view by TRMNL and LaraPaper), and the views `full.liquid`,
+  `half_horizontal.liquid`, `half_vertical.liquid`, `quadrant.liquid`, which only print
+  it. Narrow views (under 600 CSS px: left/right half, quadrant) get
+  `.trmnl-calendar--narrow`.
 - `preview/` — local renderer (`render.mjs`), CI render suite (`ci.sh`), random data
   (`random-data.mjs`), PHP Liquid check (`php/render.php`).
 - `larapaper/` + `repository.yaml` — Home Assistant app: official LaraPaper image plus
@@ -26,7 +30,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   that don't finish. Needs `npm ci` in `preview/`, `composer install` in
   `preview/php/`, and `FRAMEWORK_DIR` set up as in `.github/workflows/render.yml`.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
-- `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders.
+- `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders;
+  `--size half_horizontal|half_vertical|quadrant` renders that view inside a mashup.
 - `sh preview/docs-images.sh` regenerates the README screenshots in `docs/`.
 - `node e2e/run.mjs` — end-to-end: imports `dist/rolling-month-calendar.zip` into a running app
   container (`app`, started as in `app.yml` with `--add-host
@@ -67,7 +72,7 @@ assets locally.
 `data` the bare list; several calendars are `{IDX_0: ..., IDX_1: ...}`. One calendar
 with no events is stored as a bare `[]` (LaraPaper's list check fails on empty arrays). The JS
 normalises all shapes. TRMNL and trmnlp have no `data` for several URLs, only top-level
-`IDX_n`, so `full.liquid` rebuilds that object (`ci.sh` checks it through trmnlp).
+`IDX_n`, so `shared.liquid` rebuilds that object (`ci.sh` checks it through trmnlp).
 LaraPaper uses keepsuit/liquid (PHP) with its own filters
 (`json` etc.) and regex preprocessing of `date:` filters — test with `php/render.php`,
 liquidjs alone is not proof.

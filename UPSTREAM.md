@@ -7,7 +7,7 @@ treats its native plugins as source-available and is fine with them being remixe
 
 | Upstream | Here |
 |---|---|
-| `lib/calendars/_full_month.html.erb` (`event_layout == 'rolling_month'`) | `plugin/src/full.liquid` and the `cfg` object in `shared.liquid` |
+| `lib/calendars/_full_month.html.erb` (`event_layout == 'rolling_month'`) | the `rolling_calendar` markup and the `cfg` object in `shared.liquid`, printed by `full.liquid`, the half views and `quadrant.liquid` |
 | `lib/calendars/_common.html.erb` (`trmnlInitCalendars`) | `plugin/src/shared.liquid` |
 | `lib/google_calendar/google_calendar.rb` (`prepare_events`, filters, `time_min`/`time_max`) | `trmnlRollingCalendar` in `shared.liquid` (incl. `fromIcal`), `polling_url` in `settings.yml` |
 
@@ -67,6 +67,12 @@ treats its native plugins as source-available and is fine with them being remixe
   the pixel fonts.
 - **Title bar**: the framework's `title_bar` with the visible date range replaces
   FullCalendar's `headerToolbar` (`month_header`).
+- **Half and quadrant views** (`half_horizontal`, `half_vertical`, `quadrant`): new here,
+  the same markup as the full view (upstream's month layouts are full-screen only). Grids
+  under 600 CSS px wide (`.trmnl-calendar--narrow`) show start times only, with tighter
+  spacing, and titles over up to three lines that break between words where they can.
+  A one-week grid keeps weekday-only headers (`dayHeaderFormat`) and month labels, which
+  FullCalendar would otherwise swap for dates in the header.
 - **Removed**: time-grid helpers (`trmnlAllDaySlotAuto`, `trmnlSlotBoundsAuto`, the
   week-view now indicator, `dayHeaders`), the Google colour options (`colorize_events`,
   `palette_colors`), replaced by per-calendar colours, and the

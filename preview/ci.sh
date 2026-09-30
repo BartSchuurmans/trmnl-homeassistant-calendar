@@ -32,6 +32,13 @@ render ics-options-x --ics --set rolling_advancement=day --set first_day=0 --set
 # The sample as TRMNL calendar plugins' data (Plugin Data API)
 render native-x --native --expect-events
 
+# The half and quadrant views, as part of a mashup
+render half-horizontal-x --size half_horizontal --expect-events
+render half-vertical-x --size half_vertical --expect-events
+render half-vertical-og --device og --size half_vertical --expect-events
+render quadrant-x --size quadrant --expect-events
+render quadrant-og --device og --size quadrant --expect-events
+
 # Same input through LaraPaper's Liquid engine (keepsuit/liquid, PHP)
 render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
 php php/render.php "$out/context.json" > "$out/php-body.html"
@@ -47,6 +54,10 @@ if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
     render trmnlp-x --body "$out/trmnlp-body.html" --expect-events
     node trmnlp.mjs "$out/context-ics.json" "$out/trmnlp-ics-body.html"
     render trmnlp-ics-x --body "$out/trmnlp-ics-body.html" --expect-events
+    node trmnlp.mjs "$out/context.json" "$out/trmnlp-half-vertical-body.html" half_vertical
+    render trmnlp-half-vertical-x --body "$out/trmnlp-half-vertical-body.html" --expect-events
+    node trmnlp.mjs "$out/context.json" "$out/trmnlp-quadrant-body.html" quadrant
+    render trmnlp-quadrant-x --body "$out/trmnlp-quadrant-body.html" --expect-events
 else
     echo "== trmnlp skipped (no Docker)"
 fi
