@@ -40,3 +40,10 @@ for seed in 1 2 3 4 5 6 7 8 9 10 11 12; do
     render "random-$seed-$device" --device "$device" --data "$out/random-$seed.json" $settings
     unset IFS
 done
+
+# Busy weeks capped with "+N more" instead of showing fewer weeks
+IFS='
+'
+# shellcheck disable=SC2086 # split on newlines, as above
+render random-8-more-x --data "$out/random-8.json" $(node random-data.mjs 8 /dev/null) --set week_overflow=more
+unset IFS

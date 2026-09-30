@@ -55,9 +55,11 @@
   .trmnl-calendar .fc-col-header-cell { border-top-width: 0; }
   .trmnl-calendar .fc-col-header-cell-cushion {
     display: block;
-    padding: calc(4px * var(--cal-u)) calc(6px * var(--cal-u));
+    padding: calc(2px * var(--cal-u)) calc(6px * var(--cal-u));
     font-weight: 700;
     text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
   .trmnl-calendar .fc-daygrid-body tr:last-child > td { border-bottom-width: 0; }
   .trmnl-calendar .fc-daygrid-body td:first-child,
@@ -76,7 +78,12 @@
     border-radius: 999px;
     text-align: center;
   }
-  .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number { background: var(--black); color: var(--white); }
+  /* today: the top of the cell (number and month label) as a black band */
+  .trmnl-calendar.highlight-today .fc-day-today .fc-daygrid-day-top { background: var(--black); }
+  .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number,
+  .trmnl-calendar.highlight-today .fc-day-today .trmnl-month-label { background: transparent !important; color: var(--white); }
+  .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number { font-weight: 700; }
+  .trmnl-calendar.highlight-today .fc-day-today .fc-daygrid-week-number { color: var(--white); }
   .trmnl-calendar .trmnl-month-label {
     min-width: 0;
     overflow: hidden;
@@ -139,10 +146,17 @@
   /* filled events (multi-day, or any from a coloured calendar) get a bold title to match */
   .trmnl-calendar .fc-daygrid-block-event .fc-event-title { font-weight: 700; }
   .trmnl-calendar .fc-daygrid-day-events { margin-bottom: calc(3px * var(--cal-u)); }
-  .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; }
+  /* "+N more" (Busy weeks setting), at the events' size */
+  .trmnl-calendar .fc-daygrid-day-bottom { font-size: inherit; } /* FullCalendar shrinks it to .85em */
+  .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; font-size: var(--fc-small-font-size); margin-left: calc(3px * var(--cal-u)); }
   .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; }
   /* the week number sits top-left of the week's first cell; keep a month label clear of it */
   .trmnl-calendar .fc-daygrid-day-frame:has(.fc-daygrid-week-number) .trmnl-month-label { padding-left: 2.6em; }
+
+  /* "Fade past events": events that are over recede. Only where greys print as greys (4-bit,
+     or the "Dither" setting); a 1-/2-bit pattern would make them unreadable instead. */
+  .screen--4bit .trmnl-calendar.fade-past .fc-event-past,
+  .trmnl-calendar.fade-past.dither-greys .fc-event-past { opacity: 0.45; }
 
   /* "Dither" setting: skip the framework's per-depth greys (patterns on 1-/2-bit) and
      paint the raw palette greys; LaraPaper then dithers the whole screen. */
@@ -394,14 +408,17 @@
         var shadeClass = function(arg) {
           return (isWeekend(arg) && ha.shadeWeekends && !ha.ditherGreys) ? ['bg--gray-75'] : [];
         };
-        baseOpts.dayHeaderClassNames = function(arg) { return ['text--base'].concat(shadeClass(arg)); };
+        var screenStyles = function() { return getComputedStyle(node.closest('.screen') || document.documentElement); };
+        // 1-/2-bit screens print grey as a dot pattern, which breaks up the pixel fonts of the
+        // events on top of it: there the weekend is shaded in the header row only.
+        var patternedGreys = (parseInt(screenStyles().getPropertyValue('--framework-bit-depth'), 10) || 4) <= 2 && !ha.ditherGreys;
+        baseOpts.dayHeaderClassNames = function(arg) { return ['text--small'].concat(shadeClass(arg)); };
         baseOpts.eventClassNames = function(arg) {
           var classes = ['text--small'];
           if (!arg.event.allDay) classes.push('trmnl-event--timed');
           if (arg.event.extendedProps.color) classes.push('trmnl-event--colored');
           return classes;
         };
-        var screenStyles = function() { return getComputedStyle(node.closest('.screen') || document.documentElement); };
         // Paint a palette token: its bg--* class (solid on 4-bit, dither pattern on 1-/2-bit),
         // or in "Dither" mode the raw colour, which LaraPaper then dithers with the rest.
         var paint = function(el, token, raw) {
@@ -420,7 +437,8 @@
             var bar = info.el.querySelector('.fc-daygrid-event-dot');
             if (bar) paint(bar, 'gray-50', styles.getPropertyValue('--gray-50').trim());
             var time = info.el.querySelector('.fc-event-time');
-            if (time && bar && !ha.ditherGreys) time.classList.add('text--muted');
+            // (grey on 4-bit; a muted pattern on 1-/2-bit is hard to read, so solid black there)
+            if (time && bar && !ha.ditherGreys && !patternedGreys) time.classList.add('text--muted');
             if (main) paint(main, 'gray-70', styles.getPropertyValue('--gray-70').trim());
             return;
           }
@@ -442,7 +460,7 @@
         };
         baseOpts.moreLinkClassNames = textSmall;
         baseOpts.weekNumberClassNames = textSmall;
-        baseOpts.dayCellClassNames = shadeClass;
+        baseOpts.dayCellClassNames = function(arg) { return patternedGreys ? [] : shadeClass(arg); };
 
         // Month/rolling-month: force numeric day number, but add a small month label
         if (node.classList.contains('trmnl-calendar--month')) {
@@ -464,7 +482,8 @@
               // FullCalendar marks certain day numbers as month-start
               if (!numEl.classList.contains('fc-daygrid-month-start')) return;
 
-              var monthName = arg.date.toLocaleDateString((cfg.locale || 'en'), { month: 'long', timeZone: 'UTC' });
+              // short month name ("Sep"), which fits next to the number; some locales end it with a dot
+              var monthName = arg.date.toLocaleDateString((cfg.locale || 'en'), { month: 'short', timeZone: 'UTC' }).replace(/\.$/, '');
               var label = document.createElement('span');
               label.className = 'trmnl-month-label text--small';
               label.textContent = monthName;
@@ -495,10 +514,15 @@
           var weekRows = node.querySelectorAll('.fc-daygrid-body tr');
           var fitWeeks = 0;
           weekRows.forEach(function(tr){ if (tr.getBoundingClientRect().bottom <= gridBottom) fitWeeks++; });
-          fitWeeks = Math.min(6, Math.max(4, fitWeeks));
+          // Upstream keeps at least 4 weeks, so a busy month is cut off at the bottom.
+          // "Busy weeks" setting: show only the weeks that fit, so every event stays
+          // visible, or keep at least 3 and let each day end in "+N more".
+          var capDays = ha.weekOverflow === 'more' && fitWeeks < 3;
+          fitWeeks = Math.min(6, Math.max(ha.weekOverflow === 'more' ? 3 : 1, fitWeeks));
           if (fitWeeks < weekRows.length) {
             calendar.destroy();
             cfg.views.rollingMonth.duration = { weeks: fitWeeks };
+            if (capDays) cfg.dayMaxEvents = true;
             calendar = new FullCalendar.Calendar(node, Object.assign(baseOpts, cfg));
             calendar.render();
           }
