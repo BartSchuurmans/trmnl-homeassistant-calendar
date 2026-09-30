@@ -104,7 +104,8 @@
   .trmnl-calendar .fc-event-time { margin: 0; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .trmnl-calendar .fc-event-title { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* Timed events without a calendar colour, as upstream draws them: a grey bar on the
+  /* Timed events without a calendar colour, as upstream draws them (and single-day
+     all-day events the same way, without the time): a grey bar on the
      left (FullCalendar's dot, restyled), the title wrapping over as many lines as it
      needs, and the time below it in grey. */
   .trmnl-calendar .fc-daygrid-dot-event {
@@ -135,6 +136,8 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
+  /* filled events (multi-day, or any from a coloured calendar) get a bold title to match */
+  .trmnl-calendar .fc-daygrid-block-event .fc-event-title { font-weight: 700; }
   .trmnl-calendar .fc-daygrid-day-events { margin-bottom: calc(3px * var(--cal-u)); }
   .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; }
   .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; }
@@ -239,6 +242,14 @@
         cfg.ignoredPhrasesExactMatch.indexOf(description.trim()) !== -1;
     }
 
+    // all-day end dates are exclusive: a one-day event ends the next day (or has no end)
+    function isSingleDay(start, end) {
+      if (!end) return true;
+      var d = new Date(start + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() + 1);
+      return end <= d.toISOString().slice(0, 10);
+    }
+
     function toEvent(ev, prefix, color, cfg) {
       if (!ev || !ev.start) return null;
       var allDay = !!ev.start.date && !ev.start.dateTime;
@@ -250,8 +261,10 @@
         start: start,
         end: end,
         allDay: allDay,
-        // coloured calendars fill every event, timed ones included, instead of a dot
-        display: color ? 'block' : 'auto',
+        // coloured calendars fill every event, timed ones included, instead of a dot;
+        // otherwise single-day all-day events get the timed events' bar ('list-item' is
+        // FullCalendar's dot display) and only multi-day ones keep a filled band
+        display: color ? 'block' : (allDay && isSingleDay(start, end) ? 'list-item' : 'auto'),
         extendedProps: { summary: ev.summary, description: ev.description || '', location: ev.location || '', color: color }
       };
     }
@@ -401,8 +414,9 @@
           var styles = screenStyles();
 
           if (!color) {
-            // Upstream look: timed events get a grey bar and a grey time; all-day and
-            // multi-day events a light grey fill with black text.
+            // Upstream look: timed events get a grey bar and a grey time; multi-day
+            // events a light grey fill. Single-day all-day events are drawn like timed
+            // ones (see toEvent), with the bar and no time.
             var bar = info.el.querySelector('.fc-daygrid-event-dot');
             if (bar) paint(bar, 'gray-50', styles.getPropertyValue('--gray-50').trim());
             var time = info.el.querySelector('.fc-event-time');
