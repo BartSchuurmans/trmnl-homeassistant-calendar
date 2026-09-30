@@ -113,6 +113,8 @@ function sampleData() {
     start: { date: local(addDays(today, day)) }, end: { date: local(addDays(today, day + days)) },
     summary, description: null, location: null, uid: `${summary}-${day}`, recurrence_id: null, rrule: null,
   });
+  // first Saturday at least three days out, so the weekend is always Sat–Sun
+  const saturday = 3 + ((6 - (today.getDay() + 3) % 7) + 7) % 7;
   const family = [
     timed(-2, '18:30', '19:30', 'Swimming lessons'),
     timed(0, '08:15', '08:45', 'School run'),
@@ -120,7 +122,7 @@ function sampleData() {
     allDay(1, 1, 'Bin day'),
     timed(2, '10:00', '11:00', 'Dentist'),
     timed(3, '18:30', '19:30', 'Swimming lessons'),
-    allDay(5, 3, 'Weekend in Antwerp'),
+    allDay(saturday, 2, 'Weekend in Antwerp'),
     timed(9, '15:00', '16:00', 'Parent-teacher meeting'),
     allDay(12, 1, 'Birthday Oma'),
     timed(12, '16:00', '19:00', 'Birthday party'),
