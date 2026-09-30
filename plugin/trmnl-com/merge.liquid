@@ -1,0 +1,19 @@
+{% comment %}
+  TRMNL.com only: prepended to shared.liquid in the recipe's shared markup there (see
+  README.md in this folder). With the Plugin Merge strategy, each "Calendar" dropdown
+  (plugin_instance_select) stores the name TRMNL gives the chosen plugin's data, e.g.
+  caldav_12345, and that data sits at the top level under this name. Look each one up and
+  hand them to shared.liquid as {IDX_0: ..., IDX_1: ...}, in the dropdowns' order.
+  Not in shared.liquid because LaraPaper's Liquid (keepsuit) can't parse the [name]
+  lookup.
+{% endcomment %}
+{% assign merge_values = trmnl.plugin_settings.custom_fields_values %}
+{% assign merge_sources = false %}
+{% capture merge_json %}{
+{%- for i in (1..4) -%}
+  {%- assign merge_field = "calendar_" | append: i -%}
+  {%- assign merge_key = merge_values[merge_field] | default: "" | strip -%}
+  {%- unless forloop.first %}, {% endunless -%}
+  "IDX_{{ i | minus: 1 }}": {% if merge_key != "" %}{% assign merge_sources = true %}{{ [merge_key] | json | default: "null" }}{% else %}null{% endif %}
+{%- endfor -%}
+}{% endcapture %}

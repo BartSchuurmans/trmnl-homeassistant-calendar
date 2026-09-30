@@ -146,6 +146,8 @@ Note each plugin's ID, the number in its URL (`/plugin_settings/12345`), set its
 **Layout** to **Rolling Month** (TRMNL only shares the events of the plugin's own view, so
 shorter layouts leave most of the grid empty), and hide the plugin in your playlist
 rather than removing it: TRMNL only refreshes plugins that are on a playlist. Create an account API key with read access on your trmnl.com account page.
+On TRMNL.com itself the recipe skips the IDs and key: you pick the calendar plugins in
+its "Calendar" dropdowns (Plugin Merge, see [plugin/trmnl-com](plugin/trmnl-com/README.md)).
 
 **Home Assistant.** Find your calendar entity IDs under Settings → Devices & services →
 Entities (filter on `calendar.`). Any calendar integration works (Local Calendar,
@@ -305,7 +307,7 @@ HA_URL=http://homeassistant.local:8123 HA_TOKEN=... \
 Options: `--set key=value` (any custom field), `--tz Europe/Amsterdam`,
 `--device og` / `og2` (800×480, 1-bit / 2-bit), `--raw` (skip the grey-level reduction), `--data payload.json`,
 `--ics` (hand the events over as parsed ICS feeds, as LaraPaper does), `--native` (as TRMNL
-calendar plugins' data), `--out file.png`. It needs a Chromium;
+calendar plugins' data), `--merge` (as TRMNL.com's Plugin Merge dropdowns), `--out file.png`. It needs a Chromium;
 set `CHROMIUM_PATH` if Playwright can't find one.
 
 The preview uses the same window size, screen classes and framework version as

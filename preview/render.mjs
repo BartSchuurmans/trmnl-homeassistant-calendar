@@ -22,6 +22,10 @@
 // --native serves the events as TRMNL's Plugin Data API returns a native calendar plugin's
 // data ({ data: { events: [...] } }) and fills in trmnl_plugins, which switches to that source.
 //
+// --merge renders as TRMNL.com does with the Plugin Merge strategy: each calendar's data at
+// the top level as caldav_<id>, the "Calendar" dropdowns (calendar_1, ...) naming them, and
+// plugin/trmnl-com/merge.liquid prepended to the shared markup.
+//
 // --size half_horizontal|half_vertical|quadrant renders that view as part of a mashup.
 //
 // --expect-events fails the render when no event made it onto the grid.
@@ -64,6 +68,7 @@ let strict = false;
 let ics = false;
 let size = 'full';
 let native = false;
+let merge = false;
 let expectEvents = false;
 let now = new Date();
 let out = path.join(outDir, 'preview.png');
@@ -82,6 +87,7 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--now') now = new Date(`${args[++i]}T12:00:00`);
   else if (args[i] === '--ics') ics = true;
   else if (args[i] === '--native') native = true;
+  else if (args[i] === '--merge') merge = true;
   else if (args[i] === '--expect-events') expectEvents = true;
 }
 const device = DEVICES[deviceName];
@@ -214,6 +220,18 @@ if (native) {
     : toNative(Array.isArray(payload) ? { data: payload } : payload);
   if (!overrides.trmnl_plugins) customFields.trmnl_plugins = (idx.length ? idx : ['IDX_0']).map((_, i) => 10001 + i).join(',');
 }
+// Plugin Merge: no polled payload, the chosen plugins' data sits at the top level
+let merged = {};
+if (merge) {
+  const idx = Object.keys(payload).filter((k) => /^IDX_\d+$/.test(k));
+  const cals = idx.length ? idx.map((k) => payload[k]) : [Array.isArray(payload) ? { data: payload } : payload];
+  cals.forEach((cal, i) => {
+    const key = `caldav_${10001 + i}`;
+    merged[key] = toNative(cal).data;
+    if (!overrides[`calendar_${i + 1}`]) customFields[`calendar_${i + 1}`] = key;
+  });
+  payload = {};
+}
 if (ics) {
   const idx = Object.keys(payload).filter((k) => /^IDX_\d+$/.test(k));
   payload = idx.length ? Object.fromEntries(idx.map((k) => [k, toIcal(payload[k])]))
@@ -227,9 +245,10 @@ if (ics) {
 // on top (so a single calendar's { data: [...] } turns `data` into the bare list).
 const context = {
   size,
-  data: payload,
+  ...(merge ? {} : { data: payload }),
   config: customFields,
   ...payload,
+  ...merged,
   trmnl: {
     system: { timestamp_utc: Math.floor(now.getTime() / 1000) },
     user: { locale: 'en', time_zone_iana: timeZone, utc_offset: '0', name: 'Preview' },
@@ -246,7 +265,9 @@ const engine = new Liquid();
 const MASHUPS = { full: null, half_horizontal: 'mashup--1Tx1B', half_vertical: 'mashup--1Lx1R', quadrant: 'mashup--2x2' };
 if (!(size in MASHUPS)) throw new Error(`unknown size ${size}`);
 const view = `<div class="view view--${size}">\n${fs.readFileSync(path.join(src, `${size}.liquid`), 'utf8')}\n</div>`;
-const markup = fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8') + '\n' + (MASHUPS[size]
+const shared = (merge ? fs.readFileSync(path.join(src, '..', 'trmnl-com', 'merge.liquid'), 'utf8') + '\n' : '')
+  + fs.readFileSync(path.join(src, 'shared.liquid'), 'utf8');
+const markup = shared + '\n' + (MASHUPS[size]
   // A half or quadrant is one view in a mashup; the others are left empty here
   ? `<div class="mashup ${MASHUPS[size]}">${view}${`<div class="view view--${size}"></div>`.repeat(size === 'quadrant' ? 3 : 1)}</div>` : view);
 const body = bodyFile ? fs.readFileSync(bodyFile, 'utf8') : await engine.parseAndRender(markup, context);
