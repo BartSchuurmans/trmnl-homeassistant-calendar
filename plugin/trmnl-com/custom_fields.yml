@@ -7,13 +7,13 @@
   field_type: author_bio
   name: About
   category: calendar
-  description: Rolling month calendar fed by your TRMNL calendar plugins.
+  description: "All your TRMNL calendar plugins in one rolling month grid, with what the built-in layout lacks:<br/>• up to four calendars from different accounts and providers (Google, Outlook, CalDAV, ...) in one grid<br/>• a color and a prefix per calendar<br/>• half and quadrant views for mashups<br/>• busy weeks never cut off: fewer weeks, or \"+N more\"<br/>• finished events faded<br/>Setup: set each calendar plugin's layout to Rolling Month, keep it in a playlist (it can be hidden), then pick it below."
   github_url: https://github.com/BartSchuurmans/trmnl-rolling-month-calendar
   email_address: bart@minnozz.com
 - keyname: calendar_1
   field_type: plugin_instance_select
   name: Calendar
-  description: A TRMNL calendar plugin you connected (Google, Outlook, Apple, CalDAV, ...). Set its layout to Rolling Month, or it only shares the events of its own, shorter view. Keep it in a playlist (it can be hidden), or its events stop refreshing.
+  description: One of your TRMNL calendar plugins (Google, Outlook, Apple, CalDAV, ...); the list shows all your plugins. Set its layout to Rolling Month, or it only shares the events of its own, shorter view. Keep it in a playlist (it can be hidden), or its events stop refreshing.
 - keyname: calendar_2
   field_type: plugin_instance_select
   name: Calendar 2
@@ -148,4 +148,5 @@
 - keyname: ignored_phrases_exact_match
   field_type: multi_string
   name: Ignore events titled exactly
+  description: Events whose title is exactly one of these are hidden.
   optional: true
