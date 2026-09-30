@@ -138,9 +138,10 @@ anyone with the link can read the calendar, so keep it private):
 **TRMNL calendar plugins.** Calendars you connected on trmnl.com (Google, Outlook,
 Apple…) can feed the recipe through TRMNL's
 [Plugin Data API](https://github.com/usetrmnl/api-docs/blob/main/private-api/plugin-data.md).
-Note each plugin's ID, the number in its URL (`/plugin_settings/12345`), and hide the
-plugin in your playlist rather than removing it: TRMNL only refreshes plugins that are on
-a playlist. Create an account API key with read access on your trmnl.com account page.
+Note each plugin's ID, the number in its URL (`/plugin_settings/12345`), set its
+**Layout** to **Rolling Month** (TRMNL only shares the events of the plugin's own view, so
+shorter layouts leave most of the grid empty), and hide the plugin in your playlist
+rather than removing it: TRMNL only refreshes plugins that are on a playlist. Create an account API key with read access on your trmnl.com account page.
 
 **Home Assistant.** Find your calendar entity IDs under Settings → Devices & services →
 Entities (filter on `calendar.`). Any calendar integration works (Local Calendar,
