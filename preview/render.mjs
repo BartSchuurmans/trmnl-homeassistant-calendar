@@ -115,43 +115,47 @@ function sampleData() {
   });
   // first Saturday at least three days out, so the weekend is always Sat–Sun
   const saturday = 3 + ((6 - (today.getDay() + 3) % 7) + 7) % 7;
+  // A family of two adults: a shared calendar plus one of their own each
   const family = [
     timed(-2, '18:30', '19:30', 'Swimming lessons'),
-    timed(0, '08:15', '08:45', 'School run'),
-    timed(0, '19:00', '21:00', 'Dinner with Anna & Tom'),
+    timed(2, '19:00', '21:00', 'Dinner with Anna & Tom'),
     allDay(1, 1, 'Bin day'),
-    timed(2, '10:00', '11:00', 'Dentist'),
-    timed(3, '18:30', '19:30', 'Swimming lessons'),
     allDay(saturday, 2, 'Weekend in Antwerp'),
-    timed(9, '15:00', '16:00', 'Parent-teacher meeting'),
-    allDay(12, 1, 'Birthday Oma'),
-    timed(12, '16:00', '19:00', 'Birthday party'),
-    timed(10, '18:30', '19:30', 'Swimming lessons'),
-    timed(17, '18:30', '19:30', 'Swimming lessons'),
-    allDay(20, 5, 'Autumn holiday'),
-    timed(24, '09:00', '09:30', 'Car service'),
-    timed(31, '18:30', '19:30', 'Swimming lessons'),
-    allDay(33, 1, 'Bin day'),
-    timed(38, '20:00', '22:30', 'Concert'),
+    timed(5, '18:30', '19:30', 'Swimming lessons'),
+    timed(7, '15:00', '16:00', 'Parent-teacher meeting'),
+    allDay(10, 1, 'Birthday Oma'),
+    timed(10, '16:00', '19:00', 'Birthday party'),
+    timed(12, '18:30', '19:30', 'Swimming lessons'),
+    allDay(15, 1, 'Bin day'),
+    allDay(saturday + 14, 9, 'Autumn holiday'),
+    timed(26, '18:30', '19:30', 'Swimming lessons'),
+    timed(30, '20:00', '22:30', 'Concert'),
   ];
-  const work = [
+  const mark = [
+    timed(-1, '07:00', '08:00', 'Gym'),
+    timed(saturday, '09:00', '10:30', 'Football'),
+    timed(1, '12:00', '13:00', 'Lunch', { summary: null }),
+    timed(0, '11:00', '12:00', 'Dentist'),
+    timed(6, '09:00', '17:00', 'Offsite'),
+    timed(9, '07:00', '08:00', 'Gym'),
+    timed(22, '09:00', '09:30', 'Car service'),
+  ];
+  const sara = [
+    timed(-1, '13:00', '14:30', 'Quarterly planning'),
     timed(0, '09:30', '10:00', 'Standup'),
-    timed(1, '13:00', '14:30', 'Quarterly planning'),
-    timed(2, '09:30', '10:00', 'Standup'),
-    timed(4, '11:00', '12:00', '1:1'),
-    timed(8, '09:00', '17:00', 'Offsite'),
-    timed(15, '14:00', '15:00', 'Design review'),
+    timed(1, '18:00', '19:00', 'Yoga'),
+    // shared with the family calendar → de-duplicated
+    timed(7, '15:00', '16:00', 'Parent-teacher meeting'),
+    timed(15, '18:00', '19:00', 'Yoga'),
+    timed(13, '14:00', '15:00', 'Design review'),
     allDay(26, 2, 'Conference'),
-    // shared with family calendar → de-duplicated
-    timed(9, '15:00', '16:00', 'Parent-teacher meeting'),
-    timed(3, '12:00', '13:00', 'Lunch', { summary: null }),
   ];
-  return { IDX_0: { data: family }, IDX_1: { data: work } };
+  return { IDX_0: { data: family }, IDX_1: { data: mark }, IDX_2: { data: sara } };
 }
 
 const payload = dataFile ? JSON.parse(fs.readFileSync(dataFile, 'utf8'))
   : process.env.HA_URL ? await liveData() : sampleData();
-if (!dataFile && !process.env.HA_URL && !overrides.calendars) customFields.calendars = 'calendar.family,calendar.work';
+if (!dataFile && !process.env.HA_URL && !overrides.calendars) customFields.calendars = 'calendar.family,calendar.mark,calendar.sara';
 
 // LaraPaper render context: `data` is the payload, then the payload keys are spread
 // on top (so a single calendar's { data: [...] } turns `data` into the bare list).
