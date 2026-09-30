@@ -21,7 +21,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 ## Checks
 
 - `sh preview/ci.sh` — renders sample and random calendars (TRMNL X, OG 1-/2-bit) and
-  once through LaraPaper's PHP Liquid engine; fails on template/JS errors or renders
+  once each through LaraPaper's PHP Liquid engine and trmnlp (TRMNL's Ruby Liquid, via
+  Docker, `preview/trmnlp.mjs`); fails on template/JS errors or renders
   that don't finish. Needs `npm ci` in `preview/`, `composer install` in
   `preview/php/`, and `FRAMEWORK_DIR` set up as in `.github/workflows/render.yml`.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
@@ -66,7 +67,7 @@ assets locally.
 `data` the bare list; several calendars are `{IDX_0: ..., IDX_1: ...}`. One calendar
 with no events is stored as a bare `[]` (LaraPaper's list check fails on empty arrays). The JS
 normalises all shapes. TRMNL and trmnlp have no `data` for several URLs, only top-level
-`IDX_n`, so `full.liquid` rebuilds that object (`render.mjs --trmnl` checks it).
+`IDX_n`, so `full.liquid` rebuilds that object (`ci.sh` checks it through trmnlp).
 LaraPaper uses keepsuit/liquid (PHP) with its own filters
 (`json` etc.) and regex preprocessing of `date:` filters — test with `php/render.php`,
 liquidjs alone is not proof.
