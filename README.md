@@ -1,13 +1,49 @@
-# trmnl-rolling-month-calendar
+# Rolling Month Calendar for TRMNL
 
-A rolling-month calendar for a **TRMNL X**, fed by **ICS feeds** (Google, iCloud,
-Outlook, Fastmail, Nextcloud…) or **Home Assistant** calendar
-entities, and rendered by a
-self-hosted TRMNL server ([LaraPaper](https://github.com/usetrmnl/larapaper)).
+A rolling-month calendar for [TRMNL](https://trmnl.com) e-ink displays: the current week
+and the weeks after it in one grid, with several calendars side by side, a color and a
+prefix per calendar, and half and quadrant views for mashups. Made for the
+**TRMNL X**, and it works on the original TRMNL too.
 
 ![preview](docs/preview.png)
 
-## How it works
+There are two ways to use it. Pick the one that matches how your TRMNL is set up:
+
+- **[On TRMNL.com](#on-trmnlcom)**: your device uses TRMNL's own servers. Install the
+  recipe and pick the calendar plugins you already connected on trmnl.com (Google,
+  Outlook, Apple, CalDAV…). Nothing to host.
+- **[Self-hosted with LaraPaper](#self-hosted-with-larapaper)**: your device talks to
+  [LaraPaper](https://github.com/usetrmnl/larapaper), a TRMNL server you run yourself,
+  for example as a Home Assistant app. The calendar then reads **ICS feeds** or **Home
+  Assistant** calendar entities, and everything stays on your network.
+
+The [settings](#settings) are the same on both, apart from where the events come from.
+The rest of this README after [Settings](#settings) is about how the recipe is built,
+for anyone who wants to change it.
+
+## On TRMNL.com
+
+1. **Connect your calendars as TRMNL calendar plugins** on trmnl.com, if you haven't
+   already (Google Calendar, Outlook, Apple, CalDAV…). In each one's settings:
+   - set the layout to **Rolling Month**; with another layout it only shares the events
+     of its own, shorter view;
+   - keep it in a playlist, or its events stop refreshing. It doesn't have to show:
+     hiding it in the playlist is fine.
+2. **Install the recipe**: find **Rolling Month Calendar** among TRMNL's recipes and
+   install it.
+3. **Pick your calendars** in its **Calendar** dropdowns, up to four. The dropdowns list
+   all your plugins, so choose the calendar ones. Set the other [settings](#settings)
+   as you like.
+4. **Add it to your playlist.**
+
+Updates arrive by themselves: every release of this repository updates the recipe on
+TRMNL.com.
+
+## Self-hosted with LaraPaper
+
+This repository also has a Home Assistant app, **LaraPaper (local)**, that runs LaraPaper
+with everything the calendar needs built in, so rendering a screen needs no internet
+access. LaraPaper can also run with Docker Compose on any machine.
 
 ```mermaid
 flowchart LR
@@ -27,65 +63,6 @@ flowchart LR
 ```
 
 <sub>With Docker Compose instead of the app, the LaraPaper container runs on any machine that can reach Home Assistant.</sub>
-
-## What's in this repository
-
-- **The calendar recipe** (`plugin/src/`): a LaraPaper recipe that polls ICS feeds or
-  Home Assistant's calendar API and draws the events with FullCalendar inside the TRMNL
-  framework. LaraPaper installs it from the
-  [TRMNL recipe catalog](https://bnussbau.github.io/trmnl-recipe-catalog/); each release
-  also has it as `rolling-month-calendar.zip`.
-- **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
-  the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
-  in, so rendering a screen needs no internet access. See
-  [larapaper/DOCS.md](larapaper/DOCS.md).
-- **A local preview** (`preview/`): renders the recipe to a PNG at the device's
-  resolution and grey levels, from sample, random or live Home Assistant data. CI uses it
-  to check every change.
-
-| Path | What |
-|---|---|
-| `plugin/src/settings.yml` | Recipe settings: polling URL, auth header, custom fields |
-| `plugin/src/full.liquid`, `half_horizontal.liquid`, `half_vertical.liquid`, `quadrant.liquid` | The views: each prints the calendar from `shared.liquid` |
-| `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA event mapping) and the markup (fork of `_full_month.html.erb`) |
-| `preview/` | Local renderer and CI render checks |
-| `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
-| `larapaper/`, `repository.yaml` | The LaraPaper (local) Home Assistant app |
-| `docker-compose.yml` | Plain LaraPaper, for running outside Home Assistant |
-
-## Differences from upstream
-
-The recipe is a fork of TRMNL's native calendar plugin
-([usetrmnl/plugins `lib/calendars`](https://github.com/usetrmnl/plugins/tree/master/lib/calendars)),
-`rolling_month` layout only. The FullCalendar view, the 4–6 week fitting and the event
-filtering work as upstream. What changed:
-
-- **ICS feeds or Home Assistant instead of Google Calendar.** Events come from any
-  calendar's ICS feed link, which LaraPaper fetches and parses, or from HA's
-  `/api/calendars/<entity>` endpoint, so any HA calendar integration works. Both are
-  turned into FullCalendar events in the browser, where upstream does it server-side.
-- **Liquid recipe instead of ERB.** Runs on LaraPaper; the settings are custom fields.
-- **Open-source parts only.** The public FullCalendar 6.1 build instead of TRMNL's
-  private one, and styles rebuilt from TRMNL framework classes, because upstream's
-  calendar stylesheets aren't published. The look matches upstream's month preview.
-- **Per-calendar colors and prefixes** replace Google's calendar and event colors.
-- **Half and quadrant views for mashups.** The top or bottom half keeps the full width
-  and shows the weeks that fit (usually two); the left or right half is the full grid at
-  half the width, with start times only and tighter spacing. A quadrant is narrow like
-  that and usually shows one week.
-  The RSVP filter is gone, since HA doesn't expose attendees.
-- **Explicit time zone handling**: events are converted to the configured zone, so the
-  result doesn't depend on the renderer's system zone.
-- **Rendering fixes and additions**: FullCalendar measures correctly under the
-  framework's scale transform, a choice between adapted greys and full-screen dithering
-  on 1-/2-bit screens, and a notice when a calendar fails to load.
-- **Removed**: the time-grid helpers and FullCalendar's own header toolbar (the
-  framework's title bar is used instead).
-
-[UPSTREAM.md](UPSTREAM.md) maps each upstream file to its counterpart here and lists
-the changes in detail.
-
-## Setup
 
 ### 1. Run LaraPaper
 
@@ -140,11 +117,6 @@ anyone with the link can read the calendar, so keep it private):
 - Fastmail, Nextcloud and most CalDAV servers have a similar "subscribe" or "export"
   link
 
-**TRMNL calendar plugins** (Google, Outlook, Apple… connected on trmnl.com) feed the
-recipe on TRMNL.com itself: you pick them in its "Calendar" dropdowns (Plugin Merge, see
-[plugin/trmnl-com](plugin/trmnl-com/README.md)). On LaraPaper, use the calendars' ICS
-links instead.
-
 **Home Assistant.** Find your calendar entity IDs under Settings → Devices & services →
 Entities (filter on `calendar.`). Any calendar integration works (Local Calendar,
 Google, CalDAV, iCloud…).
@@ -182,42 +154,6 @@ installed copy. After changing anything under `plugin/src`, build the ZIP with
 `./scripts/build-zip.sh` (→ `dist/rolling-month-calendar.zip`) and import that the same
 way.
 
-## Settings
-
-| Setting | Default | Notes |
-|---|---|---|
-| Calendar prefixes | – | Text shown before each event title, per calendar (e.g. `W:`) |
-| Calendar colors | – | Event background per calendar: a TRMNL color name (`black`, `gray-10` … `gray-75`, `red`, `blue-40`, …) or a hex color |
-| Time zone | LaraPaper user time zone | Events are converted to this zone before rendering |
-| Week starts on | Monday | |
-| Advance | Weekly | `Daily` starts the grid at today instead of the start of the week |
-| Time format | 24 hour | |
-| Show event times / end times | yes / yes | Times go on their own line below the title. End times only show with event times on |
-| Show past events | yes | Earlier days of the current week |
-| Highlight today | yes | Today's weekday is inverted in the header row and its day number gets a black pill |
-| Fade past events | yes | Events that are over are drawn faded. Greyscale screens (TRMNL X) and `Dither` only |
-| Shade weekends | yes | |
-| Busy weeks | Show fewer weeks | What happens when the weeks don't all fit, see below |
-| Show title bar | no | The framework's title bar, with the recipe name and the visible date range |
-| Show week numbers | no | |
-| Greys on 1-bit / 2-bit screens | Adapt styles | `Adapt` uses the framework's greys, which become dither patterns on 1-/2-bit screens. `Dither` paints plain greys and has LaraPaper Floyd–Steinberg dither the whole screen. LaraPaper dithers 4-bit output (TRMNL X) either way, so this only matters for 1-bit and 2-bit devices |
-| Locale | `en` | Day/month names, e.g. `nl`, `de` |
-| Ignore events containing / titled exactly | – | Same filters as upstream |
-
-The grid shows as many whole weeks (up to 6) as fit, and with ICS feeds no more than
-the feeds cover (see below): busy weeks make rows taller, so
-fewer fit. With **Busy weeks** set to `Show fewer weeks` it shows only the weeks that
-fit, so every event stays visible even if that is only a week or two. `Show "+N more"`
-keeps at least 3 weeks and ends a day that doesn't fit with "+N more". (Upstream keeps
-at least 4 weeks and cuts a very busy 4th week off at the bottom.)
-
-On 1-bit and 2-bit screens with `Adapt styles`, weekends are shaded in the header row
-only and event times are solid black, because the framework's grey dot patterns make
-the pixel fonts on top of them hard to read.
-
-<sub>Greys on a 1-bit screen: <b>Adapt styles</b> (left) vs <b>Dither</b> (right).</sub><br>
-<img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
-
 ### ICS feeds
 
 LaraPaper fetches each feed on every refresh and parses it itself: recurring events are
@@ -230,16 +166,59 @@ and has no such limit.
 A `webcal://` link is fetched over `https://`. The Home Assistant token is never sent
 to the feeds.
 
+## Settings
+
+Where the events come from is the only difference between the two: TRMNL.com has the
+**Calendar** dropdowns, LaraPaper the **ICS feed URLs** or **Home Assistant** fields
+(see the setup above). Everything else is the same, except the one marked
+*LaraPaper only*.
+
+| Setting | Default | Notes |
+|---|---|---|
+| Calendar prefixes | – | Text shown before each event title, per calendar (e.g. `W:`) |
+| Calendar colors | – | Event background per calendar: a TRMNL color name (`black`, `gray-10` … `gray-75`, `red`, `blue-40`, …) or a hex color |
+| Time zone | Your account's time zone | Events are converted to this zone before rendering |
+| Week starts on | Monday | |
+| Advance | Weekly | `Daily` starts the grid at today instead of the start of the week |
+| Time format | 24 hour | |
+| Show event times / end times | yes / yes | Times go on their own line below the title. End times only show with event times on |
+| Show past events | yes | Earlier days of the current week |
+| Highlight today | yes | Today's weekday is inverted in the header row and its day number gets a black pill |
+| Fade past events | yes | Events that are over are drawn faded. Greyscale screens (TRMNL X) and `Dither` only |
+| Shade weekends | yes | |
+| Busy weeks | Show fewer weeks | What happens when the weeks don't all fit, see below |
+| Show title bar | no | The framework's title bar, with the recipe name and the visible date range |
+| Show week numbers | no | |
+| Greys on 1-bit / 2-bit screens (*LaraPaper only*) | Adapt styles | `Adapt` uses the framework's greys, which become dither patterns on 1-/2-bit screens. `Dither` paints plain greys and has LaraPaper Floyd–Steinberg dither the whole screen. LaraPaper dithers 4-bit output (TRMNL X) either way, so this only matters for 1-bit and 2-bit devices |
+| Locale | `en` | Day/month names, e.g. `nl`, `de` |
+| Ignore events containing / titled exactly | – | Hide events by title (and, for "containing", description) |
+
+The grid shows as many whole weeks (up to 6) as fit, and with ICS feeds no more than
+the feeds cover (see [ICS feeds](#ics-feeds)): busy weeks make rows taller, so
+fewer fit. With **Busy weeks** set to `Show fewer weeks` it shows only the weeks that
+fit, so every event stays visible even if that is only a week or two. `Show "+N more"`
+keeps at least 3 weeks and ends a day that doesn't fit with "+N more". (TRMNL's built-in
+calendar keeps at least 4 weeks and cuts a very busy 4th week off at the bottom.)
+
+On 1-bit and 2-bit screens with `Adapt styles` (always, on TRMNL.com), weekends are
+shaded in the header row only and event times are solid black, because the framework's
+grey dot patterns make the pixel fonts on top of them hard to read.
+
+<sub>Greys on a 1-bit screen: <b>Adapt styles</b> (left) vs <b>Dither</b> (right, LaraPaper only).</sub><br>
+<img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
+
 ### Multiple calendars
 
-List several feeds under **ICS feed URLs** or several entities under **Home Assistant
-calendar entities**. **Calendar prefixes** and **Calendar colors** are matched to them by
-position: the first prefix/color goes with the first feed or entity, and so on. Empty entries are skipped, so use `-` to hold the place of
-a calendar that should have none. For example, with these settings:
+Pick several **Calendar** dropdowns on TRMNL.com, or list several feeds under **ICS feed
+URLs** or several entities under **Home Assistant calendar entities** on LaraPaper.
+**Calendar prefixes** and **Calendar colors** are matched to them by position: the first
+prefix/color goes with the first calendar, and so on. Empty entries are skipped, so use
+`-` to hold the place of a calendar that should have none. For example, with these
+settings:
 
 | Setting | Entries |
 |---|---|
-| Home Assistant calendar entities | `calendar.family`, `calendar.mark`, `calendar.sara` |
+| Calendars | Family, Mark, Sara |
 | Calendar prefixes | `-`, `M:`, `S:` |
 | Calendar colors | `black`, `-`, `gray-50` |
 
@@ -258,13 +237,78 @@ show, with week numbers on.
   - `white` (or `#fff`) gets a thin grey outline, dotted on 1-/2-bit screens, like the
     grid lines, so its events don't vanish on a white day.
 - Events without a calendar color get a grey bar on the left with a bold title, and
-  timed events the time in grey below it (upstream's look). Single-day all-day events
-  are drawn the same way; multi-day events are a light grey band across their days.
+  timed events the time in grey below it (the built-in calendar's look). Single-day
+  all-day events are drawn the same way; multi-day events are a light grey band across
+  their days.
 - Titles wrap over at most two lines, then end in an ellipsis, for every kind of event.
+
+## Differences from upstream
+
+The recipe is a fork of TRMNL's native calendar plugin
+([usetrmnl/plugins `lib/calendars`](https://github.com/usetrmnl/plugins/tree/master/lib/calendars)),
+`rolling_month` layout only. The FullCalendar view, the 4–6 week fitting and the event
+filtering work as upstream. What changed:
+
+- **Several sources instead of one Google Calendar.** On TRMNL.com, up to four of your
+  TRMNL calendar plugins in one grid. On LaraPaper, any calendar's ICS feed link, which
+  LaraPaper fetches and parses, or HA's `/api/calendars/<entity>` endpoint, so any HA
+  calendar integration works. All are turned into FullCalendar events in the browser,
+  where upstream does it server-side.
+- **Liquid recipe instead of ERB.** Runs on TRMNL.com and LaraPaper; the settings are
+  custom fields.
+- **Open-source parts only.** The public FullCalendar 6.1 build instead of TRMNL's
+  private one, and styles rebuilt from TRMNL framework classes, because upstream's
+  calendar stylesheets aren't published. The look matches upstream's month preview.
+- **Per-calendar colors and prefixes** replace Google's calendar and event colors.
+- **Half and quadrant views for mashups.** The top or bottom half keeps the full width
+  and shows the weeks that fit (usually two); the left or right half is the full grid at
+  half the width, with start times only and tighter spacing. A quadrant is narrow like
+  that and usually shows one week.
+  The RSVP filter is gone, since HA doesn't expose attendees.
+- **Explicit time zone handling**: events are converted to the configured zone, so the
+  result doesn't depend on the renderer's system zone.
+- **Rendering fixes and additions**: FullCalendar measures correctly under the
+  framework's scale transform, a choice between adapted greys and full-screen dithering
+  on 1-/2-bit screens, and a notice when a calendar fails to load.
+- **Removed**: the time-grid helpers and FullCalendar's own header toolbar (the
+  framework's title bar is used instead).
+
+[UPSTREAM.md](UPSTREAM.md) maps each upstream file to its counterpart here and lists
+the changes in detail.
+
+## What's in this repository
+
+- **The calendar recipe** (`plugin/src/`): the markup, in trmnlp format, that polls ICS
+  feeds or Home Assistant's calendar API and draws the events with FullCalendar inside
+  the TRMNL framework. LaraPaper installs it from the
+  [TRMNL recipe catalog](https://bnussbau.github.io/trmnl-recipe-catalog/); each release
+  also has it as `rolling-month-calendar.zip`.
+- **The TRMNL.com recipe** (`plugin/trmnl-com/`): the same markup with the Plugin Merge
+  strategy, built from `plugin/src` and uploaded to TRMNL.com on each release. See
+  [plugin/README.md](plugin/README.md).
+- **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
+  the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
+  in, so rendering a screen needs no internet access. See
+  [larapaper/DOCS.md](larapaper/DOCS.md).
+- **A local preview** (`preview/`): renders the recipe to a PNG at the device's
+  resolution and grey levels, from sample, random or live Home Assistant data. CI uses it
+  to check every change.
+
+| Path | What |
+|---|---|
+| `plugin/src/settings.yml` | Recipe settings: polling URL, auth header, custom fields |
+| `plugin/src/full.liquid`, `half_horizontal.liquid`, `half_vertical.liquid`, `quadrant.liquid` | The views: each prints the calendar from `shared.liquid` |
+| `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA / TRMNL plugin event mapping) and the markup (fork of `_full_month.html.erb`) |
+| `plugin/trmnl-com/` | The TRMNL.com variant: its settings and `merge.liquid` |
+| `preview/` | Local renderer and CI render checks |
+| `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
+| `scripts/build-variant.sh` | Builds the variants, such as the TRMNL.com recipe |
+| `larapaper/`, `repository.yaml` | The LaraPaper (local) Home Assistant app |
+| `docker-compose.yml` | Plain LaraPaper, for running outside Home Assistant |
 
 ## TRMNL framework
 
-LaraPaper renders recipes inside the [TRMNL framework](https://github.com/usetrmnl/trmnl-framework)
+The recipe renders inside the [TRMNL framework](https://github.com/usetrmnl/trmnl-framework)
 (`framework_version: 3.3.1` in `settings.yml`, LaraPaper's default). The plugin uses it for:
 
 - **Text**: `text--small` / `text--base` on FullCalendar's elements. That's Inter at the
@@ -329,6 +373,9 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   it serves (recurring and all-day events, no token sent), that the recipe
   rendered rather than LaraPaper's error screen, the PNG size, and that events show up
   on the screen. The screens are attached as the `e2e-screens` artifact.
+- **TRMNL.com** (`.github/workflows/trmnl-com.yml`): on each release, uploads the
+  TRMNL.com recipe and checks that TRMNL.com matches the build; weekly, only compares
+  them. See [plugin/README.md](plugin/README.md).
 
 To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
 `composer install` in `preview/php`, then run `sh preview/ci.sh`.
@@ -340,11 +387,11 @@ To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
   (`"now" | date: "%s" | minus: 604800`), which LaraPaper's PHP Liquid and the Ruby
   Liquid of TRMNL's own servers both read the same way.
 - The recipe loads FullCalendar from `/rolling-month-calendar/...`, which the LaraPaper (local)
-  app serves, and falls back to jsDelivr on any other server. With plain LaraPaper,
-  rendering also loads the TRMNL framework from trmnl.com, so the container needs
-  internet access. The app avoids both. How: screens render from a temporary
-  `file://` page, so root-relative paths resolve to files in the image, and to nginx
-  in the browser preview.
+  app serves, and falls back to jsDelivr on any other server (TRMNL.com included). With
+  plain LaraPaper, rendering also loads the TRMNL framework from trmnl.com, so the
+  container needs internet access. The app avoids both. How: screens render from a
+  temporary `file://` page, so root-relative paths resolve to files in the image, and to
+  nginx in the browser preview.
 - Like LaraPaper, the preview reduces the screenshot to the device's grey levels. 4-bit
   is always dithered. 1-bit and 2-bit are dithered only when the page contains
   `<img class="image-dither">`, which is what the `Dither` setting adds.
