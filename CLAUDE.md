@@ -89,8 +89,10 @@ LaraPaper uses keepsuit/liquid (PHP) with its own filters
 liquidjs alone is not proof.
 
 **Polling URL.** Resolved by PHP Liquid with only the custom fields as variables. The
-dates use timestamp maths (`"now" | date: "%s" | minus: 604800 | date: "%Y-%m-%d"`), which
-PHP and Ruby Liquid (TRMNL, Terminus) agree on; PHP-only wording like `"today -7 days"`
+dates use timestamp maths from local midnight (`"now" | date: "%Y-%m-%d" | date: "%s" |
+minus: 561600 | date: "%Y-%m-%d"`), which PHP and Ruby Liquid (TRMNL, Terminus) agree on;
+the extra half day keeps DST days (23 or 25 h) from shifting the date, as counting whole
+days from "now" did in the hour after midnight; PHP-only wording like `"today -7 days"`
 comes out as text in Ruby. Don't use `T` in date formats there (PHP treats it as a
 timezone). HA accepts date-only `start`/`end`. LaraPaper's importer turns every `=` in
 `polling_headers` into `:`, so the header's Liquid can't use `=`, `==` or `assign`.
