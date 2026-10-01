@@ -159,3 +159,6 @@ dates with `getUTC*`.
   framework or FullCalendar: update `assets.txt` hashes (a tarball member is pinned by
   the tarball's hash) and the license texts listed there, and the paths in the
   Dockerfile, `shared.liquid` and `settings.yml`.
+- Dependabot (`.github/dependabot.yml`) only bumps GitHub Actions and `preview/` npm
+  packages, monthly. FullCalendar is ignored there; it and the versions above are bumped by
+  hand across all their files.
