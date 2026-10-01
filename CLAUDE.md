@@ -161,4 +161,6 @@ dates with `getUTC*`.
   Dockerfile, `shared.liquid` and `settings.yml`.
 - Dependabot (`.github/dependabot.yml`) only bumps GitHub Actions and `preview/` npm
   packages, monthly. FullCalendar is ignored there; it and the versions above are bumped by
-  hand across all their files.
+  hand across all their files. `upstream.yml` (weekly, `scripts/check-upstream.sh`) opens an
+  issue when LaraPaper, the framework, FullCalendar or trmnlp has a newer release; closing
+  one skips that version.

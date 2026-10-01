@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.43.1-1
+
+- LaraPaper 0.43.1, with a newer ICS parser (om/icalparser 4.1.4).
+
 ## 0.43.0-6
 
 - The project is now called Rolling Month Calendar
