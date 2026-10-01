@@ -1,0 +1,27 @@
+name: Upstream releases
+
+# Weekly: checks LaraPaper, the TRMNL framework, FullCalendar and trmnlp for new releases.
+# Dependabot leaves these out because each bump moves several files at once
+# (.github/dependabot.yml). Opens or updates one issue per dependency that is behind
+# (scripts/check-upstream.sh); the bump itself is done by hand.
+
+on:
+  schedule:
+    - cron: '43 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check upstream releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: sh scripts/check-upstream.sh --issues
