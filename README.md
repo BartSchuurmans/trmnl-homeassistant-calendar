@@ -383,9 +383,10 @@ To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
 ## Notes
 
 - For Home Assistant, the polling URL fetches 7 days back to 43 days ahead, enough for
-  the current week plus 6 weeks. The dates are computed from a timestamp
-  (`"now" | date: "%s" | minus: 604800`), which LaraPaper's PHP Liquid and the Ruby
-  Liquid of TRMNL's own servers both read the same way.
+  the current week plus 6 weeks. The dates are computed from the timestamp of today's
+  local midnight (`"now" | date: "%Y-%m-%d" | date: "%s" | minus: 561600`), which
+  LaraPaper's PHP Liquid and the Ruby Liquid of TRMNL's own servers both read the same
+  way.
 - The recipe loads FullCalendar from `/rolling-month-calendar/...`, which the LaraPaper (local)
   app serves, and falls back to jsDelivr on any other server (TRMNL.com included). With
   plain LaraPaper, rendering also loads the TRMNL framework from trmnl.com, so the

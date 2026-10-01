@@ -8,12 +8,14 @@ polling_verb: get
 # One URL per calendar: the ICS feeds if any are set, otherwise one Home Assistant
 # calendar entity each. The server resolves this with Liquid on every refresh, so the
 # Home Assistant window always covers the rolling month: the current week plus up to 6
-# weeks ahead. The dates are worked out from a timestamp (604800 s = 7 days, 3715200 s =
-# 43 days), which PHP (LaraPaper) and Ruby (TRMNL, Terminus) Liquid read alike. ICS feeds
-# are fetched whole; the server parses them and keeps the events around today.
+# weeks ahead. The dates are worked out from the timestamp of today's local midnight
+# (561600 s = 6.5 days back, 3758400 s = 43.5 days ahead: the half day keeps a 23- or
+# 25-hour DST day from moving the date), which PHP (LaraPaper) and Ruby (TRMNL, Terminus)
+# Liquid read alike. ICS feeds are fetched whole; the server parses them and keeps the
+# events around today.
 polling_url: |-
   {% if ics_urls contains "/" %}{% assign feeds = ics_urls | split: "," %}{% for feed in feeds %}{{ feed | strip | replace: "webcal://", "https://" }}
-  {% endfor %}{% else %}{% assign cals = calendars | split: "," %}{% for cal in cals %}{{ ha_url }}/api/calendars/{{ cal | strip }}?start={{ "now" | date: "%s" | minus: 604800 | date: "%Y-%m-%d" }}&end={{ "now" | date: "%s" | plus: 3715200 | date: "%Y-%m-%d" }}
+  {% endfor %}{% else %}{% assign cals = calendars | split: "," %}{% for cal in cals %}{{ ha_url }}/api/calendars/{{ cal | strip }}?start={{ "now" | date: "%Y-%m-%d" | date: "%s" | minus: 561600 | date: "%Y-%m-%d" }}&end={{ "now" | date: "%Y-%m-%d" | date: "%s" | plus: 3758400 | date: "%Y-%m-%d" }}
   {% endfor %}{% endif %}
 # Only Home Assistant gets the token. No "=" in the Liquid here, not even in an assign:
 # LaraPaper's importer turns every "=" into ":".
