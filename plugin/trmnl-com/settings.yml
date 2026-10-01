@@ -1,13 +1,13 @@
 ---
 # The recipe on TRMNL.com (trmnlp format): the settings of plugin/src/settings.yml with
-# the Plugin Merge strategy instead of polling. scripts/build-trmnl-com.sh puts this next
-# to plugin/src's views and merge.liquid + shared.liquid; see README.md in this folder.
+# the Plugin Merge strategy instead of polling. scripts/build-variant.sh puts this next
+# to plugin/src's views and merge.liquid + shared.liquid; see plugin/README.md.
 #
 # The form fields are the same settings as plugin/src/settings.yml, minus the sources
 # TRMNL.com can't use (ICS feeds need a server that parses them, Home Assistant would have
 # to be public) and the LaraPaper-only "Dither" option, with "Calendar" dropdowns instead
 # of plugin IDs and an API key. preview/variants.mjs checks that the settings both have
-# keep the same type, options and default.
+# match in type, name, options, default and order.
 name: Rolling Month Calendar
 refresh_interval: 15
 strategy: plugin_merge

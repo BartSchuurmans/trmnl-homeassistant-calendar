@@ -18,11 +18,12 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   bundled TRMNL framework, fonts and FullCalendar (`assets.txt`, pinned by SHA-256).
 - `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
   in-container helper.
-- `plugin/trmnl-com/` — the recipe on TRMNL.com: its `settings.yml` (Plugin Merge strategy,
-  its own form fields) and `merge.liquid`, prepended to the shared markup there. Built
-  from `plugin/src` by `scripts/build-trmnl-com.sh`; never edit the markup on TRMNL.com.
+- `plugin/<variant>/` (now `trmnl-com/`, see `plugin/README.md`) — the recipe for another
+  channel: its own `settings.yml` and `*.liquid` put in front of `src/shared.liquid`.
+  `trmnl-com/`: TRMNL.com, Plugin Merge strategy, `merge.liquid`. Never edit the markup
+  on TRMNL.com; releases upload it.
 - `scripts/build-zip.sh` — builds `dist/rolling-month-calendar.zip` for LaraPaper's recipe import;
-  `scripts/build-trmnl-com.sh` builds the TRMNL.com variant (`dist/trmnl-com/src`, ZIP).
+  `scripts/build-variant.sh` builds the variants (`dist/<variant>/src`, ZIP each).
 - `LICENSE` (MIT, own code) and `THIRD_PARTY_NOTICES.md` (upstream plugin, bundled
   assets) — keep the notices table in step with `assets.txt`.
 
@@ -38,8 +39,9 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   Screenshots land in `preview/out/ci/` — look at them after visual changes.
 - `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders;
   `--size half_horizontal|half_vertical|quadrant` renders that view inside a mashup.
-- `node preview/variants.mjs check` (in `ci.sh`) — `plugin/trmnl-com/settings.yml` in step
-  with `plugin/src/settings.yml`. A new setting goes in both, or in `LARAPAPER_ONLY` there.
+- `node preview/variants.mjs check` (in `ci.sh`) — each variant's `settings.yml` in step
+  with `plugin/src/settings.yml`. A new setting goes in every variant, or in that variant's
+  `leftOut` in `VARIANTS` there.
 - `sh preview/docs-images.sh` regenerates the README screenshots in `docs/`.
 - `node e2e/run.mjs` — end-to-end: imports `dist/rolling-month-calendar.zip` into a running app
   container (`app`, started as in `app.yml` with `--add-host
@@ -47,8 +49,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   TRMNL X screen via `/api/display` and checks payloads and pixels; screens in
   `e2e/out/`. `e2e/larapaper.php` runs inside the container through LaraPaper's own
   services. `--local <larapaper checkout>` runs it without Docker.
-- CI: `.github/workflows/render.yml` (recipe), `trmnl-com.yml` (compares TRMNL.com with the
-  build, uploads it on request) and `app.yml` (builds and smoke-tests
+- CI: `.github/workflows/render.yml` (recipe), `trmnl-com.yml` (uploads the TRMNL.com
+  variants on a release, compares TRMNL.com with the latest release weekly) and `app.yml` (builds and smoke-tests
   the Home Assistant app, then runs the end-to-end test; on main it publishes the image).
 
 ## Things that are easy to get wrong
@@ -136,8 +138,9 @@ dates with `getUTC*`.
   and publishes a GitHub release with `rolling-month-calendar.zip` (+ `.sha256`). The ZIP is
   reproducible (`build-zip.sh` dates it by the last `plugin/src` commit). Every render
   run also uploads the ZIP as an artifact.
-- TRMNL.com: run the "TRMNL.com" workflow with Upload once the change is on main (see
-  `plugin/trmnl-com/README.md`).
+  The release also attaches each variant's ZIP and uploads the TRMNL.com variants there
+  (`trmnl-com.yml`, needs the `TRMNL_API_KEY` secret and plugin ID variables); TRMNL.com
+  changes only on a release.
 - Home Assistant app: bump `version` in `larapaper/config.yaml` (`<LaraPaper
   version>-N`) with any change to the image; `app.yml` fails PRs that change app files
   other than DOCS.md/translations without a bump. Add an entry to

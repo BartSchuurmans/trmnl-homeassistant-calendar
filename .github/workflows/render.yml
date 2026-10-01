@@ -8,10 +8,10 @@ name: Render
 
 on:
   pull_request:
-    paths: [plugin/**, preview/**, scripts/build-zip.sh, scripts/build-trmnl-com.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
+    paths: [plugin/**, preview/**, scripts/build-zip.sh, scripts/build-variant.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
   push:
     branches: [main]
-    paths: [plugin/**, preview/**, scripts/build-zip.sh, scripts/build-trmnl-com.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
+    paths: [plugin/**, preview/**, scripts/build-zip.sh, scripts/build-variant.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
   workflow_dispatch:
   workflow_call:
 
@@ -70,7 +70,7 @@ jobs:
       - name: Build recipe ZIPs
         run: |
           sh scripts/build-zip.sh
-          sh scripts/build-trmnl-com.sh
+          sh scripts/build-variant.sh
 
       - uses: actions/upload-artifact@v7
         with:
@@ -79,5 +79,5 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: rolling-month-calendar-trmnl-com
-          path: dist/rolling-month-calendar-trmnl-com.zip
+          name: rolling-month-calendar-variants
+          path: dist/rolling-month-calendar-*.zip

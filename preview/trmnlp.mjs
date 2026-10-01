@@ -66,17 +66,15 @@ if (start < 0 || end < start) throw new Error('unexpected trmnlp output');
 fs.writeFileSync(bodyFile, html.slice(start + open.length, end));
 fs.rmSync(project, { recursive: true, force: true });
 
-// `trmnlp lint` (TRMNL's best-practice checks) on the recipe twice: as plugin/src
-// (LaraPaper, polling) and as it runs on TRMNL.com (built by scripts/build-trmnl-com.sh:
-// merge.liquid in front of the shared markup, its own settings). Every custom field gets a
-// value, so the unused-field check covers them all. Fails on any finding not in LINT_ALLOWED.
+// `trmnlp lint` (TRMNL's best-practice checks) on plugin/src (LaraPaper, polling) and on
+// every variant as scripts/build-variant.sh builds it (e.g. TRMNL.com: merge.liquid in front
+// of the shared markup, its own settings). Every custom field gets a value, so the
+// unused-field check covers them all. Fails on any finding not in LINT_ALLOWED.
 function lint() {
   const repo = path.join(here, '..');
-  execFileSync('sh', [path.join(repo, 'scripts', 'build-trmnl-com.sh')], { stdio: 'ignore' });
-  const projects = {
-    larapaper: path.join(repo, 'plugin', 'src'),
-    'trmnl-com': path.join(repo, 'dist', 'trmnl-com', 'src'),
-  };
+  const built = execFileSync('sh', [path.join(repo, 'scripts', 'build-variant.sh')], { encoding: 'utf8' });
+  const projects = { larapaper: path.join(repo, 'plugin', 'src') };
+  for (const [, name] of built.matchAll(/^wrote dist\/([^/]+)\/src /gm)) projects[name] = path.join(repo, 'dist', name, 'src');
   let ok = true;
   for (const [name, src] of Object.entries(projects)) {
     const fields = yaml.load(fs.readFileSync(path.join(src, 'settings.yml'), 'utf8')).custom_fields;

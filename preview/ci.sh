@@ -64,7 +64,7 @@ if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
     pull=$!
 fi
 
-# TRMNL.com's settings in step with plugin/src's (no rendering, see variants.mjs)
+# The variants' settings (plugin/trmnl-com, ...) in step with plugin/src's (no rendering)
 spawn variants node variants.mjs check
 
 # The contexts for the PHP and trmnlp renders, first so those can start early
