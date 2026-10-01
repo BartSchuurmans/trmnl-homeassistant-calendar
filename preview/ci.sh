@@ -64,6 +64,9 @@ if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
     pull=$!
 fi
 
+# The variants' settings (plugin/trmnl-com, ...) in step with plugin/src's (no rendering)
+spawn variants node variants.mjs check
+
 # The contexts for the PHP and trmnlp renders, first so those can start early
 render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
 context=$last
@@ -83,9 +86,6 @@ render options-x --set locale=nl --set first_day=0 --set show_week_numbers=yes -
 render ics-x --ics
 render ics-og --device og --ics --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:
 render ics-options-x --ics --set rolling_advancement=day --set first_day=0 --set week_overflow=more
-
-# The sample as TRMNL calendar plugins' data (Plugin Data API)
-render native-x --native --expect-events
 
 # The sample as TRMNL.com's Plugin Merge dropdowns (plugin/trmnl-com/merge.liquid)
 render merge-x --merge --expect-events --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:

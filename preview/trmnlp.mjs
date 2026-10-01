@@ -66,27 +66,20 @@ if (start < 0 || end < start) throw new Error('unexpected trmnlp output');
 fs.writeFileSync(bodyFile, html.slice(start + open.length, end));
 fs.rmSync(project, { recursive: true, force: true });
 
-// `trmnlp lint` (TRMNL's best-practice checks) on the recipe twice: as plugin/src
-// (LaraPaper, polling) and as it runs on TRMNL.com (plugin/trmnl-com: merge.liquid in front
-// of the shared markup, its own form fields). Every custom field gets a value, so the
+// `trmnlp lint` (TRMNL's best-practice checks) on plugin/src (LaraPaper, polling) and on
+// every variant as scripts/build-variant.sh builds it (e.g. TRMNL.com: merge.liquid in front
+// of the shared markup, its own settings). Every custom field gets a value, so the
 // unused-field check covers them all. Fails on any finding not in LINT_ALLOWED.
 function lint() {
-  const plugin = path.join(here, '..', 'plugin');
-  const read = (file) => fs.readFileSync(path.join(plugin, file), 'utf8');
-  const settings = yaml.load(read('src/settings.yml'));
-  const comFields = yaml.load(read('trmnl-com/custom_fields.yml'));
-  const { polling_url, polling_headers, polling_verb, ...comSettings } = settings;
-  const projects = {
-    larapaper: [settings, settings.custom_fields],
-    'trmnl-com': [{ ...comSettings, strategy: 'plugin_merge', custom_fields: comFields }, comFields,
-      read('trmnl-com/merge.liquid') + read('src/shared.liquid')],
-  };
+  const repo = path.join(here, '..');
+  const built = execFileSync('sh', [path.join(repo, 'scripts', 'build-variant.sh')], { encoding: 'utf8' });
+  const projects = { larapaper: path.join(repo, 'plugin', 'src') };
+  for (const [, name] of built.matchAll(/^wrote dist\/([^/]+)\/src /gm)) projects[name] = path.join(repo, 'dist', name, 'src');
   let ok = true;
-  for (const [name, [pluginSettings, fields, shared]] of Object.entries(projects)) {
+  for (const [name, src] of Object.entries(projects)) {
+    const fields = yaml.load(fs.readFileSync(path.join(src, 'settings.yml'), 'utf8')).custom_fields;
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'trmnlp-lint-'));
-    fs.cpSync(path.join(plugin, 'src'), path.join(dir, 'src'), { recursive: true });
-    fs.writeFileSync(path.join(dir, 'src', 'settings.yml'), yaml.dump(pluginSettings));
-    if (shared) fs.writeFileSync(path.join(dir, 'src', 'shared.liquid'), shared);
+    fs.cpSync(src, path.join(dir, 'src'), { recursive: true });
     fs.writeFileSync(path.join(dir, '.trmnlp.yml'), yaml.dump({
       watch: false,
       custom_fields: Object.fromEntries(fields.filter((field) => field.field_type !== 'author_bio')

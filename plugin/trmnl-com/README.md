@@ -13,16 +13,10 @@ each one up (`{{ [name] }}`) and passes them to `shared.liquid` as
 `{IDX_0: ..., IDX_1: ...}`. It is a separate file because LaraPaper's Liquid (keepsuit)
 can't parse that lookup; `render.mjs --merge` renders with it.
 
-The plugin on TRMNL.com is set up as:
+## Built from the repo
 
-| Setting | Value |
-|---|---|
-| Strategy | Plugin Merge |
-| Shared markup | `merge.liquid` followed by `../src/shared.liquid` |
-| Full, half and quadrant markup | `../src/<view>.liquid` |
-| Form fields | `custom_fields.yml` (without the comment header) |
-| Framework CSS version | 3.3.1 |
-| Remove bleed margin | Yes |
-
-Keep `custom_fields.yml` in step with `../src/settings.yml` (same keys and defaults) when
-settings change.
+This folder holds only what differs from `../src`: `settings.yml` (Plugin Merge, framework
+3.3.1, bleed margin removed, its form fields) and `merge.liquid`, which goes in front of
+the shared markup. `scripts/build-variant.sh trmnl-com` builds the plugin, and releases
+upload it to TRMNL.com; see [the variants overview](../README.md). Don't edit the plugin
+on TRMNL.com itself.

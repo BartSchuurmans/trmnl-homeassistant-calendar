@@ -1,0 +1,96 @@
+name: TRMNL.com
+
+# The recipe's TRMNL.com variants (plugin/<variant>, built by scripts/build-variant.sh) on
+# TRMNL.com. release.yml calls this with upload, so TRMNL.com only changes on a release:
+# it uploads each variant's build with `trmnlp push`, then checks that TRMNL.com matches.
+# Weekly and on demand it only compares TRMNL.com with the latest release, to catch edits
+# made on TRMNL.com itself. See plugin/README.md.
+#
+# Needs the repository secret TRMNL_API_KEY (an account API key from trmnl.com/account)
+# and, per variant, the repository variable named in the matrix below (the number in the
+# plugin's edit URL, /plugin_settings/<id>/edit). A variant without its ID is skipped.
+
+on:
+  workflow_call:
+    inputs:
+      upload:
+        type: boolean
+        default: false
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency: trmnl-com
+
+env:
+  TRMNLP_IMAGE: trmnl/trmnlp:v0.12.0 # as in preview/trmnlp.mjs
+
+jobs:
+  trmnl-com:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: trmnl-com
+            plugin_id_var: TRMNL_PLUGIN_ID
+    env:
+      TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
+      TRMNL_PLUGIN_ID: ${{ vars[matrix.plugin_id_var] }}
+      VARIANT: ${{ matrix.variant }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the build is dated by the last plugin/ commit; tags for the latest release
+
+      # A release builds its own tag; a compare builds the latest release
+      - name: Check out the latest release
+        if: ${{ !inputs.upload }}
+        run: |
+          tag=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$tag" ]; then echo "::error::no release tag yet"; exit 1; fi
+          git checkout --quiet "$tag"
+          echo "Comparing with $tag"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Build
+        run: |
+          (cd preview && npm ci)
+          sh scripts/build-variant.sh "$VARIANT"
+
+      - name: Not configured
+        if: env.TRMNL_API_KEY == '' || env.TRMNL_PLUGIN_ID == ''
+        run: |
+          echo "::warning::$VARIANT skipped, set the TRMNL_API_KEY secret and the ${{ matrix.plugin_id_var }} variable"
+
+      - name: Upload to TRMNL.com
+        if: inputs.upload && env.TRMNL_API_KEY != '' && env.TRMNL_PLUGIN_ID != ''
+        run: |
+          project="$RUNNER_TEMP/push"
+          mkdir -p "$project"
+          cp -R "dist/$VARIANT/src" "$project/src"
+          echo 'watch: false' > "$project/.trmnlp.yml"
+          docker run --rm --user "$(id -u):$(id -g)" --env TRMNL_API_KEY --volume "$project:/plugin" \
+            "$TRMNLP_IMAGE" push --force --id "$TRMNL_PLUGIN_ID"
+
+      - name: Compare with TRMNL.com
+        if: env.TRMNL_API_KEY != '' && env.TRMNL_PLUGIN_ID != ''
+        run: |
+          project="$RUNNER_TEMP/pull"
+          mkdir -p "$project/src"
+          echo 'watch: false' > "$project/.trmnlp.yml"
+          docker run --rm --user "$(id -u):$(id -g)" --env TRMNL_API_KEY --volume "$project:/plugin" \
+            "$TRMNLP_IMAGE" pull --force --id "$TRMNL_PLUGIN_ID"
+          if ! node preview/variants.mjs diff "$VARIANT" "$project/src" > "$RUNNER_TEMP/diff.txt"; then
+            cat "$RUNNER_TEMP/diff.txt"
+            { echo "### $VARIANT on TRMNL.com differs from $(git describe --tags --always)"; echo; tail -n +2 "$RUNNER_TEMP/diff.txt"; } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/diff.txt"

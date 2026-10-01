@@ -1,8 +1,10 @@
 name: Release
 
 # Pushing a tag like v1.2.0 runs the render checks and publishes a GitHub release
-# with the recipe ZIP (dist/rolling-month-calendar.zip) and its SHA-256. The asset name stays the
-# same, so the README can link to releases/latest/download/rolling-month-calendar.zip.
+# with the recipe ZIP (dist/rolling-month-calendar.zip), one per variant
+# (rolling-month-calendar-<variant>.zip) and their SHA-256. The asset names stay the same,
+# so the README can link to releases/latest/download/rolling-month-calendar.zip. Then it
+# uploads the TRMNL.com variants there (trmnl-com.yml).
 #
 # The Home Assistant app is released separately: Home Assistant offers an update
 # whenever `version` in larapaper/config.yaml changes on main.
@@ -36,14 +38,23 @@ jobs:
             exit 1
           fi
 
-      - name: Build recipe ZIP
+      - name: Build recipe ZIPs
         run: |
           sh scripts/build-zip.sh
-          cd dist && sha256sum rolling-month-calendar.zip > rolling-month-calendar.zip.sha256 && cat rolling-month-calendar.zip.sha256
+          sh scripts/build-variant.sh
+          cd dist && for zip in rolling-month-calendar*.zip; do sha256sum "$zip" > "$zip.sha256" && cat "$zip.sha256"; done
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/rolling-month-calendar.zip dist/rolling-month-calendar.zip.sha256 \
+          gh release create "$GITHUB_REF_NAME" dist/rolling-month-calendar*.zip dist/rolling-month-calendar*.zip.sha256 \
             --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+
+  # The TRMNL.com variants follow releases, not main
+  trmnl-com:
+    needs: release
+    uses: ./.github/workflows/trmnl-com.yml
+    with:
+      upload: true
+    secrets: inherit

@@ -1,7 +1,7 @@
 # trmnl-rolling-month-calendar
 
 A rolling-month calendar for a **TRMNL X**, fed by **ICS feeds** (Google, iCloud,
-Outlook, Fastmail, Nextcloud…), **TRMNL calendar plugins** or **Home Assistant** calendar
+Outlook, Fastmail, Nextcloud…) or **Home Assistant** calendar
 entities, and rendered by a
 self-hosted TRMNL server ([LaraPaper](https://github.com/usetrmnl/larapaper)).
 
@@ -140,15 +140,10 @@ anyone with the link can read the calendar, so keep it private):
 - Fastmail, Nextcloud and most CalDAV servers have a similar "subscribe" or "export"
   link
 
-**TRMNL calendar plugins.** Calendars you connected on trmnl.com (Google, Outlook,
-Apple…) can feed the recipe through TRMNL's
-[Plugin Data API](https://github.com/usetrmnl/api-docs/blob/main/private-api/plugin-data.md).
-Note each plugin's ID, the number in its URL (`/plugin_settings/12345`), set its
-**Layout** to **Rolling Month** (TRMNL only shares the events of the plugin's own view, so
-shorter layouts leave most of the grid empty), and hide the plugin in your playlist
-rather than removing it: TRMNL only refreshes plugins that are on a playlist. Create an account API key with read access on your trmnl.com account page.
-On TRMNL.com itself the recipe skips the IDs and key: you pick the calendar plugins in
-its "Calendar" dropdowns (Plugin Merge, see [plugin/trmnl-com](plugin/trmnl-com/README.md)).
+**TRMNL calendar plugins** (Google, Outlook, Apple… connected on trmnl.com) feed the
+recipe on TRMNL.com itself: you pick them in its "Calendar" dropdowns (Plugin Merge, see
+[plugin/trmnl-com](plugin/trmnl-com/README.md)). On LaraPaper, use the calendars' ICS
+links instead.
 
 **Home Assistant.** Find your calendar entity IDs under Settings → Devices & services →
 Entities (filter on `calendar.`). Any calendar integration works (Local Calendar,
@@ -168,10 +163,8 @@ LaraPaper → **Plugins** → add menu → **Import from OSS Catalog** → **Ins
 **Rolling Month Calendar**. Then
 open the settings of the **Rolling Month Calendar** recipe and fill in either:
 
-- **ICS feed URLs**, one per calendar. When these are set, the other sources are not
-  used. Or:
-- **TRMNL calendar plugins**, one plugin ID per calendar, and **TRMNL API key**. When
-  these are set, the Home Assistant fields are not used. Or:
+- **ICS feed URLs**, one per calendar. When these are set, the Home Assistant fields are
+  not used. Or:
 - **Home Assistant calendar entities**, e.g. `calendar.family`, `calendar.work`. With
   Docker Compose also **Home Assistant URL**, e.g. `http://homeassistant.local:8123`
   (must be reachable from the LaraPaper container), and **Access token**. With the
@@ -237,17 +230,11 @@ and has no such limit.
 A `webcal://` link is fetched over `https://`. The Home Assistant token is never sent
 to the feeds.
 
-### TRMNL calendar plugins
-
-Each plugin is read from `https://trmnl.com/api/plugin_settings/<id>/data` with your
-TRMNL API key, on every refresh of the recipe. The events come as TRMNL's own calendar
-plugins parsed them, so they cover the days those plugins fetch.
-
 ### Multiple calendars
 
-List several feeds under **ICS feed URLs**, several plugins under **TRMNL calendar
-plugins** or several entities under **Home Assistant calendar entities**. **Calendar prefixes** and **Calendar colors** are matched to them by
-position: the first prefix/color goes with the first feed, plugin or entity, and so on. Empty entries are skipped, so use `-` to hold the place of
+List several feeds under **ICS feed URLs** or several entities under **Home Assistant
+calendar entities**. **Calendar prefixes** and **Calendar colors** are matched to them by
+position: the first prefix/color goes with the first feed or entity, and so on. Empty entries are skipped, so use `-` to hold the place of
 a calendar that should have none. For example, with these settings:
 
 | Setting | Entries |
@@ -307,8 +294,7 @@ HA_URL=http://homeassistant.local:8123 HA_TOKEN=... \
 
 Options: `--set key=value` (any custom field), `--tz Europe/Amsterdam`,
 `--device og` / `og2` (800×480, 1-bit / 2-bit), `--raw` (skip the grey-level reduction), `--data payload.json`,
-`--ics` (hand the events over as parsed ICS feeds, as LaraPaper does), `--native` (as TRMNL
-calendar plugins' data), `--merge` (as TRMNL.com's Plugin Merge dropdowns), `--out file.png`. It needs a Chromium;
+`--ics` (hand the events over as parsed ICS feeds, as LaraPaper does), `--merge` (as TRMNL.com's Plugin Merge dropdowns), `--out file.png`. It needs a Chromium;
 set `CHROMIUM_PATH` if Playwright can't find one.
 
 The preview uses the same window size, screen classes and framework version as
@@ -324,7 +310,7 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   `preview/ci.sh`. That renders sample and random calendars on the TRMNL X and OG with
   the framework files pinned in `larapaper/assets.txt`, and renders once through
   LaraPaper's PHP Liquid engine (`preview/php/render.php`, which also checks the polling
-  URLs and headers for Home Assistant, ICS feeds and TRMNL plugins), and through trmnlp
+  URLs and headers for Home Assistant and ICS feeds), and through trmnlp
   (TRMNL's own Ruby Liquid, via Docker). The sample and some random calendars are also
   rendered as ICS feeds, in the shape LaraPaper parses them into, and the sample as TRMNL
   calendar plugins' data. It

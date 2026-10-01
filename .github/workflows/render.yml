@@ -3,15 +3,15 @@ name: Render
 # Renders the recipe with sample and random calendars on the TRMNL X and OG, with the
 # same framework version and screen markup as LaraPaper, plus once through LaraPaper's
 # PHP Liquid engine. Fails on template errors, JavaScript errors and renders that don't
-# finish. The screenshots and the recipe ZIP are uploaded as artifacts. release.yml
-# calls this before publishing a release.
+# finish. The screenshots and the recipe ZIPs (LaraPaper, TRMNL.com) are uploaded as
+# artifacts. release.yml calls this before publishing a release.
 
 on:
   pull_request:
-    paths: [plugin/**, preview/**, scripts/build-zip.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
+    paths: [plugin/**, preview/**, scripts/build-zip.sh, scripts/build-variant.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
   push:
     branches: [main]
-    paths: [plugin/**, preview/**, scripts/build-zip.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
+    paths: [plugin/**, preview/**, scripts/build-zip.sh, scripts/build-variant.sh, larapaper/assets.txt, larapaper/fetch-assets.sh, .github/workflows/render.yml]
   workflow_dispatch:
   workflow_call:
 
@@ -67,10 +67,17 @@ jobs:
           path: preview/out/ci/*.png
           if-no-files-found: ignore
 
-      - name: Build recipe ZIP
-        run: sh scripts/build-zip.sh
+      - name: Build recipe ZIPs
+        run: |
+          sh scripts/build-zip.sh
+          sh scripts/build-variant.sh
 
       - uses: actions/upload-artifact@v7
         with:
           name: rolling-month-calendar
           path: dist/rolling-month-calendar.zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rolling-month-calendar-variants
+          path: dist/rolling-month-calendar-*.zip
