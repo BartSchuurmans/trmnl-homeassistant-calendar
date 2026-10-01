@@ -1,0 +1,93 @@
+name: TRMNL.com
+
+# Compares the recipe on TRMNL.com with the one built from this repo
+# (scripts/build-trmnl-com.sh), and on request uploads the build there with `trmnlp push`.
+# See plugin/trmnl-com/README.md.
+#
+# Needs the repository secret TRMNL_API_KEY (an account API key from trmnl.com/account)
+# and the repository variable TRMNL_PLUGIN_ID (the number in the plugin's edit URL,
+# /plugin_settings/<id>/edit); without them the job only builds. A difference after a
+# change on main is reported as a warning: TRMNL.com is behind until someone runs this
+# workflow with "Upload".
+
+on:
+  push:
+    branches: [main]
+    paths: [plugin/**, scripts/build-trmnl-com.sh, preview/variants.mjs, .github/workflows/trmnl-com.yml]
+  schedule:
+    - cron: '17 6 * * 1' # weekly, to catch edits made on TRMNL.com itself
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: Upload the build to TRMNL.com (overwrites its markup and form fields)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency: trmnl-com
+
+env:
+  TRMNLP_IMAGE: trmnl/trmnlp:v0.12.0 # as in preview/trmnlp.mjs
+
+jobs:
+  trmnl-com:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
+      TRMNL_PLUGIN_ID: ${{ vars.TRMNL_PLUGIN_ID }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the build is dated by the last plugin/ commit
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: preview/package-lock.json
+
+      - name: Build
+        run: |
+          (cd preview && npm ci)
+          node preview/variants.mjs check
+          sh scripts/build-trmnl-com.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rolling-month-calendar-trmnl-com
+          path: dist/rolling-month-calendar-trmnl-com.zip
+
+      - name: Upload to TRMNL.com
+        if: inputs.upload && env.TRMNL_API_KEY != '' && env.TRMNL_PLUGIN_ID != ''
+        run: |
+          project="$RUNNER_TEMP/push"
+          mkdir -p "$project"
+          cp -R dist/trmnl-com/src "$project/src"
+          echo 'watch: false' > "$project/.trmnlp.yml"
+          docker run --rm --user "$(id -u):$(id -g)" --env TRMNL_API_KEY --volume "$project:/plugin" \
+            "$TRMNLP_IMAGE" push --force --id "$TRMNL_PLUGIN_ID"
+
+      - name: Compare with TRMNL.com
+        if: env.TRMNL_API_KEY != '' && env.TRMNL_PLUGIN_ID != ''
+        run: |
+          project="$RUNNER_TEMP/pull"
+          mkdir -p "$project/src"
+          echo 'watch: false' > "$project/.trmnlp.yml"
+          docker run --rm --user "$(id -u):$(id -g)" --env TRMNL_API_KEY --volume "$project:/plugin" \
+            "$TRMNLP_IMAGE" pull --force --id "$TRMNL_PLUGIN_ID"
+          if node preview/variants.mjs diff "$project/src" > "$RUNNER_TEMP/diff.txt"; then
+            cat "$RUNNER_TEMP/diff.txt"
+          else
+            cat "$RUNNER_TEMP/diff.txt"
+            { echo '### TRMNL.com differs from the repo'; echo; tail -n +2 "$RUNNER_TEMP/diff.txt"; } >> "$GITHUB_STEP_SUMMARY"
+            # right after an upload it must match; otherwise TRMNL.com is just behind (or was edited there)
+            if [ "${{ inputs.upload }}" = true ]; then exit 1; fi
+            echo "::warning title=TRMNL.com differs from the repo::Run the TRMNL.com workflow with Upload, or bring edits made on TRMNL.com into plugin/ (see the job summary)"
+          fi
+
+      - name: Not configured
+        if: env.TRMNL_API_KEY == '' || env.TRMNL_PLUGIN_ID == ''
+        run: echo "::notice::Set the TRMNL_API_KEY secret and the TRMNL_PLUGIN_ID variable to compare with (and upload to) TRMNL.com"

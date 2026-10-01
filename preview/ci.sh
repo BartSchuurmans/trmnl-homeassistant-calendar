@@ -64,6 +64,9 @@ if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
     pull=$!
 fi
 
+# TRMNL.com's settings in step with plugin/src's (no rendering, see variants.mjs)
+spawn variants node variants.mjs check
+
 # The contexts for the PHP and trmnlp renders, first so those can start early
 render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
 context=$last
