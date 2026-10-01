@@ -119,12 +119,23 @@ forwards only GET `/api/calendars/` to `http://supervisor/core/api` with the app
 on loopback only; don't publish it or widen its paths. Docker Compose setups still use a
 URL and long-lived token. CI and the e2e test point it at the fake HA via `HA_API_URL`.
 
+**FullCalendar 7 and the Mono theme.** v7 has no semantic `.fc-*` classes (they are
+hashed); everything is styled through class hooks (`dayCellClass`, `listItemEventClass`,
+`rowEventInnerClass`, ...). `window.trmnlMonoTheme` in `shared.liquid` is a theme plugin
+naming the parts `mono-*`; the TRMNL adapter adds framework classes through the same
+hooks (FullCalendar joins class hooks from plugins and options). The framework's CSS is in
+cascade layers (`tn--*`), so unlayered CSS beats `bg--*`/`text--*` whatever its
+specificity: the theme's colours go in `@layer tn--base.mono`, and colours a framework
+class must be able to override never go unlayered. Event colours are event properties
+(`color`, `contrastColor` → `--fc-event-color`). v7 lays out events from ResizeObservers
+after `render()` returns, so week fitting measures two animation frames later. A one-week
+grid has no day numbers (FullCalendar shows them from two weeks on).
+
 **Greys and fonts.** Use framework classes (`text--small`, `bg--gray-*`,
-`text--muted`) on FullCalendar elements via its `*ClassNames` hooks / `eventDidMount`,
-so each bit depth gets its own rendering (solid on 4-bit, dither patterns on 1-/2-bit,
-pixel fonts on low-density screens). FullCalendar's own event background wins over
-`bg--*` in the cascade, which is why fills go on `.fc-event-main`. The "Dither" setting
-paints raw palette vars (`var(--gray-70)`) instead and emits LaraPaper's
+`text--muted`) on FullCalendar elements via its class hooks, so each bit depth gets its
+own rendering (solid on 4-bit, dither patterns on 1-/2-bit, pixel fonts on low-density
+screens). The "Dither" setting paints raw palette vars (`var(--gray-70)`) through the
+theme's variables and event colours instead, and emits LaraPaper's
 `<img class="image-dither">` switch.
 
 **Time zones.** HA sends timed events with offsets; they are converted to wall-clock
@@ -152,7 +163,7 @@ dates with `getUTC*`.
 
 - Keep upstream's behaviour and comments where the code is forked (see UPSTREAM.md) and
   update UPSTREAM.md when diverging.
-- Sizes in CSS scale with `--cal-u` (`--ui-scale`); colours use framework palette vars.
+- Sizes in CSS scale with `--mono-u` (`--ui-scale`); colours use framework palette vars.
 - After a change that alters how the calendar looks, regenerate the README screenshots
   in `docs/` with `sh preview/docs-images.sh` and commit them in the same PR.
 - After changing `plugin/src/`, rebuild with `scripts/build-zip.sh`; re-importing the

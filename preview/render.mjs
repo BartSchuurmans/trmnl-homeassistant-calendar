@@ -280,7 +280,7 @@ const nm = path.join(here, 'node_modules');
 await page.route('https://cdn.jsdelivr.net/npm/**', (route) => {
   const rel = new URL(route.request().url()).pathname.replace(/^\/npm\//, '').replace(/@[\d.]+/, '');
   const file = path.join(nm, rel);
-  return fs.existsSync(file) ? route.fulfill({ path: file, contentType: 'application/javascript' }) : route.abort();
+  return fs.existsSync(file) ? route.fulfill({ path: file, contentType: file.endsWith('.css') ? 'text/css' : 'application/javascript' }) : route.abort();
 });
 const frameworkDir = process.env.FRAMEWORK_DIR;
 await page.route('https://trmnl.com/**', (route) => {
@@ -298,7 +298,7 @@ if (strict && pageErrors.length) {
   throw new Error(`JavaScript errors in the page: ${pageErrors.join('; ')}`);
 }
 await page.waitForTimeout(300);
-if (expectEvents && !(await page.locator('.fc-event').count())) {
+if (expectEvents && !(await page.locator('.mono-event').count())) {
   await browser.close();
   throw new Error('no events on the grid');
 }

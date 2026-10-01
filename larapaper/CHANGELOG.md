@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.1-2
+
+- FullCalendar 7.1.0 is built in next to 6.1.21. The next calendar recipe release uses
+  FullCalendar 7 and renders without internet only with this app version; recipes
+  up to v1.9.0 keep using 6.1.21.
+
 ## 0.43.1-1
 
 - LaraPaper 0.43.1, with a newer ICS parser (om/icalparser 4.1.4).

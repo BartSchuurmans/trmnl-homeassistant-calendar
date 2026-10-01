@@ -6,176 +6,168 @@
   enough for dayGrid. It loads from /rolling-month-calendar/..., which the LaraPaper (local) app
   in this repo serves so rendering needs no internet, and falls back to jsDelivr on
   any other server. The stylesheets upstream links (plugins/calendars,
-  plugins/calendars_full_month) aren't published, so the styles below are a
-  re-creation.
+  plugins/calendars_full_month) aren't published, so the look below is a re-creation,
+  written as a FullCalendar 7 theme ("Mono") plus the TRMNL framework's classes. Only
+  FullCalendar's skeleton.css (layout, no looks) is loaded with it.
 {% endcomment %}
 {% assign cal_locale = trmnl.plugin_settings.custom_fields_values.locale | default: "en" | strip | downcase %}
-<script src="/rolling-month-calendar/fullcalendar/6.1.21/index.global.min.js"></script>
-<script>window.FullCalendar || document.write('<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"><\/script>');</script>
+<link rel="stylesheet" href="/rolling-month-calendar/fullcalendar/7.1.0/skeleton.css">
+<script src="/rolling-month-calendar/fullcalendar/7.1.0/all/global.js"></script>
+<script>window.FullCalendar || document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.0/skeleton.css"><script src="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.0/all/global.js"><\/script>');</script>
 {% if cal_locale != "en" and cal_locale != "" %}
-<script src="/rolling-month-calendar/fullcalendar/6.1.21/locales-all.global.min.js"></script>
-<script>(window.FullCalendar && FullCalendar.globalLocales && FullCalendar.globalLocales.length) || document.write('<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales-all.global.min.js"><\/script>');</script>
+<script src="/rolling-month-calendar/fullcalendar/7.1.0/locales-all/global.js"></script>
+<script>(window.FullCalendar && FullCalendar.globalLocales && FullCalendar.globalLocales.length) || document.write('<script src="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.0/locales-all/global.js"><\/script>');</script>
 {% endif %}
 
 <style>
-  /* Fonts, text sizes and greys come from the TRMNL framework: the JS below puts
-     text--* and bg--gray-* classes on FullCalendar's elements, which gives Inter at
-     the device's scale on the TRMNL X and pixel fonts plus dither patterns on 1-/2-bit
-     screens. This sheet only shapes FullCalendar's grid; sizes follow --ui-scale. */
-  .trmnl-calendar {
-    --cal-u: var(--ui-scale, 1);
-    --cal-line: max(1px, round(down, calc(var(--cal-u) * 1.4px), 1px)); /* 1px, 2px on the X */
-    flex: 1 1 auto;
-    align-self: stretch;
-    min-height: 0;
-    width: 100%;
-    color: var(--black);
-    --fc-border-color: var(--black);
-    --fc-page-bg-color: var(--white);
-    --fc-neutral-bg-color: transparent;
-    --fc-today-bg-color: transparent;
-    --fc-event-bg-color: var(--black);
-    --fc-event-border-color: var(--black);
-    --fc-event-text-color: var(--white);
-    --fc-small-font-size: 1em;
+  /* ---------------------------------------------------------------------------------------
+     "Mono": a monochrome FullCalendar 7 theme for the day grid, made for e-paper. It only
+     needs FullCalendar's skeleton.css: the theme (window.trmnlMonoTheme below) puts these
+     mono-* classes on the grid through FullCalendar's class hooks, and everything it paints
+     comes from the --mono-* variables.
+     --------------------------------------------------------------------------------------- */
+  .mono {
+    --mono-u: 1;                       /* size unit: everything scales with it */
+    --mono-ink: #000;
+    --mono-paper: #fff;
+    --mono-line: #888;                 /* grid lines */
+    --mono-line-style: solid;
+    --mono-muted: #555;                /* past days, event times */
+    --mono-weekend: #eee;              /* weekend cells and header */
+    --mono-bar: #888;                  /* the bar left of timed events */
+    --mono-fill: #ccc;                 /* events drawn as a band */
+    --mono-fill-text: var(--mono-ink);
+    --mono-line-width: 1px;
+    color: var(--mono-ink);
   }
 
-  /* e-ink: no scrollbars, no hover states, no links */
-  .trmnl-calendar .fc-scroller { overflow: hidden !important; }
-  .trmnl-calendar a { color: inherit; text-decoration: none; }
-  .trmnl-calendar .fc-event:hover,
-  .trmnl-calendar .fc-daygrid-dot-event:hover { background: none; }
+  /* grid: lines between cells only; FullCalendar's skeleton removes the outer ones */
+  .mono-header, .mono-day { border-width: var(--mono-line-width); border-style: var(--mono-line-style); }
+  .mono-header-divider, .mono-week { border-bottom-width: var(--mono-line-width); border-bottom-style: var(--mono-line-style); }
+  .mono-week:last-child { border-bottom-width: 0; }
 
-  /* grid: thin grey lines like upstream; 1-/2-bit can't print grey lines, so dotted black */
-  .trmnl-calendar th, .trmnl-calendar td { border: 1px solid var(--gray-50); }
-  .screen--1bit .trmnl-calendar th, .screen--1bit .trmnl-calendar td,
-  .screen--2bit .trmnl-calendar th, .screen--2bit .trmnl-calendar td { border-style: dotted; border-color: var(--black); }
-  .trmnl-calendar .fc-scrollgrid,
-  .trmnl-calendar .fc-scrollgrid-section > * { border-width: 0; }
-  .trmnl-calendar .fc-col-header-cell { border-top-width: 0; }
-  .trmnl-calendar .fc-col-header-cell-cushion {
-    display: block;
-    padding: calc(2px * var(--cal-u)) calc(6px * var(--cal-u));
+  /* weekday header: short, bold, uppercase; mono-header--today inverts a column's */
+  .mono-header-inner {
+    padding: calc(2px * var(--mono-u)) calc(6px * var(--mono-u));
     font-weight: 700;
-    text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  .trmnl-calendar .fc-daygrid-body tr:last-child > td { border-bottom-width: 0; }
-  .trmnl-calendar .fc-daygrid-body td:first-child,
-  .trmnl-calendar .fc-col-header-cell:first-child { border-left-width: 0; }
-  .trmnl-calendar .fc-daygrid-body td:last-child,
-  .trmnl-calendar .fc-col-header-cell:last-child { border-right-width: 0; }
 
-  /* day number, right aligned; month label sits left of the number on the 1st */
-  .trmnl-calendar .fc-daygrid-day-top { align-items: center; }
-  .trmnl-calendar .fc-daygrid-day-top.trmnl-has-month-label { flex-direction: row; justify-content: flex-end; align-items: baseline; }
-  /* font-size 0 drops the link's own (browser default) line box, so the number's text starts
-     right below the padding, where the week number's does too */
-  .trmnl-calendar .fc-daygrid-day-number { padding: calc(3px * var(--cal-u)) calc(4px * var(--cal-u)) calc(1px * var(--cal-u)); font-size: 0; }
-  .trmnl-calendar .trmnl-day-number {
-    display: inline-block;
-    min-width: 1.5em;
-    padding: 0 0.3em;
-    border-radius: 999px;
-    text-align: center;
+  /* day number, right aligned, with the month's short name left of it where one starts
+     (and on the grid's first day); today's number in a pill */
+  .mono-day-top { display: flex; justify-content: flex-end; }
+  .mono-day-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    min-width: 0;
+    padding: calc(3px * var(--mono-u)) calc(4px * var(--mono-u)) calc(1px * var(--mono-u));
   }
-  /* today: its weekday in the header row inverted, and the day number in a black pill */
-  .trmnl-calendar.highlight-today .fc-col-header-cell.trmnl-today-col { background: var(--black) !important; color: var(--white); }
-  .trmnl-calendar.highlight-today .fc-day-today .trmnl-day-number { background: var(--black); color: var(--white); font-weight: 700; }
-  .trmnl-calendar .fc-daygrid-month-start.trmnl-mid-month { font-weight: 400; }
-  .trmnl-calendar .trmnl-month-label {
+  .mono-day-top--narrow .mono-day-label { padding-left: calc(2px * var(--mono-u)); padding-right: calc(2px * var(--mono-u)); }
+  .mono-month {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding-left: calc(4px * var(--cal-u));
+    padding-right: 0.4em;
   }
+  .mono-day-number { min-width: 1.5em; padding: 0 0.3em; border-radius: 999px; text-align: center; }
+  .mono-day-top--narrow .mono-day-number { min-width: 0; padding: 0 0.15em; }
+  .mono-day-top--new-month .mono-day-number { font-weight: 700; }
+  .mono-day--today .mono-day-number { min-width: 1.5em; font-weight: 700; }
+  .mono-day-events { margin-bottom: calc(3px * var(--mono-u)); }
 
-  /* events */
-  .trmnl-calendar .fc-daygrid-event { margin-top: calc(2px * var(--cal-u)); }
-  .trmnl-calendar .fc-daygrid-block-event {
-    border: 0;
-    border-radius: calc(2px * var(--cal-u));
-    background: transparent; /* the fill goes on .fc-event-main, see eventDidMount */
-    overflow: hidden;
-  }
-  .trmnl-calendar .fc-daygrid-block-event .fc-event-main {
-    height: 100%;
-    padding: calc(1px * var(--cal-u)) calc(4px * var(--cal-u));
-    color: var(--black);
-  }
-  .trmnl-calendar .fc-daygrid-block-event .fc-event-main-frame { flex-direction: column-reverse; align-items: stretch; }
-  .trmnl-calendar .fc-daygrid-event,
-  .trmnl-calendar .fc-daygrid-event * { line-height: 1.25; }
-  .trmnl-calendar .fc-event-time { margin: 0; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  /* every title, timed or all-day, bar or fill, band or single day: wraps over at most two
-     lines, then ends in an ellipsis */
-  .trmnl-calendar .fc-daygrid-event .fc-event-title {
-    font-weight: 400;
+  /* week number, top left of the week's first cell */
+  .mono-week-number { position: absolute; top: 0; left: 0; z-index: 1; font-weight: 700; padding: calc(3px * var(--mono-u)) calc(4px * var(--mono-u)) 0; }
+
+  /* events: the title (up to two lines, then an ellipsis) above the time */
+  .mono-event { margin-bottom: calc(2px * var(--mono-u)); line-height: 1.25; }
+  .mono-event-inner { display: flex; flex-direction: column; min-width: 0; }
+  .mono-event-title {
+    order: -1;
+    font-weight: 700;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-    white-space: normal;
     overflow-wrap: anywhere;
   }
+  .mono-event--narrow .mono-event-title { -webkit-line-clamp: 3; overflow-wrap: break-word; }
+  .mono-event-time { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  /* Timed events without a calendar colour, as upstream draws them (and single-day
-     all-day events the same way, without the time): a grey bar on the
-     left (FullCalendar's dot, restyled), the title (up to two lines, see above), and the
-     time below it in grey. */
-  .trmnl-calendar .fc-daygrid-dot-event {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: calc(4px * var(--cal-u));
-    align-items: start;
-    padding: 0;
-    margin-left: calc(3px * var(--cal-u));
-    margin-right: calc(3px * var(--cal-u));
-    color: var(--black);
+  /* timed (list-item) events: a bar on the left, the time below in grey */
+  .mono-event--bar { align-items: stretch; gap: calc(4px * var(--mono-u)); margin-inline: calc(3px * var(--mono-u)); }
+  .mono-event--bar.mono-event--narrow { gap: calc(2px * var(--mono-u)); margin-inline: calc(1px * var(--mono-u)) 0; }
+  .mono-event-bar { flex: none; width: calc(3px * var(--mono-u)); border-radius: calc(2px * var(--mono-u)); }
+  .mono-event--narrow .mono-event-bar { width: calc(2px * var(--mono-u)); }
+
+  /* band (row) events: multi-day, or any with a colour of its own (FullCalendar's
+     --fc-event-color, defaulting to --mono-fill) */
+  .mono-event--fill { overflow: hidden; }
+  .mono-event--start { border-start-start-radius: calc(2px * var(--mono-u)); border-end-start-radius: calc(2px * var(--mono-u)); margin-inline-start: calc(3px * var(--mono-u)); }
+  .mono-event--end { border-start-end-radius: calc(2px * var(--mono-u)); border-end-end-radius: calc(2px * var(--mono-u)); margin-inline-end: calc(3px * var(--mono-u)); }
+  .mono-event--narrow.mono-event--start { margin-inline-start: calc(1px * var(--mono-u)); }
+  .mono-event--narrow.mono-event--end { margin-inline-end: calc(1px * var(--mono-u)); }
+  /* the text colour on the inner part, which a host's classes on the event don't reach */
+  .mono-event--fill .mono-event-inner { color: var(--fc-event-contrast-color); }
+  .mono-event--fill .mono-event-inner { flex: 1 1 auto; padding: calc(1px * var(--mono-u)) calc(4px * var(--mono-u)); }
+  .mono-event--fill.mono-event--narrow .mono-event-inner { padding: calc(1px * var(--mono-u)) calc(2px * var(--mono-u)); }
+
+  /* "+N more" */
+  .mono-more { font-weight: 700; margin-inline-start: calc(3px * var(--mono-u)); }
+
+  /* The theme's colours, in a cascade layer so that classes a host adds through the hooks
+     win over them. Elsewhere this would be `@layer mono`; here it goes inside the TRMNL
+     framework's base layer, below the framework's utilities (bg--*, text--*). */
+  @layer tn--base.mono {
+    .mono-header, .mono-day, .mono-header-divider, .mono-week { border-color: var(--mono-line); }
+    .mono-weekend { background-color: var(--mono-weekend); }
+    .mono-header--today { background-color: var(--mono-ink); color: var(--mono-paper); }
+    .mono-day--past .mono-day-label { color: var(--mono-muted); }
+    .mono-day--today .mono-day-number { background-color: var(--mono-ink); color: var(--mono-paper); }
+    .mono-event-bar { background-color: var(--mono-bar); }
+    .mono-event--bar .mono-event-time { color: var(--mono-muted); }
+    .mono-event--fill { background-color: var(--fc-event-color); }
   }
-  .trmnl-calendar .fc-daygrid-event-dot {
-    grid-row: 1 / span 2;
+
+  /* ---------------------------------------------------------------------------------------
+     TRMNL adapter: the theme's variables from the framework's palette and --ui-scale; fonts,
+     text sizes and the greys of each bit depth come from framework classes the JS adds
+     through the same hooks (text--small, bg--gray-*, text--muted).
+     --------------------------------------------------------------------------------------- */
+  .trmnl-calendar {
+    flex: 1 1 auto;
     align-self: stretch;
-    width: calc(3px * var(--cal-u));
-    height: auto; /* FullCalendar sizes the dot with a fixed height */
-    box-sizing: border-box;
-    margin: 0;
-    border: 0;
-    border-radius: calc(2px * var(--cal-u));
+    min-height: 0;
+    width: 100%;
   }
-  .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { grid-column: 2; grid-row: 1; }
-  .trmnl-calendar .fc-daygrid-dot-event .fc-event-time { grid-column: 2; grid-row: 2; }
-  .trmnl-calendar .fc-daygrid-dot-event .fc-event-title { font-weight: 700; }
-  /* filled events (multi-day, or any from a coloured calendar) get a bold title to match */
-  .trmnl-calendar .fc-daygrid-block-event .fc-event-title { font-weight: 700; }
-  .trmnl-calendar .fc-daygrid-day-events { margin-bottom: calc(3px * var(--cal-u)); }
-  /* "+N more" (Busy weeks setting), at the events' size */
-  .trmnl-calendar .fc-daygrid-day-bottom { font-size: inherit; } /* FullCalendar shrinks it to .85em */
-  .trmnl-calendar .fc-daygrid-more-link { font-weight: 700; font-size: var(--fc-small-font-size); margin-left: calc(3px * var(--cal-u)); }
-  .trmnl-calendar .fc-daygrid-week-number { background: none; color: inherit; font-weight: 700; padding: calc(3px * var(--cal-u)) calc(4px * var(--cal-u)) 0; }
-  /* the week number sits top-left of the week's first cell; keep a month label clear of it */
-  .trmnl-calendar .fc-daygrid-day-frame:has(.fc-daygrid-week-number) .trmnl-month-label { padding-left: 2.6em; }
+  .trmnl-calendar.mono {
+    --mono-u: var(--ui-scale, 1);
+    --mono-ink: var(--black);
+    --mono-paper: var(--white);
+    --mono-line: var(--gray-50);
+    --mono-muted: var(--gray-30);
+    --mono-weekend: transparent;      /* bg--gray-75 on the cells, see shadeClass */
+    --mono-bar: transparent;          /* bg--gray-50, see listItemEventBeforeClass */
+    --mono-fill: transparent;         /* bg--* on the event, see paintEvent */
+  }
+  /* 1-/2-bit can't print grey lines (dotted black instead) or grey text (solid black) */
+  .screen--1bit .trmnl-calendar.mono,
+  .screen--2bit .trmnl-calendar.mono { --mono-line: var(--black); --mono-line-style: dotted; --mono-muted: var(--black); }
+  /* "Dither" setting: skip the framework's per-depth greys (patterns on 1-/2-bit) and
+     paint the raw palette greys; LaraPaper then dithers the whole screen. */
+  .trmnl-calendar.dither-greys.mono { --mono-bar: var(--gray-50); --mono-muted: var(--gray-30); }
+  .trmnl-calendar.dither-greys.shade-weekends.mono { --mono-weekend: var(--gray-75); }
+  /* "Highlight today" off: no pill */
+  .trmnl-calendar:not(.highlight-today) .mono-day--today .mono-day-number { background: none; color: inherit; font-weight: inherit; }
 
   /* "Fade past events": events that are over recede. Only where greys print as greys (4-bit,
      or the "Dither" setting); a 1-/2-bit pattern would make them unreadable instead.
      invert/brightness/invert mixes every pixel 40% towards white, like 60% opacity on a
      white cell; TRMNL's publish check rejects the opacity property. */
-  .screen--4bit .trmnl-calendar.fade-past .fc-event-past,
-  .trmnl-calendar.fade-past.dither-greys .fc-event-past { filter: invert(1) brightness(0.6) invert(1); }
-
-  /* "Dither" setting: skip the framework's per-depth greys (patterns on 1-/2-bit) and
-     paint the raw palette greys; LaraPaper then dithers the whole screen. */
-  .trmnl-calendar.dither-greys.shade-weekends .fc-daygrid-day.fc-day-sat,
-  .trmnl-calendar.dither-greys.shade-weekends .fc-daygrid-day.fc-day-sun { background: var(--gray-75); }
-  .trmnl-calendar.dither-greys.shade-weekends .fc-col-header-cell.fc-day-sat,
-  .trmnl-calendar.dither-greys.shade-weekends .fc-col-header-cell.fc-day-sun { background: var(--gray-75); }
-  .trmnl-calendar.dither-greys .trmnl-day-number.is-past,
-  .trmnl-calendar.dither-greys .trmnl-month-label.is-past,
-  .trmnl-calendar.dither-greys .fc-daygrid-week-number,
-  .trmnl-calendar.dither-greys .fc-daygrid-dot-event .fc-event-time { color: var(--gray-30); }
-  .trmnl-calendar.dither-greys .fc-daygrid-event-dot { background: var(--gray-50); }
+  .screen--4bit .trmnl-calendar.fade-past .mono-event--past,
+  .trmnl-calendar.fade-past.dither-greys .mono-event--past { filter: invert(1) brightness(0.6) invert(1); }
 
   /* a white calendar colour has no edge on a white cell: outline it like the grid lines */
   .trmnl-calendar .trmnl-event--white { box-shadow: inset 0 0 0 1px var(--gray-50); }
@@ -183,28 +175,76 @@
   .screen--2bit .trmnl-calendar .trmnl-event--white { box-shadow: none; outline: 1px dotted var(--black); outline-offset: -1px; }
 
   /* patterned or dithered weekend cells make small text hard to read: back it with white */
-  .screen--1bit .trmnl-calendar .trmnl-day-number,
-  .screen--2bit .trmnl-calendar .trmnl-day-number,
-  .screen--1bit .trmnl-calendar .trmnl-month-label,
-  .screen--2bit .trmnl-calendar .trmnl-month-label,
-  .screen--1bit .trmnl-calendar .fc-daygrid-dot-event,
-  .screen--2bit .trmnl-calendar .fc-daygrid-dot-event { background-color: var(--white); }
-
-  /* Narrow views (see trmnlInitCalendars): less space around events and day numbers, and
-     titles wrap between words where they can, over up to three lines */
-  .trmnl-calendar--narrow .fc-daygrid-dot-event { column-gap: calc(2px * var(--cal-u)); margin-left: calc(1px * var(--cal-u)); margin-right: 0; }
-  .trmnl-calendar--narrow .fc-daygrid-event-dot { width: calc(2px * var(--cal-u)); }
-  .trmnl-calendar--narrow .fc-daygrid-block-event .fc-event-main { padding: calc(1px * var(--cal-u)) calc(2px * var(--cal-u)); }
-  .trmnl-calendar--narrow .fc-daygrid-event .fc-event-title { -webkit-line-clamp: 3; overflow-wrap: break-word; }
-  .trmnl-calendar--narrow .fc-daygrid-day-number { padding-left: calc(2px * var(--cal-u)); padding-right: calc(2px * var(--cal-u)); }
-  .trmnl-calendar--narrow .trmnl-day-number { min-width: 0; padding: 0 0.15em; }
-  .trmnl-calendar--narrow .fc-day-today .trmnl-day-number { min-width: 1.5em; }
-  .trmnl-calendar--narrow .trmnl-month-label { padding-left: calc(2px * var(--cal-u)); }
+  .screen--1bit .trmnl-calendar .mono-day-number,
+  .screen--2bit .trmnl-calendar .mono-day-number,
+  .screen--1bit .trmnl-calendar .mono-month,
+  .screen--2bit .trmnl-calendar .mono-month,
+  .screen--1bit .trmnl-calendar .mono-event--bar,
+  .screen--2bit .trmnl-calendar .mono-event--bar { background-color: var(--white); }
+  .screen--1bit .trmnl-calendar.highlight-today .mono-day--today .mono-day-number,
+  .screen--2bit .trmnl-calendar.highlight-today .mono-day--today .mono-day-number { background-color: var(--black); }
 
   .trmnl-calendar-error { font-weight: 700; }
 </style>
 
 <script>
+  // "Mono" theme for FullCalendar 7 (CSS above): a plugin of class hooks that name the day
+  // grid's parts with mono-* classes, plus the day cell's content. A host adds its own
+  // classes through the same hooks; FullCalendar joins both.
+  window.trmnlMonoTheme = (function() {
+    function join() { return Array.prototype.filter.call(arguments, Boolean).join(' '); }
+    function isWeekend(info) { return info.dow === 0 || info.dow === 6; }
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+    }
+    var dayRow = {
+      listItemEventClass: 'mono-event mono-event--bar',
+      listItemEventBeforeClass: 'mono-event-bar',
+      listItemEventInnerClass: 'mono-event-inner',
+      rowEventClass: function(info) {
+        return join('mono-event mono-event--fill', info.isStart && 'mono-event--start', info.isEnd && 'mono-event--end');
+      },
+      rowEventInnerClass: 'mono-event-inner',
+      rowMoreLinkClass: 'mono-more'
+    };
+    return {
+      name: 'trmnl-mono',
+      optionDefaults: {
+        className: 'mono',
+        eventColor: 'var(--mono-fill)',
+        eventContrastColor: 'var(--mono-fill-text)',
+        eventClass: function(info) { return join(info.isPast && 'mono-event--past', info.isNarrow && 'mono-event--narrow'); },
+        eventTimeClass: 'mono-event-time',
+        eventTitleClass: 'mono-event-title',
+        dayHeaderRowClass: 'mono-header-row',
+        dayHeaderDividerClass: 'mono-header-divider',
+        dayHeaderClass: function(info) { return join('mono-header', isWeekend(info) && 'mono-weekend'); },
+        dayHeaderInnerClass: 'mono-header-inner',
+        dayHeaderAlign: 'center',
+        dayRowClass: 'mono-week',
+        dayCellClass: function(info) {
+          return join('mono-day', isWeekend(info) && 'mono-weekend', info.isToday && 'mono-day--today', info.isPast && 'mono-day--past', info.isOther && 'mono-day--other');
+        },
+        dayCellTopClass: function(info) {
+          return join('mono-day-top', info.isNarrow && 'mono-day-top--narrow', info.monthText && info.date.getUTCDate() === 1 && 'mono-day-top--new-month');
+        },
+        dayCellTopInnerClass: 'mono-day-label',
+        // FullCalendar names the month where one starts (and on the grid's first day) in
+        // monthStartFormat; short, as it sits next to the number. Some locales end it in a dot.
+        monthStartFormat: { month: 'short', day: 'numeric' },
+        dayCellTopContent: function(info) {
+          var month = (info.monthText || '').replace(/\.$/, '');
+          return {
+            html: (month ? '<span class="mono-month">' + escapeHtml(month) + '</span>' : '') +
+              '<span class="mono-day-number">' + escapeHtml(info.dayNumberText || info.date.getUTCDate()) + '</span>'
+          };
+        },
+        dayCellInnerClass: 'mono-day-events',
+        inlineWeekNumberClass: 'mono-week-number'
+      },
+      views: { dayGrid: dayRow }
+    };
+  })();
   // Home Assistant REST (/api/calendars/<entity>) and server-parsed ICS feeds →
   // FullCalendar events.
   // Stands in for the closed-source Calendar::Helper of the native plugin and mirrors
@@ -450,6 +490,8 @@
           initialDate: settings.today,
           // weekday names only, also on a one-week grid, where FullCalendar adds the date
           dayHeaderFormat: { weekday: 'short' },
+          // the dates of the visible range, as FullCalendar 6 wrote it ("Sep 28 – Oct 25, 2026")
+          titleFormat: { year: 'numeric', month: 'short', day: 'numeric' },
           firstDay: settings.firstDay,
           eventTimeFormat: { hour: 'numeric', minute: '2-digit', hour12: settings.hour12, meridiem: false },
           views: { rollingMonth: rollingMonthView },
@@ -469,119 +511,65 @@
           cfg.displayEventEnd = false;
         }
 
-        // Base options shared by all calendars
+        // Base options shared by all calendars: the Mono theme, and on top of it the TRMNL
+        // framework's classes through the same hooks: text--* picks the device's font and
+        // size, bg--gray-* paints solid on 4-bit and a dither pattern on 1-/2-bit. The
+        // "Dither" setting paints raw greys through the theme's variables instead (see
+        // .dither-greys).
         var baseOpts = {
+          plugins: [window.trmnlMonoTheme],
           headerToolbar: false,
           locale: (cfg.locale || 'en')
         };
 
-        // TRMNL framework classes on FullCalendar's elements: text--* picks the device's
-        // font and size, bg--gray-* paints solid on 4-bit and a dither pattern on 1-/2-bit.
-        // The "Dither" setting paints raw greys in CSS instead (see .dither-greys).
-        var textSmall = function() { return ['text--small']; };
-        var isWeekend = function(arg) { return arg.dow === 0 || arg.dow === 6; };
-        var shadeClass = function(arg) {
-          return (isWeekend(arg) && settings.shadeWeekends && !settings.ditherGreys) ? ['bg--gray-75'] : [];
-        };
-        var screenStyles = function() { return getComputedStyle(node.closest('.screen') || document.documentElement); };
+        var screenStyles = getComputedStyle(node.closest('.screen') || document.documentElement);
+        var depth = parseInt(screenStyles.getPropertyValue('--framework-bit-depth'), 10) || 4;
         // 1-/2-bit screens print grey as a dot pattern, which breaks up the pixel fonts of the
         // events on top of it: there the weekend is shaded in the header row only.
-        var patternedGreys = (parseInt(screenStyles().getPropertyValue('--framework-bit-depth'), 10) || 4) <= 2 && !settings.ditherGreys;
+        var patternedGreys = depth <= 2 && !settings.ditherGreys;
+        var shadeClass = function(info) {
+          return (info.dow === 0 || info.dow === 6) && settings.shadeWeekends && !settings.ditherGreys ? 'bg--gray-75' : '';
+        };
         // today's weekday column; the rolling grid always starts in today's week
+        var highlightToday = node.classList.contains('highlight-today');
         var todayDow = new Date(settings.today + 'T00:00:00Z').getUTCDay();
-        baseOpts.dayHeaderClassNames = function(arg) {
-          return ['text--small'].concat(arg.dow === todayDow ? ['trmnl-today-col'] : shadeClass(arg));
+        baseOpts.dayHeaderClass = function(info) {
+          return 'text--small ' + (highlightToday && info.dow === todayDow ? 'mono-header--today' : shadeClass(info));
         };
-        baseOpts.eventClassNames = function(arg) {
-          var classes = ['text--small'];
-          if (!arg.event.allDay) classes.push('trmnl-event--timed');
-          if (arg.event.extendedProps.color) classes.push('trmnl-event--colored');
-          return classes;
-        };
-        // Paint a palette token: its bg--* class (solid on 4-bit, dither pattern on 1-/2-bit),
-        // or in "Dither" mode the raw colour, which LaraPaper then dithers with the rest.
-        var paint = function(el, token, raw) {
-          if (settings.ditherGreys) el.style.backgroundColor = raw;
-          else el.classList.add('bg--' + token);
-        };
-        baseOpts.eventDidMount = function(info) {
-          var color = info.event.extendedProps.color;
-          var main = info.el.querySelector('.fc-event-main');
-          var styles = screenStyles();
+        baseOpts.dayCellClass = function(info) { return patternedGreys ? '' : shadeClass(info); };
+        var muted = settings.ditherGreys || patternedGreys ? '' : 'text--muted';
+        baseOpts.dayCellTopInnerClass = function(info) { return 'text--small ' + (info.isPast ? muted : ''); };
+        baseOpts.eventClass = 'text--small';
+        // Upstream look: timed events get a grey bar and a grey time (on 1-/2-bit a muted
+        // pattern is hard to read, so solid black there); single-day all-day events are drawn
+        // the same, without the time (see toEvent)
+        baseOpts.listItemEventBeforeClass = settings.ditherGreys ? '' : 'bg--gray-50';
+        baseOpts.listItemEventTimeClass = muted;
+        baseOpts.moreLinkClass = 'text--small';
+        baseOpts.inlineWeekNumberClass = 'text--small';
+        // locales without a short word for week (nl) get the long one glued to the number
+        // ("Week40"); keep FullCalendar 6's "W40" there
+        baseOpts.inlineWeekNumberContent = function(info) { return info.text.length > 4 ? 'W' + info.num : info.text; };
 
-          if (!color) {
-            // Upstream look: timed events get a grey bar and a grey time; multi-day
-            // events a light grey fill. Single-day all-day events are drawn like timed
-            // ones (see toEvent), with the bar and no time.
-            var bar = info.el.querySelector('.fc-daygrid-event-dot');
-            if (bar) paint(bar, 'gray-50', styles.getPropertyValue('--gray-50').trim());
-            var time = info.el.querySelector('.fc-event-time');
-            // (grey on 4-bit; a muted pattern on 1-/2-bit is hard to read, so solid black there)
-            if (time && bar && !settings.ditherGreys && !patternedGreys) time.classList.add('text--muted');
-            if (main) paint(main, 'gray-70', styles.getPropertyValue('--gray-70').trim());
-            return;
-          }
-
-          // Calendar colour. FullCalendar paints the event's own background, which wins
-          // over bg--* in the cascade, so the colour goes on the inner .fc-event-main.
-          // Text is black or white by lightness on screens that print greys solid; on
-          // 1-/2-bit the fill is a dither pattern, so black text with the framework's
-          // contrast outline (text-stroke), like upstream's adaptiveEventStroke.
-          main = main || info.el;
-          var raw = color.hex || styles.getPropertyValue('--' + color.token).trim();
-          if (color.hex) main.style.backgroundColor = raw;
-          else paint(main, color.token, raw);
-          if (color.token === 'white' || /^#f{3}(f{3})?$/i.test(raw)) main.classList.add('trmnl-event--white');
-          var depth = parseInt(styles.getPropertyValue('--framework-bit-depth'), 10) || 4;
+        // Band events (multi-day, or from a coloured calendar): a light grey band, or the
+        // calendar's colour, painted with its bg--* class (solid on 4-bit, dither pattern on
+        // 1-/2-bit), or in "Dither" mode as the raw colour, which LaraPaper then dithers with
+        // the rest; a hex colour as-is. Text is black or white by lightness on screens that
+        // print greys solid; on 1-/2-bit the fill is a dither pattern, so black text with the
+        // framework's contrast outline (text-stroke), like upstream's adaptiveEventStroke.
+        built.events.forEach(function(ev) {
+          var color = ev.extendedProps.color || { token: 'gray-70' };
+          var raw = color.hex || screenStyles.getPropertyValue('--' + color.token).trim();
+          var classes = [];
+          if (color.hex || settings.ditherGreys) ev.color = color.hex || 'var(--' + color.token + ')';
+          else classes.push('bg--' + color.token);
+          if (color.token === 'white' || /^#f{3}(f{3})?$/i.test(raw)) classes.push('trmnl-event--white');
           var patterned = depth <= 2 && !settings.ditherGreys && color.token && color.token !== 'black' && color.token !== 'white';
-          main.style.color = patterned || !isDark(raw) ? 'var(--black)' : 'var(--white)';
-          if (patterned) main.classList.add('text-stroke', 'text-stroke--small');
-        };
-        baseOpts.moreLinkClassNames = textSmall;
-        baseOpts.weekNumberClassNames = textSmall;
-        baseOpts.dayCellClassNames = function(arg) { return patternedGreys ? [] : shadeClass(arg); };
-
-        // Month/rolling-month: force numeric day number, but add a small month label
-        if (node.classList.contains('trmnl-calendar--month')) {
-          baseOpts.dayCellContent = function(arg) {
-            try {
-              var cls = 'trmnl-day-number text--small' + (arg.isPast ? ' is-past' + (settings.ditherGreys ? '' : ' text--muted') : '');
-              return { html: '<span class="' + cls + '">' + arg.date.getUTCDate() + '</span>' };
-            } catch (e) {
-              return { html: '' };
-            }
-          };
-
-          baseOpts.dayCellDidMount = function(arg) {
-            try {
-              var top = arg.el.querySelector('.fc-daygrid-day-top');
-              var numEl = top && top.querySelector('.fc-daygrid-day-number');
-              if (!top || !numEl) return;
-
-              // Label the grid's first day and the 1st of a month when the grid spans two
-              // months, as FullCalendar's month-start does. FullCalendar skips that on a
-              // one-week grid (it hides day numbers there), so check it here and add its class.
-              var gridStart = arg.view.currentStart;
-              var gridEnd = new Date(arg.view.currentEnd.getTime() - 86400000);
-              var spansMonths = gridStart.getUTCMonth() !== gridEnd.getUTCMonth() || gridStart.getUTCFullYear() !== gridEnd.getUTCFullYear();
-              if (!spansMonths || (arg.date.getUTCDate() !== 1 && arg.date.getTime() !== gridStart.getTime())) return;
-              numEl.classList.add('fc-daygrid-month-start');
-
-              // short month name ("Sep"), which fits next to the number; some locales end it with a dot
-              var monthName = arg.date.toLocaleDateString((cfg.locale || 'en'), { month: 'short', timeZone: 'UTC' }).replace(/\.$/, '');
-              var label = document.createElement('span');
-              // past days: the label is muted like the number next to it
-              label.className = 'trmnl-month-label text--small' + (arg.isPast ? ' is-past' + (settings.ditherGreys ? '' : ' text--muted') : '');
-              // FullCalendar bolds the number of every labelled day; keep that for the 1st
-              // of a month, not for the grid's first day, which is labelled mid-month
-              if (arg.date.getUTCDate() !== 1) numEl.classList.add('trmnl-mid-month');
-              label.textContent = monthName;
-              // Mark parent so CSS can align the pair to the right without :has()
-              top.classList.add('trmnl-has-month-label');
-              top.insertBefore(label, numEl);
-            } catch (e) { /* ignore */ }
-          };
-        }
+          ev.contrastColor = patterned || !isDark(raw) ? 'var(--black)' : 'var(--white)';
+          if (patterned) classes.push('text-stroke', 'text-stroke--small');
+          ev.extendedProps.fillClass = classes.join(' ');
+        });
+        baseOpts.rowEventClass = function(info) { return info.event.extendedProps.fillClass; };
 
         // Rolling month fills the screen with as many whole weeks as actually fit.
         // Render the max first — 6, because only 6 weeks of events are fetched ahead
@@ -605,12 +593,29 @@
         var calendar = new FullCalendar.Calendar(node, Object.assign(baseOpts, cfg));
         calendar.render();
 
+        var finish = function() {
+          if (built.errors.length) {
+            var err = document.createElement('div');
+            err.className = 'trmnl-calendar-error text--small';
+            err.textContent = 'Could not load ' + built.errors.join('; ');
+            node.parentNode.insertBefore(err, node);
+          }
+
+          // Title bar: the visible date range, the same text FullCalendar's toolbar would show
+          var titleRange = (node.closest('.view') || document).querySelector('.title_bar [data-calendar-range]');
+          if (titleRange) titleRange.textContent = calendar.view.title;
+
+          node.setAttribute('data-initialized', 'true');
+        };
+
         // Count the week rows that landed fully on screen (row height is content-
         // driven, so dense months fit fewer). Re-render with just those weeks so
         // the range — and the title — match what is actually visible.
-        if (expandWeeksToFillHeight) {
+        // FullCalendar 7 lays out events once its ResizeObservers have measured the grid,
+        // which is after render() returns: count once that has run, two frames later.
+        var fitWeeksToHeight = function() {
           var gridBottom = node.getBoundingClientRect().bottom + 1;
-          var weekRows = node.querySelectorAll('.fc-daygrid-body tr');
+          var weekRows = node.querySelectorAll('.mono-week');
           var fitWeeks = 0;
           weekRows.forEach(function(tr){ if (tr.getBoundingClientRect().bottom <= gridBottom) fitWeeks++; });
           // Upstream keeps at least 4 weeks, so a busy month is cut off at the bottom.
@@ -622,64 +627,20 @@
             calendar.destroy();
             cfg.views.rollingMonth.duration = { weeks: fitWeeks };
             if (capDays) cfg.dayMaxEvents = true;
+            // a one-week grid has no day numbers (FullCalendar shows them from two weeks
+            // on), so the header names the dates
+            if (fitWeeks === 1) cfg.dayHeaderFormat = { weekday: 'short', day: 'numeric' };
             calendar = new FullCalendar.Calendar(node, Object.assign(baseOpts, cfg));
             calendar.render();
           }
-        }
-
-        if (built.errors.length) {
-          var err = document.createElement('div');
-          err.className = 'trmnl-calendar-error text--small';
-          err.textContent = 'Could not load ' + built.errors.join('; ');
-          node.parentNode.insertBefore(err, node);
-        }
-
-        // Title bar: the visible date range, the same text FullCalendar's toolbar would show
-        var titleRange = (node.closest('.view') || document).querySelector('.title_bar [data-calendar-range]');
-        if (titleRange) titleRange.textContent = calendar.view.title;
-
-        node.setAttribute('data-initialized', 'true');
-
-        // Hacky fix for bug shown in https://github.com/usetrmnl/core/pull/2951.
-        // Month view multi-day reflow detector. FC writes inline `top:Npx`
-        // on .fc-daygrid-event-harness-abs during render based on measured
-        // cell heights, but doesn't recompute when cells reflow later (font
-        // swap on hard refresh, late CSS, images). Watch per-cell event
-        // containers and trigger updateSize() when any height changes.
-        if (node.classList.contains('trmnl-calendar--month') && window.ResizeObserver) {
-          var rerunPending = false;
-          var lastHeights = new Map();
-          var rerun = function() {
-            if (rerunPending) return;
-            rerunPending = true;
-            requestAnimationFrame(function() {
-              rerunPending = false;
-              try { calendar.updateSize(); } catch (_) {}
-            });
-          };
-          var ro = new ResizeObserver(function(entries) {
-            var changed = false;
-            for (var i = 0; i < entries.length; i++) {
-              var el = entries[i].target;
-              var h = Math.round(entries[i].contentRect.height);
-              if (lastHeights.get(el) !== h) {
-                lastHeights.set(el, h);
-                changed = true;
-              }
-            }
-            if (changed) rerun();
-          });
-          node.querySelectorAll('.fc-daygrid-day-events').forEach(function(el) {
-            lastHeights.set(el, Math.round(el.getBoundingClientRect().height));
-            ro.observe(el);
-          });
-          // Insurance for the font-swap reflow specifically:
-          // some browsers may defer the per-cell ResizeObserver signal
-          // longer than the global fonts `loadingdone` event.
-          if (document.fonts && document.fonts.addEventListener) {
-            document.fonts.addEventListener('loadingdone', rerun);
-          }
-        }
+          afterLayout(finish);
+        };
+        var afterLayout = function(fn) {
+          requestAnimationFrame(function() { requestAnimationFrame(function() {
+            try { fn(); } catch (e) { console.error(e); node.setAttribute('data-initialized', 'true'); }
+          }); });
+        };
+        afterLayout(expandWeeksToFillHeight ? fitWeeksToHeight : finish);
       });
     } catch (e) { console.error(e); }
   };
