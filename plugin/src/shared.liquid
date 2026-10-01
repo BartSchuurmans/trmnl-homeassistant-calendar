@@ -527,6 +527,13 @@
         // 1-/2-bit screens print grey as a dot pattern, which breaks up the pixel fonts of the
         // events on top of it: there the weekend is shaded in the header row only.
         var patternedGreys = depth <= 2 && !settings.ditherGreys;
+        // The framework's small text is Inter at 13px on high-density screens (the TRMNL X):
+        // a calendar packs a lot of it, so one size down there. Pixel fonts (low-density
+        // screens) only come in their own sizes and stay as they are.
+        if (screenStyles.getPropertyValue('--font-small-font-smoothing').trim() !== 'none') {
+          node.style.setProperty('--font-small-font-size', 'calc(11px * var(--text-ui-scale))');
+          node.style.setProperty('--font-small-line-height', 'calc(15px * var(--text-ui-scale))');
+        }
         var shadeClass = function(info) {
           return (info.dow === 0 || info.dow === 6) && settings.shadeWeekends && !settings.ditherGreys ? 'bg--gray-75' : '';
         };
