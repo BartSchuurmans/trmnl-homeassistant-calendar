@@ -17,7 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 const IMAGE = 'trmnl/trmnlp:v0.12.0';
 // `trmnlp lint` findings that don't apply to this recipe
