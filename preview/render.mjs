@@ -39,7 +39,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Liquid } from 'liquidjs';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { chromium } from 'playwright-core';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
