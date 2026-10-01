@@ -256,8 +256,8 @@
       };
     }
 
-    // TRMNL's native calendar plugins (Google, Outlook, Apple, ...) in data mode: parsed
-    // events with start_full/end_full (a date for all-day events, else a time with offset;
+    // TRMNL's native calendar plugins (Google, Outlook, Apple, ...), as TRMNL.com's Plugin
+    // Merge hands them over (plugin/trmnl-com/merge.liquid): parsed events with start_full/end_full (a date for all-day events, else a time with offset;
     // usetrmnl/plugins lib/google_calendar/google_calendar.rb#event_hash).
     function fromNative(ev) {
       if (!ev || typeof ev !== 'object' || !ev.start_full) return null;
@@ -286,7 +286,6 @@
       }
       if (Array.isArray(payload.ical)) return [{ events: payload.ical.map(fromIcal).filter(Boolean) }];
       if (Array.isArray(payload.events)) return [{ events: payload.events.map(fromNative).filter(Boolean) }];
-      if (payload.data && Array.isArray(payload.data.events)) return payloadToCalendars(payload.data);
       if (Array.isArray(payload.data)) return [{ events: payload.data }];
       if (payload.error || payload.message) return [{ events: [], error: payload.error || payload.message }];
       return [];
@@ -696,9 +695,9 @@
 {% assign s = trmnl.plugin_settings.custom_fields_values %}
 {% assign time_zone = s.time_zone | default: trmnl.user.time_zone_iana | default: "UTC" %}
 {% assign locale = s.locale | default: "en" | strip %}
-{% comment %} ICS feeds, else TRMNL plugins, replace the HA entities when set (see polling_url in settings.yml);
-   on TRMNL.com the Plugin Merge dropdowns replace them all (below) {% endcomment %}
-{% assign source = "ha" %}{% case s.trmnl_plugins %}{% when nil, "" %}{% else %}{% assign source = "trmnl" %}{% endcase %}
+{% comment %} ICS feeds replace the HA entities when set (see polling_url in settings.yml);
+   on TRMNL.com the Plugin Merge dropdowns replace them both (below) {% endcomment %}
+{% assign source = "ha" %}
 {% if s.ics_urls contains "/" %}{% assign source = "ics" %}{% endif %}
 {% comment %}
   LaraPaper passes the payload as `data`: one calendar's response, or {IDX_0: ..., IDX_1: ...}

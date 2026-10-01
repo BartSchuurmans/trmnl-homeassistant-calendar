@@ -102,16 +102,13 @@ midnight-to-midnight timestamps (no all-day flag). `fromIcal` in `shared.liquid`
 to HA's shape, and the grid stops at the last week the feed covers. `render.mjs --ics`
 fakes that shape; `e2e/fake-ha.mjs` serves real feeds.
 
-**TRMNL calendar plugins.** `trmnl_plugins` (plugin setting ids) + `trmnl_api_key` poll
-`trmnl.com/api/plugin_settings/<id>/data` (TRMNL's Plugin Data API), which returns
-`{data: {events: [...]}}` with `start_full`/`end_full`/`all_day` (`fromNative` in
-`shared.liquid`). ICS feeds win over it, it wins over HA. TRMNL's recommended "Plugin
-Merge" strategy names each source `<plugin>_<id>`, which keepsuit can't look up
-dynamically (and LaraPaper has no Plugin Merge), so there the recipe polls the API.
-`render.mjs --native` fakes that shape. On TRMNL.com itself the recipe uses Plugin Merge
-(`plugin/trmnl-com/`): "Calendar" dropdowns store the merged data's name (`caldav_<id>`),
-which `merge.liquid` looks up with `{{ [name] }}`. keepsuit can't parse that, so it stays
-out of `shared.liquid`; `render.mjs --merge` covers it.
+**TRMNL calendar plugins.** Only on TRMNL.com (`plugin/trmnl-com/`, Plugin Merge):
+"Calendar" dropdowns store the merged data's name (`caldav_<id>`), which `merge.liquid`
+looks up with `{{ [name] }}`; the data is `{events: [...]}` with
+`start_full`/`end_full`/`all_day` (`fromNative` in `shared.liquid`). keepsuit can't parse
+that lookup, so it stays out of `shared.liquid`; `render.mjs --merge` covers it. The
+LaraPaper recipe dropped its Plugin Data API source (plugin IDs + API key): ICS feeds
+cover those calendars there.
 
 **Home Assistant access.** In the app, the recipe's default URL `http://127.0.0.1:8124`
 is an nginx proxy written by `larapaper/rootfs/etc/entrypoint.d/10-ha-calendar.sh`: it

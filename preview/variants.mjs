@@ -22,8 +22,6 @@ const VARIANTS = {
   'trmnl-com': {
     leftOut: {
       ics_urls: 'TRMNL.com polls JSON only; an .ics feed fails as "Malformed JSON"',
-      trmnl_plugins: 'replaced by the calendar_N dropdowns (Plugin Merge)',
-      trmnl_api_key: 'replaced by the calendar_N dropdowns (Plugin Merge)',
       ha_url: 'Home Assistant would have to be reachable from the internet',
       ha_token: 'Home Assistant would have to be reachable from the internet',
       calendars: 'Home Assistant entities; replaced by the calendar_N dropdowns',

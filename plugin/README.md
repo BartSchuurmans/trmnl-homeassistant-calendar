@@ -13,7 +13,7 @@ another place to publish it. A variant has only what differs:
 
 | Variant | Where | Data |
 |---|---|---|
-| `src/` | LaraPaper | ICS feeds, TRMNL Plugin Data API, Home Assistant (polling) |
+| `src/` | LaraPaper | ICS feeds, Home Assistant (polling) |
 | [`trmnl-com/`](trmnl-com/README.md) | TRMNL.com | TRMNL calendar plugins (Plugin Merge) |
 
 `scripts/build-variant.sh [variant...]` builds each variant into `dist/<variant>/src` (a
