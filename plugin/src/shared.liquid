@@ -199,11 +199,14 @@
   .screen--2bit .trmnl-calendar.highlight-today .mono-day--today .mono-day-number { background-color: var(--black); }
 
   /* weather (weather_entity): icon and high at the left of the day's number line, after
-     the week number where that sits */
+     the week number where that sits. It wraps onto a hidden second line where the line
+     runs out of room, so the low goes first, then the high, then the icon, and the month
+     name and number never move */
   .trmnl-calendar .mono-day-label:has(.trmnl-weather) { flex: 1 1 auto; align-items: center; }
-  .trmnl-calendar .mono-day-label:has(.trmnl-weather) .mono-month { flex: none; }
+  .trmnl-calendar .mono-day-label:has(.trmnl-weather) :is(.mono-month, .mono-day-number) { flex: none; }
   .trmnl-calendar .trmnl-weather {
-    display: inline-flex; align-items: center; gap: calc(3px * var(--mono-u));
+    display: inline-flex; flex: 0 1 auto; flex-wrap: wrap; align-items: center; align-content: flex-start;
+    min-width: 0; height: 1.25em; overflow: hidden; column-gap: calc(3px * var(--mono-u));
     margin-right: auto; padding-right: 0.4em; color: var(--black); white-space: nowrap;
   }
   .trmnl-calendar .trmnl-weather--after-week { padding-left: 3em; }
@@ -635,16 +638,16 @@
         };
         baseOpts.dayCellClass = function(info) { return patternedGreys ? '' : shadeClass(info); };
         // Weather (weather_entity): an icon and the day's high (and low, "Weather
-        // temperatures") left of the day number, from today on. The low only where nothing
-        // else shares the line; narrow views show the icon only, and none where the week
-        // number sits.
+        // temperatures") left of the day number, from today on; what doesn't fit is hidden
+        // (CSS). No low next to the week number; narrow views show the icon only, and none
+        // where the week number sits.
         var themeTopContent = window.trmnlMonoTheme.optionDefaults.dayCellTopContent;
         baseOpts.dayCellTopContent = function(info) {
           var content = themeTopContent(info);
           var forecast = !info.isPast && built.weather[info.date.toISOString().slice(0, 10)];
           var weekCell = settings.weekNumbers && info.dow === settings.firstDay % 7;
           if (!forecast || (info.isNarrow && weekCell)) return content;
-          var low = settings.weatherLows && forecast.low !== null && !weekCell && !info.monthText;
+          var low = settings.weatherLows && forecast.low !== null && !weekCell;
           return { html: '<span class="trmnl-weather' + (weekCell ? ' trmnl-weather--after-week' : '') + '">' + weatherIcon(forecast.condition) +
             (info.isNarrow ? '' : '<span class="trmnl-weather-high">' + Math.round(forecast.high) + '°</span>' +
               (low ? '<span class="trmnl-weather-low">' + Math.round(forecast.low) + '°</span>' : '')) + '</span>' + content.html };

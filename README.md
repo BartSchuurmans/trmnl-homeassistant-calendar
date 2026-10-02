@@ -175,7 +175,8 @@ to the feeds.
 *LaraPaper (local) app only.* With **Home Assistant weather entity** set, each day from
 today on gets the weather entity's daily forecast left of its day number: an icon and
 the high, or the high and low with **Weather temperatures**. The low is left out next
-to a week number or a month name, where the line has no room for it, and narrow views
+to a week number, and wherever the line runs out of room (on a narrow OG screen next to a
+month name, say), and narrow views
 (half and quadrant mashups) show only the icon. It works with ICS feeds as well as with
 Home Assistant calendars.
 

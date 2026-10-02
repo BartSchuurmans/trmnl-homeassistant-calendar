@@ -64,7 +64,7 @@ custom_fields:
   - keyname: weather_temperatures
     field_type: select
     name: Weather temperatures
-    description: With a weather entity, show each day's high, or its high and low. The low is left out where the day's line has no room for it (next to a week number or a month name).
+    description: With a weather entity, show each day's high, or its high and low. The low is left out next to a week number and where the day's line has no room for it.
     options:
       - High: high
       - High and low: high_low
