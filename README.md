@@ -192,26 +192,54 @@ Where the events come from is the only difference between the two: TRMNL.com has
 (see the setup above). Everything else is the same, except the one marked
 *LaraPaper only*.
 
+The form groups them in this order. On/off settings are toggles.
+
+#### Calendars
+
 | Setting | Default | Notes |
 |---|---|---|
 | Calendar prefixes | – | Text shown before each event title, per calendar (e.g. `W:`) |
 | Calendar colors | – | Event background per calendar: a TRMNL color name (`black`, `gray-10` … `gray-75`, `red`, `blue-40`, …) or a hex color |
-| Time zone | Your account's time zone | Events are converted to this zone before rendering |
+
+#### Weather (*LaraPaper only*)
+
+| Setting | Default | Notes |
+|---|---|---|
+| Home Assistant weather entity | – | With the Home Assistant app: the daily forecast next to each day number, see [Weather](#weather) |
+| Weather temperatures | High | `High and low` adds the low where it fits |
+
+#### Grid
+
+| Setting | Default | Notes |
+|---|---|---|
 | Week starts on | Monday | |
 | Advance | Weekly | `Daily` starts the grid at today instead of the start of the week |
-| Time format | 24 hour | |
-| Show event times / end times | yes / yes | Times go on their own line below the title. End times only show with event times on |
-| Show past events | yes | Earlier days of the current week |
-| Highlight today | yes | Today's weekday is inverted in the header row and its day number gets a black pill |
-| Fade past events | yes | Events that are over are drawn faded. Greyscale screens (TRMNL X) only |
-| Shade weekends | yes | |
 | Busy weeks | Show fewer weeks | What happens when the weeks don't all fit, see below |
-| Show title bar | no | The framework's title bar, with the recipe name and the visible date range |
-| Show week numbers | no | |
-| Locale | `en` | Day/month names, e.g. `nl`, `de` |
+| Show week numbers | off | |
+| Highlight today | on | Today's weekday is inverted in the header row and its day number gets a black pill |
+| Shade weekends | on | |
+| Show title bar | off | The framework's title bar, with the recipe name and the visible date range |
+
+#### Events
+
+| Setting | Default | Notes |
+|---|---|---|
+| Time format | 24 hour | |
+| Show event times / end times | on / on | Times go on their own line below the title. End times only show with event times on |
+| Show past events | on | Earlier days of the current week |
+| Fade past events | on | Events that are over are drawn faded. Greyscale screens (TRMNL X) only |
 | Ignore events containing / titled exactly | – | Hide events by title (and, for "containing", description) |
-| Home Assistant weather entity | – | *LaraPaper only*, with the Home Assistant app: the daily forecast next to each day number, see [Weather](#weather) |
-| Weather temperatures | High | `High and low` adds the low where it fits |
+
+#### Language and time zone
+
+| Setting | Default | Notes |
+|---|---|---|
+| Time zone | Your account's time zone | Events are converted to this zone before rendering |
+| Locale | `en` | Day/month names, e.g. `nl`, `de` |
+
+The on/off settings were Yes/No dropdowns up to v2.1.0. The calendar still reads values
+saved back then, but LaraPaper's form shows a saved "No" as ticked, and saving the form
+then turns it on: after updating, check the toggles once.
 
 The grid shows as many whole weeks (up to 6) as fit, and with ICS feeds no more than
 the feeds cover (see [ICS feeds](#ics-feeds)): busy weeks make rows taller, so
@@ -356,7 +384,7 @@ so `shared.liquid` corrects its measurements inside the calendar (see the commen
 ```sh
 cd preview && npm install
 node render.mjs                                   # sample events → out/preview.png
-node render.mjs --set display_event_end=no --set locale=nl
+node render.mjs --set display_event_end=false --set locale=nl
 HA_URL=http://homeassistant.local:8123 HA_TOKEN=... \
   HA_CALENDARS=calendar.family,calendar.work node render.mjs   # your real calendars
 ```

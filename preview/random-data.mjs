@@ -50,9 +50,9 @@ const colors = Array.from({ length: calendarCount }, () => pick(['-', 'black', '
 const settings = {
   calendars: Array.from({ length: calendarCount }, (_, i) => `calendar.c${i}`).join(','),
   calendar_colors: colors.join(','),
-  display_event_end: pick(['yes', 'no']),
-  show_week_numbers: pick(['yes', 'no']),
-  month_header: pick(['yes', 'no']),
+  display_event_end: pick(['true', 'false', 'no']),
+  show_week_numbers: pick(['true', 'false', 'yes']),
+  month_header: pick(['true', 'false', 'yes']),
   rolling_advancement: pick(['week', 'day']),
 };
 for (const [key, value] of Object.entries(settings)) console.log(`--set\n${key}=${value}`);

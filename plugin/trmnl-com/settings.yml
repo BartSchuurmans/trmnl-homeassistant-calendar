@@ -51,11 +51,6 @@ custom_fields:
     name: Calendar colors
     description: Optional event background, one per calendar in the same order as the calendars above. A TRMNL color name (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
     optional: true
-  - keyname: time_zone
-    field_type: time_zone
-    name: Time zone
-    description: Leave empty to use your account's time zone.
-    optional: true
   - keyname: first_day
     field_type: select
     name: Week starts on
@@ -72,57 +67,6 @@ custom_fields:
     - Weekly: week
     - Daily: day
     default: week
-  - keyname: time_format
-    field_type: select
-    name: Time format
-    options:
-    - 24 hour: 24h
-    - AM/PM: am/pm
-    default: 24h
-  - keyname: include_event_time
-    field_type: select
-    name: Show event times
-    options:
-    - 'Yes': 'yes'
-    - 'No': 'no'
-    default: 'yes'
-  - keyname: display_event_end
-    field_type: select
-    name: Show event end times
-    options:
-    - 'Yes': 'yes'
-    - 'No': 'no'
-    default: 'yes'
-  - keyname: include_past_events
-    field_type: select
-    name: Show past events
-    description: Show events on days before today that are still in the grid.
-    options:
-    - 'Yes': 'yes'
-    - 'No': 'no'
-    default: 'yes'
-  - keyname: highlight_today
-    field_type: select
-    name: Highlight today
-    options:
-    - 'Yes': 'yes'
-    - 'No': 'no'
-    default: 'yes'
-  - keyname: fade_past_events
-    field_type: select
-    name: Fade past events
-    description: Grey out events that are over (on earlier days). Greyscale screens only; 1-bit and 2-bit screens show them as usual.
-    options:
-    - 'Yes': 'yes'
-    - 'No': 'no'
-    default: 'yes'
-  - keyname: shade_weekends
-    field_type: select
-    name: Shade weekends
-    options:
-    - 'Yes': 'yes'
-    - 'No': 'no'
-    default: 'yes'
   - keyname: week_overflow
     field_type: select
     name: Busy weeks
@@ -131,27 +75,48 @@ custom_fields:
     - Show fewer weeks: fewer_weeks
     - Show "+N more": more
     default: fewer_weeks
+  - keyname: show_week_numbers
+    field_type: boolean
+    name: Show week numbers
+    default: false
+  - keyname: highlight_today
+    field_type: boolean
+    name: Highlight today
+    default: true
+  - keyname: shade_weekends
+    field_type: boolean
+    name: Shade weekends
+    default: true
   - keyname: month_header
-    field_type: select
+    field_type: boolean
     name: Show title bar
     description: TRMNL title bar at the bottom with the recipe name and the visible date range.
-    options:
-    - 'Yes': 'yes'
-    - 'No': 'no'
-    default: 'no'
-  - keyname: show_week_numbers
+    default: false
+  - keyname: time_format
     field_type: select
-    name: Show week numbers
+    name: Time format
     options:
-    - 'Yes': 'yes'
-    - 'No': 'no'
-    default: 'no'
-  - keyname: locale
-    field_type: string
-    name: Locale
-    description: Language for day and month names, e.g. en, nl, de, fr.
-    default: en
-    optional: true
+    - 24 hour: 24h
+    - AM/PM: am/pm
+    default: 24h
+  - keyname: include_event_time
+    field_type: boolean
+    name: Show event times
+    default: true
+  - keyname: display_event_end
+    field_type: boolean
+    name: Show event end times
+    default: true
+  - keyname: include_past_events
+    field_type: boolean
+    name: Show past events
+    description: Show events on days before today that are still in the grid.
+    default: true
+  - keyname: fade_past_events
+    field_type: boolean
+    name: Fade past events
+    description: Grey out events that are over (on earlier days). Greyscale screens only; 1-bit and 2-bit screens show them as usual.
+    default: true
   - keyname: ignored_phrases
     field_type: multi_string
     name: Ignore events containing
@@ -161,4 +126,15 @@ custom_fields:
     field_type: multi_string
     name: Ignore events titled exactly
     description: Events whose title is exactly one of these are hidden.
+    optional: true
+  - keyname: time_zone
+    field_type: time_zone
+    name: Time zone
+    description: Leave empty to use your account's time zone.
+    optional: true
+  - keyname: locale
+    field_type: string
+    name: Locale
+    description: Language for day and month names, e.g. en, nl, de, fr.
+    default: en
     optional: true
