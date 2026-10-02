@@ -16,12 +16,7 @@ another place to publish it. A variant has only what differs:
 | `src/` | LaraPaper | ICS feeds, Home Assistant (polling) |
 | [`trmnl-com/`](trmnl-com/README.md) | TRMNL.com | TRMNL calendar and weather plugins (Plugin Merge) |
 
-A folder with views of its own (`full.liquid`) is a **companion recipe** instead: a
-separate recipe that feeds a variant, built from its own files only and not compared with
-`src/`. [`daily-forecast/`](daily-forecast/README.md) is one: Open-Meteo's daily forecast,
-for `trmnl-com/`'s Weather dropdown.
-
-`scripts/build-variant.sh [variant...]` builds each variant (and companion recipe) into `dist/<variant>/src` (a
+`scripts/build-variant.sh [variant...]` builds each variant into `dist/<variant>/src` (a
 trmnlp project) and `dist/rolling-month-calendar-<variant>.zip`. Lint (`trmnlp lint`)
 runs on those builds, and every release attaches the ZIPs.
 
@@ -37,8 +32,7 @@ and checks that TRMNL.com then matches the build. Weekly (and on demand from the
 tab) the same workflow only compares TRMNL.com with the latest release, so an edit made on
 TRMNL.com itself shows up as a failed run with the differences in its summary. It needs
 the `TRMNL_API_KEY` secret and, per variant, the plugin ID variable named in the
-workflow's matrix (`TRMNL_PLUGIN_ID` for `trmnl-com`, `TRMNL_FORECAST_PLUGIN_ID` for
-`daily-forecast`). Don't edit the markup on TRMNL.com,
+workflow's matrix (`TRMNL_PLUGIN_ID` for `trmnl-com`). Don't edit the markup on TRMNL.com,
 in its editor or through the TRMNL MCP connector: change it here and release.
 
 **Adding a variant** (say a TRMNL.com recipe polling Home Assistant):

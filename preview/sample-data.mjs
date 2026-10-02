@@ -109,8 +109,8 @@ export function sampleForecast(today, entity = 'weather.forecast_home') {
   return { changed_states: [], service_response: { [entity]: { forecast } } };
 }
 
-// The same forecast as Open-Meteo's daily forecast (on TRMNL.com: the Daily Forecast
-// recipe, plugin/daily-forecast): 16 days from `today`, conditions as WMO codes
+// The same forecast as Open-Meteo's daily forecast (on TRMNL.com: a recipe polling it,
+// such as Daily Weather): 16 days from `today`, conditions as WMO codes
 const WMO = { sunny: 0, 'clear-night': 0, partlycloudy: 2, cloudy: 3, windy: 3, fog: 45, rainy: 61, pouring: 65, snowy: 73, 'lightning-rainy': 95 };
 export function sampleOpenMeteo(today) {
   const days = Array.from({ length: 16 }, (_, i) => FORECAST[i % FORECAST.length]);

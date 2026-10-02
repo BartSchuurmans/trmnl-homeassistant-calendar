@@ -24,10 +24,7 @@
 // plugin/trmnl-com/merge.liquid prepended to the shared markup.
 //
 // --merge-weather trmnl|open-meteo adds a forecast in the Weather dropdown (weather_plugin):
-// TRMNL's Weather plugin (today and tomorrow) or the Daily Forecast recipe (Open-Meteo).
-//
-// --recipe daily-forecast renders that companion recipe (plugin/daily-forecast) instead,
-// with a sample Open-Meteo forecast.
+// TRMNL's Weather plugin (today and tomorrow) or a recipe polling Open-Meteo (Daily Weather).
 //
 // --size half_horizontal|half_vertical|quadrant renders that view as part of a mashup.
 //
@@ -54,7 +51,7 @@ import { chromium } from 'playwright-core';
 import { sampleData, sampleForecast, sampleOpenMeteo, sampleTrmnlWeather } from './sample-data.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-let src = path.join(here, '..', 'plugin', 'src');
+const src = path.join(here, '..', 'plugin', 'src');
 const outDir = path.join(here, 'out');
 
 // Screen classes and CSS variables as LaraPaper sets them for its seeded device models
@@ -77,7 +74,6 @@ let ics = false;
 let size = 'full';
 let merge = false;
 let mergeWeather = null;
-let recipe = null;
 let expectEvents = false;
 let scale = null;
 let now = new Date();
@@ -98,7 +94,6 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--ics') ics = true;
   else if (args[i] === '--merge') merge = true;
   else if (args[i] === '--merge-weather') { merge = true; mergeWeather = args[++i]; }
-  else if (args[i] === '--recipe') { recipe = args[++i]; src = path.join(here, '..', 'plugin', recipe); }
   else if (args[i] === '--expect-events') expectEvents = true;
   else if (args[i] === '--scale') scale = args[++i];
 }
@@ -173,10 +168,9 @@ function toNative(calendar) {
 
 const todayYmd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 let payload = dataFile ? JSON.parse(fs.readFileSync(dataFile, 'utf8'))
-  : recipe ? sampleOpenMeteo(todayYmd)
   : process.env.HA_URL ? await liveData()
   : sampleData(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`, timeZone);
-if (!recipe && !dataFile && !process.env.HA_URL && !overrides.calendars) customFields.calendars = 'calendar.family,calendar.mark,calendar.sara';
+if (!dataFile && !process.env.HA_URL && !overrides.calendars) customFields.calendars = 'calendar.family,calendar.mark,calendar.sara';
 // Plugin Merge: no polled payload, the chosen plugins' data sits at the top level
 let merged = {};
 if (merge) {
@@ -276,7 +270,7 @@ page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !m.te
 const pageErrors = [];
 page.on('pageerror', (e) => { pageErrors.push(e.message); console.error(`[browser] ${e.message}`); });
 await page.setContent(html, { waitUntil: 'load', timeout: 20000 }).catch(() => {});
-await page.waitForSelector(recipe ? '.layout' : '.trmnl-calendar[data-initialized]', { timeout: 10000 });
+await page.waitForSelector('.trmnl-calendar[data-initialized]', { timeout: 10000 });
 if (strict && pageErrors.length) {
   await browser.close();
   throw new Error(`JavaScript errors in the page: ${pageErrors.join('; ')}`);
@@ -286,8 +280,8 @@ if (expectEvents && !(await page.locator('.mono-event').count())) {
   await browser.close();
   throw new Error('no events on the grid');
 }
-// a sample forecast must show up: next to the day numbers, or as the companion's days
-const forecastDays = recipe ? '.daily-forecast-day' : (mergeWeather || weatherEntity.startsWith('weather.')) && '.trmnl-weather';
+// a sample forecast must show up next to the day numbers
+const forecastDays = (mergeWeather || weatherEntity.startsWith('weather.')) && '.trmnl-weather';
 if (forecastDays && !(await page.locator(forecastDays).count())) {
   await browser.close();
   throw new Error('no weather forecast on the screen');

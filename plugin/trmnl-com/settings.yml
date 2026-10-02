@@ -57,7 +57,7 @@ custom_fields:
   - keyname: weather_plugin
     field_type: plugin_instance_select
     name: Weather
-    description: 'Optional: a weather forecast next to each day number, from today on. Pick TRMNL''s Weather plugin (today and tomorrow), the Daily Weather recipe (about a week) or the Daily Forecast recipe (two weeks). Keep it in a playlist (it can be hidden), or the forecast stops refreshing.'
+    description: 'Optional: a weather forecast next to each day number, from today on. Pick TRMNL''s Weather plugin (today and tomorrow) or the Daily Weather recipe (about a week). Keep it in a playlist (it can be hidden), or the forecast stops refreshing.'
     optional: true
   - keyname: weather_temperatures
     field_type: select

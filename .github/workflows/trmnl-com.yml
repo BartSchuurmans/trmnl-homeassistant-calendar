@@ -1,7 +1,7 @@
 name: TRMNL.com
 
-# The recipe's TRMNL.com variants and companion recipes (plugin/<variant>, built by
-# scripts/build-variant.sh) on TRMNL.com. release.yml calls this with upload, so TRMNL.com only changes on a release:
+# The recipe's TRMNL.com variants (plugin/<variant>, built by scripts/build-variant.sh) on
+# TRMNL.com. release.yml calls this with upload, so TRMNL.com only changes on a release:
 # it uploads each variant's build with `trmnlp push`, then checks that TRMNL.com matches.
 # Weekly and on demand it only compares TRMNL.com with the latest release, to catch edits
 # made on TRMNL.com itself. See plugin/README.md.
@@ -38,8 +38,6 @@ jobs:
         include:
           - variant: trmnl-com
             plugin_id_var: TRMNL_PLUGIN_ID
-          - variant: daily-forecast
-            plugin_id_var: TRMNL_FORECAST_PLUGIN_ID
     env:
       TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
       TRMNL_PLUGIN_ID: ${{ vars[matrix.plugin_id_var] }}

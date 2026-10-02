@@ -90,6 +90,6 @@ treats its native plugins as source-available and is fine with them being remixe
   calendar that failed to load, and an optional daily weather forecast (icon and high,
   optionally the low) next to the day numbers from today on: from a Home Assistant
   weather entity through the LaraPaper (local) app's proxy, or on TRMNL.com from TRMNL's
-  Weather plugin or the Daily Forecast recipe (Open-Meteo, `plugin/daily-forecast`).
+  Weather plugin or the Daily Weather recipe (Open-Meteo).
 - **Settings**: exposed as custom fields (`settings.yml`) and read from
   `trmnl.plugin_settings.custom_fields_values`.
