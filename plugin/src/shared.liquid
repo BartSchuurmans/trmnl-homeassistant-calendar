@@ -553,30 +553,6 @@
     return { splitList: splitList, splitAligned: splitAligned, wallClock: wallClock, buildEvents: buildEvents };
   })();
 
-  // The framework scales the whole screen with `transform: scale(var(--pixel-ratio))`
-  // (1.8 on the TRMNL X, which it lays out at 1040x780). FullCalendar sizes its grid from
-  // getBoundingClientRect(), which includes that transform, and writes the numbers back
-  // as CSS lengths, so the grid came out 1.8x too big. Inside a calendar, report rects in
-  // the calendar's own CSS pixels; everywhere else nothing changes.
-  // Sizes come from offsetWidth/offsetHeight (layout sizes, which don't depend on where
-  // the element sits): transformed rect sizes shift by a pixel with sub-pixel position,
-  // and FullCalendar, which positions events by their measured heights, then never settles.
-  (function() {
-    if (Element.prototype.trmnlUnscaledRects) return;
-    var rawRect = Element.prototype.getBoundingClientRect;
-    Element.prototype.getBoundingClientRect = function() {
-      var rect = rawRect.call(this);
-      var root = this.closest ? this.closest('.trmnl-calendar') : null;
-      if (!root || !root.offsetWidth) return rect;
-      var scale = (root === this ? rect : rawRect.call(root)).width / root.offsetWidth;
-      if (!scale || Math.abs(scale - 1) < 0.01) return rect;
-      var width = this.offsetWidth !== undefined ? this.offsetWidth : rect.width / scale;
-      var height = this.offsetHeight !== undefined ? this.offsetHeight : rect.height / scale;
-      return new DOMRect(Math.round(rect.x / scale), Math.round(rect.y / scale), width, height);
-    };
-    Element.prototype.trmnlUnscaledRects = true;
-  })();
-
   function isDark(color) {
     var m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(color).trim());
     if (!m) return true;
@@ -785,8 +761,11 @@
         // the range — and the title — match what is actually visible.
         // FullCalendar 7 lays out events once its ResizeObservers have measured the grid,
         // which is after render() returns: count once that has run, two frames later.
+        // Rects include the framework's screen transform (1.8 on the TRMNL X); only their
+        // order matters here, plus a tolerance of one CSS pixel.
         var fitWeeksToHeight = function() {
-          var gridBottom = node.getBoundingClientRect().bottom + 1;
+          var rect = node.getBoundingClientRect();
+          var gridBottom = rect.bottom + (node.offsetHeight ? rect.height / node.offsetHeight : 1);
           var weekRows = node.querySelectorAll('.mono-week');
           var fitWeeks = 0;
           weekRows.forEach(function(tr){ if (tr.getBoundingClientRect().bottom <= gridBottom) fitWeeks++; });

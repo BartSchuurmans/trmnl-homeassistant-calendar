@@ -43,8 +43,6 @@ treats its native plugins as source-available and is fine with them being remixe
   scratch ("Mono" in `shared.liquid`: class hooks naming the grid's parts, CSS sized with
   `--ui-scale`), on FullCalendar's skeleton.css only. Fonts, text sizes and greys come
   from TRMNL framework classes added through the same hooks.
-- **Transform fix**: `getBoundingClientRect()` is corrected inside the calendar, so
-  FullCalendar sizes correctly under the framework's `transform: scale(--pixel-ratio)`.
 - **Event look**: matched to upstream's month-layout preview. Timed events use
   FullCalendar's dot, restyled as a grey bar on the left, with a bold title
   and the time in grey below it. Multi-day events get a light grey fill (`bg--gray-70`)

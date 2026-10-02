@@ -72,12 +72,14 @@ Roman, wrong sizes). TRMNL.com renders the X at the scale its owner picked (regu
 `--ui-scale: 1`, by default; `render.mjs --scale regular`), so the calendar's text size
 doesn't follow `--ui-scale` (see the `--font-small-font-size` override in `shared.liquid`).
 
-**FullCalendar under the transform.** FullCalendar measures with
-`getBoundingClientRect()`, which includes the transform, so `shared.liquid` patches it
-inside `.trmnl-calendar` to return untransformed CSS pixels, with sizes from
-`offsetWidth/offsetHeight`. Transformed rect sizes flip by a pixel with sub-pixel
-position and FullCalendar's event layout then loops forever (the page hangs). The random
-renders in `ci.sh` exist to catch that; keep them passing after layout changes.
+**FullCalendar under the transform.** FullCalendar 7 sizes the grid from ResizeObserver
+border boxes, which ignore the transform, so it lays out correctly without help. (v6
+measured with `getBoundingClientRect()`, which includes it: the grid came out 1.8x too
+big, and transformed sizes flipping by a pixel made event layout loop forever, so the
+recipe patched that function until the v7 version proved it unneeded.) Our own code that
+reads `getBoundingClientRect()` gets transformed pixels; compare rects, don't use them as
+CSS lengths. The random renders in `ci.sh` catch layouts that don't settle; keep them
+passing after layout changes.
 
 **Browsershot content filter.** `setHtml` rejects any page containing `file:`,
 `view-source`, `//localhost`, `//127.` etc. So assets can't be inlined (FullCalendar's
