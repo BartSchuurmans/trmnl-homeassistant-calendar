@@ -125,6 +125,11 @@ Daily Weather recipe; a recipe's data arrives as `private_plugin_<id>: {merge_va
 LaraPaper recipe dropped its Plugin Data API source (plugin IDs + API key): ICS feeds
 cover those calendars there.
 
+**Links in the form.** Field descriptions may hold `<a href="..." class="underline"
+target="_blank">` (TRMNL.com allows `a`, `b`, `i` with those attributes). LaraPaper
+purifies them down to `href` (the link opens in the same tab) and escapes the About
+(`author_bio`) text, so links there go in `github_url`/`learn_more_url`.
+
 **Home Assistant access.** In the app, the recipe's default URL `http://127.0.0.1:8124`
 is an nginx proxy written by `larapaper/rootfs/etc/entrypoint.d/10-ha-calendar.sh`: it
 forwards only GET `/api/calendars/` to `http://supervisor/core/api` with the app's
