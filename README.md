@@ -195,6 +195,13 @@ Any other recipe that polls Open-Meteo's daily `weather_code`, `temperature_2m_m
 entity**, and the forecast comes from that entity. It works with ICS feeds as well as
 with Home Assistant calendars.
 
+Use Home Assistant's [Open-Meteo](https://www.home-assistant.io/integrations/open_meteo/)
+integration (free, no key) rather than Met.no, the one Home Assistant sets up as
+`weather.forecast_home`. Met.no's forecast for today covers only the hours still ahead,
+so by the evening today's high is about the current temperature. Open-Meteo's covers
+the whole day. Its entity is named after the zone it forecasts for, e.g. `weather.home`
+for the Home zone.
+
 Home Assistant gives forecasts only to a `weather.get_forecasts` service call (a POST),
 and a recipe can only poll with GET. The app's proxy on `http://127.0.0.1:8124` turns
 `GET /api/weather/<weather entity>` into that one call (`type: daily`), so the recipe
