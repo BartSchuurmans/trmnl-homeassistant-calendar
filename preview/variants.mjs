@@ -33,7 +33,7 @@ const VARIANTS = {
   'trmnl-com-ha': {
     leftOut: {
       ics_urls: 'TRMNL.com polls JSON only; an .ics feed fails as "Malformed JSON"',
-      weather_entity: 'Home Assistant gives forecasts only to a POST, and TRMNL.com polls with GET',
+      weather_entity: 'Home Assistant gives forecasts only to a POST and calendars only to a GET, and TRMNL.com polls every URL with one verb',
       weather_temperatures: 'no weather (see weather_entity)',
     },
     own: /^$/,

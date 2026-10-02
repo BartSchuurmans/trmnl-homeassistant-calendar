@@ -6,7 +6,8 @@
 # TRMNL.com polls from the internet, so Home Assistant has to be reachable from there
 # (Home Assistant Cloud's remote URL, or an own domain) and the request carries a
 # long-lived access token. No ICS feeds (TRMNL.com only polls JSON) and no weather: Home
-# Assistant only gives forecasts to a POST service call, and TRMNL.com polls with GET.
+# Assistant only gives forecasts to a POST service call, its calendars only to GET, and
+# TRMNL.com polls every URL with the same verb and body.
 #
 # On/off fields default to 'true'/'false' as text, as in plugin/trmnl-com/settings.yml.
 # preview/variants.mjs checks that the settings this and plugin/src both have match.

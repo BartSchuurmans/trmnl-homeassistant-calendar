@@ -67,8 +67,11 @@ instead.
    `calendar.`). Set the other [settings](#settings) as you like.
 4. **Add it to your playlist.**
 
-This edition has no weather: Home Assistant gives forecasts only to a POST service call,
-and TRMNL.com polls with GET.
+This edition has no weather: Home Assistant gives forecasts only to a POST service call
+and calendars only to a GET, and TRMNL.com fetches all of a recipe's URLs the same way.
+
+To try it before connecting your own Home Assistant, point it at the sample calendars in
+this repository instead ([how](plugin/trmnl-com-ha/README.md#trying-it-without-your-own-home-assistant)).
 
 ## Self-hosted with LaraPaper
 
@@ -408,7 +411,7 @@ the changes in detail.
 | `plugin/trmnl-com/` | The TRMNL.com variant: its settings and `merge.liquid` |
 | `plugin/trmnl-com-ha/` | The TRMNL.com Home Assistant variant: its settings |
 | `preview/` | Local renderer and CI render checks |
-| `preview/sample-data.mjs`, `docs/sample-ics/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview |
+| `preview/sample-data.mjs`, `docs/sample-ics/`, `docs/sample-ha/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview and as a stand-in Home Assistant |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
 | `scripts/build-variant.sh` | Builds the variants, such as the TRMNL.com recipe |
 | `larapaper/`, `repository.yaml` | The LaraPaper (local) Home Assistant app |
