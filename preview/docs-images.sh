@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 # Regenerates the README screenshots in docs/ from the sample calendars. Run it after
 # any change that alters how the calendar looks, and commit the images with it. Same
-# prerequisites as render.mjs (see ci.sh). The date is fixed, so the sample events
-# (placed relative to "today") stay put and only real changes show up in the images.
+# prerequisites as render.mjs (see ci.sh). The date is fixed, so "today" and the sample
+# events (sample-data.mjs) stay put and only real changes show up in the images.
 set -eu
 cd "$(dirname "$0")"
 docs=../docs

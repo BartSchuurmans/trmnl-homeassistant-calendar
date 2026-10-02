@@ -67,6 +67,9 @@ fi
 # The variants' settings (plugin/trmnl-com, ...) in step with plugin/src's (no rendering)
 spawn variants node variants.mjs check
 
+# docs/sample-ics (TRMNL.com's marketplace preview) in step with the sample calendars
+spawn sample-ics node sample-data.mjs check
+
 # The contexts for the PHP and trmnlp renders, first so those can start early
 render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
 context=$last

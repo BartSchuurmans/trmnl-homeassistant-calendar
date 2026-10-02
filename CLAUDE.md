@@ -13,7 +13,10 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   it. Narrow views (under 600 CSS px: left/right half, quadrant) get
   `.trmnl-calendar--narrow`.
 - `preview/` — local renderer (`render.mjs`), CI render suite (`ci.sh`), random data
-  (`random-data.mjs`), PHP Liquid check (`php/render.php`).
+  (`random-data.mjs`), PHP Liquid check (`php/render.php`), sample calendars
+  (`sample-data.mjs`: a six-week cycle, also written to `docs/sample-ics/*.ics` with
+  `node preview/sample-data.mjs write`; TRMNL.com's marketplace preview polls those feeds
+  from main, and `ci.sh` checks they're in step).
 - `larapaper/` + `repository.yaml` — Home Assistant app: official LaraPaper image plus
   bundled TRMNL framework, fonts and FullCalendar (`assets.txt`, pinned by SHA-256).
 - `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
