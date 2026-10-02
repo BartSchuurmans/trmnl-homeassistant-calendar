@@ -6,7 +6,6 @@
 //   node render.mjs                         sample events → out/preview.png
 //   HA_URL=http://ha:8123 HA_TOKEN=... HA_CALENDARS=calendar.family,calendar.work node render.mjs
 //   node render.mjs --set first_day=0 --set time_format=am/pm --device og
-//   node render.mjs --device og --set dither_greys=yes      1-bit, dithered greys
 //
 // For CI: --dump-context <file> writes the Liquid render context as JSON, --body <file>
 // screenshots markup rendered elsewhere (e.g. by LaraPaper's PHP Liquid, php/render.php),

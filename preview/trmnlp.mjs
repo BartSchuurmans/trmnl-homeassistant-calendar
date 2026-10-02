@@ -25,8 +25,7 @@ const LINT_ALLOWED = [
   // Counts words like padding, margin and font-size anywhere in the markup, stylesheet
   // included. Ours are all in shared.liquid's stylesheet for FullCalendar's generated
   // elements, which framework classes mostly can't reach (where they can, the recipe adds
-  // them through FullCalendar's class hooks). The only inline style is the hidden
-  // image-dither switch.
+  // them through FullCalendar's class hooks).
   'Markup uses too many inline styles, add more native Framework classes.',
 ];
 
