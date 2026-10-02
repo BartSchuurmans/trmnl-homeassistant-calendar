@@ -412,8 +412,8 @@
           .filter(function(r) { return r && Array.isArray(r.forecast); })[0];
         return [{ events: [], forecast: forecast ? forecast.forecast : [] }];
       }
-      // Open-Meteo's daily forecast (on TRMNL.com: the Daily Forecast recipe in
-      // plugin/daily-forecast, or any recipe polling Open-Meteo with these daily values),
+      // Open-Meteo's daily forecast (on TRMNL.com: the Daily Weather recipe, or any recipe
+      // polling Open-Meteo with these daily values),
       // dated in the location's own zone
       if (payload.daily && Array.isArray(payload.daily.time)) {
         var daily = payload.daily, max = daily.temperature_2m_max || [], min = daily.temperature_2m_min || [], codes = daily.weather_code || daily.weathercode || [];

@@ -1,8 +1,6 @@
 #!/usr/bin/env sh
 # Build a variant of the recipe (a folder in plugin/ next to src, e.g. trmnl-com) from the
-# repo sources, so there is one copy of the markup to maintain (see plugin/README.md).
-# A folder with views of its own (full.liquid, e.g. daily-forecast) is a companion recipe,
-# built from its own files only:
+# repo sources, so there is one copy of the markup to maintain (see plugin/README.md):
 #
 #   dist/<variant>/src/                         a trmnlp project: the variant's settings.yml,
 #                                               shared.liquid = the variant's *.liquid (in
@@ -37,19 +35,14 @@ for variant in "$@"; do
     mkdir -p "$out"
 
     cp "$dir/settings.yml" "$out/settings.yml"
-    if [ -f "$dir/full.liquid" ]; then
-        # a companion recipe (e.g. daily-forecast) has views of its own: copied as-is
-        cp "$dir"/*.liquid "$out/"
-    else
-        # the variant's own Liquid (e.g. trmnl-com/merge.liquid) goes in front of the shared markup
-        {
-            find "$dir" -maxdepth 1 -name '*.liquid' | LC_ALL=C sort | while read -r file; do cat "$file"; done
-            cat "$root/plugin/src/shared.liquid"
-        } > "$out/shared.liquid"
-        for view in full half_horizontal half_vertical quadrant; do
-            cp "$root/plugin/src/$view.liquid" "$out/$view.liquid"
-        done
-    fi
+    # the variant's own Liquid (e.g. trmnl-com/merge.liquid) goes in front of the shared markup
+    {
+        find "$dir" -maxdepth 1 -name '*.liquid' | LC_ALL=C sort | while read -r file; do cat "$file"; done
+        cat "$root/plugin/src/shared.liquid"
+    } > "$out/shared.liquid"
+    for view in full half_horizontal half_vertical quadrant; do
+        cp "$root/plugin/src/$view.liquid" "$out/$view.liquid"
+    done
 
     chmod 644 "$out"/*
     find "$out" -exec env TZ=UTC touch -d "@$epoch" {} +

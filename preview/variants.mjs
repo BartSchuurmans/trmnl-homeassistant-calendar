@@ -53,10 +53,8 @@ if (errors.length) {
 function check() {
   const src = load(path.join(root, 'plugin/src/settings.yml'));
   const srcFields = new Map(src.custom_fields.map((f) => [f.keyname, f]));
-  // companion recipes (views of their own, e.g. daily-forecast) have settings of their own
   const variants = fs.readdirSync(path.join(root, 'plugin'))
-    .filter((name) => name !== 'src' && fs.existsSync(path.join(root, 'plugin', name, 'settings.yml'))
-      && !fs.existsSync(path.join(root, 'plugin', name, 'full.liquid')));
+    .filter((name) => name !== 'src' && fs.existsSync(path.join(root, 'plugin', name, 'settings.yml')));
   for (const name of variants) {
     const rules = VARIANTS[name];
     if (!rules) {

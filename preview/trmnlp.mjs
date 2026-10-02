@@ -4,8 +4,8 @@
 //
 //   node trmnlp.mjs <context.json> <body.html> [full|half_horizontal|half_vertical|quadrant]
 //                                                   (context from render.mjs --dump-context)
-//   TRMNLP_VARIANT=trmnl-com node trmnlp.mjs ...    a variant or companion recipe in
-//                                                   plugin/ instead, put together as
+//   TRMNLP_VARIANT=trmnl-com node trmnlp.mjs ...    a variant in plugin/ instead, put
+//                                                   together as
 //                                                   scripts/build-variant.sh does
 //   node trmnlp.mjs --pull                          only fetches the image, if missing
 //   node trmnlp.mjs --lint                          runs `trmnlp lint` (see lint() below)
@@ -52,9 +52,8 @@ const payload = 'data' in context ? context.data : merged;
 const project = fs.mkdtempSync(path.join(os.tmpdir(), 'trmnlp-'));
 const plugin = path.join(here, '..', 'plugin');
 const variant = process.env.TRMNLP_VARIANT;
-fs.cpSync(path.join(plugin, variant && fs.existsSync(path.join(plugin, variant, 'full.liquid')) ? variant : 'src'),
-  path.join(project, 'src'), { recursive: true });
-if (variant && !fs.existsSync(path.join(plugin, variant, 'full.liquid'))) {
+fs.cpSync(path.join(plugin, 'src'), path.join(project, 'src'), { recursive: true });
+if (variant) {
   // a variant: its settings, and its own Liquid in front of the shared markup
   const own = fs.readdirSync(path.join(plugin, variant)).filter((f) => f.endsWith('.liquid')).sort();
   fs.copyFileSync(path.join(plugin, variant, 'settings.yml'), path.join(project, 'src', 'settings.yml'));
