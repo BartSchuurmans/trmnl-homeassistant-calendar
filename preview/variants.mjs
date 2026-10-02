@@ -108,8 +108,10 @@ function diff(variant, pulled) {
   }
   const ours = load(path.join(built, 'settings.yml'));
   const live = load(path.join(pulled, 'settings.yml')) || {};
+  // TRMNL keeps text settings (recipe_overview) with CRLF line ends too
+  const text = (value) => String(value ?? '').replace(/\r\n/g, '\n').trimEnd();
   for (const key of Object.keys(ours).filter((k) => k !== 'custom_fields')) {
-    if (String(ours[key] ?? '') !== String(live[key] ?? '')) errors.push(`settings ${key}: ${JSON.stringify(live[key])} on TRMNL.com, ${JSON.stringify(ours[key])} here`);
+    if (text(ours[key]) !== text(live[key])) errors.push(`settings ${key}: ${JSON.stringify(live[key])} on TRMNL.com, ${JSON.stringify(ours[key])} here`);
   }
   if (!same(live.custom_fields, ours.custom_fields)) {
     const liveFields = new Map((live.custom_fields || []).map((f) => [f.keyname, f]));
