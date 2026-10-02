@@ -184,12 +184,11 @@ Where the events come from is the only difference between the two: TRMNL.com has
 | Show event times / end times | yes / yes | Times go on their own line below the title. End times only show with event times on |
 | Show past events | yes | Earlier days of the current week |
 | Highlight today | yes | Today's weekday is inverted in the header row and its day number gets a black pill |
-| Fade past events | yes | Events that are over are drawn faded. Greyscale screens (TRMNL X) and `Dither` only |
+| Fade past events | yes | Events that are over are drawn faded. Greyscale screens (TRMNL X) only |
 | Shade weekends | yes | |
 | Busy weeks | Show fewer weeks | What happens when the weeks don't all fit, see below |
 | Show title bar | no | The framework's title bar, with the recipe name and the visible date range |
 | Show week numbers | no | |
-| Greys on 1-bit / 2-bit screens (*LaraPaper only*) | Adapt styles | `Adapt` uses the framework's greys, which become dither patterns on 1-/2-bit screens. `Dither` paints plain greys and has LaraPaper Floyd–Steinberg dither the whole screen. LaraPaper dithers 4-bit output (TRMNL X) either way, so this only matters for 1-bit and 2-bit devices |
 | Locale | `en` | Day/month names, e.g. `nl`, `de` |
 | Ignore events containing / titled exactly | – | Hide events by title (and, for "containing", description) |
 
@@ -200,12 +199,12 @@ fit, so every event stays visible even if that is only a week or two. `Show "+N 
 keeps at least 3 weeks and ends a day that doesn't fit with "+N more". (TRMNL's built-in
 calendar keeps at least 4 weeks and cuts a very busy 4th week off at the bottom.)
 
-On 1-bit and 2-bit screens with `Adapt styles` (always, on TRMNL.com), weekends are
-shaded in the header row only and event times are solid black, because the framework's
-grey dot patterns make the pixel fonts on top of them hard to read.
+On 1-bit and 2-bit screens greys become the framework's dot patterns. Weekends are
+shaded in the header row only and event times are solid black, because the patterns
+make the pixel fonts on top of them hard to read.
 
-<sub>Greys on a 1-bit screen: <b>Adapt styles</b> (left) vs <b>Dither</b> (right, LaraPaper only).</sub><br>
-<img src="docs/preview-1bit-adapt.png" width="49%"> <img src="docs/preview-1bit-dither.png" width="49%">
+<sub>The same calendar on a 1-bit (left) and a 2-bit (right) screen.</sub><br>
+<img src="docs/preview-1bit.png" width="49%"> <img src="docs/preview-2bit.png" width="49%">
 
 ### Multiple calendars
 
@@ -220,10 +219,10 @@ settings:
 |---|---|
 | Calendars | Family, Mark, Sara |
 | Calendar prefixes | `-`, `M:`, `S:` |
-| Calendar colors | `black`, `-`, `gray-50` |
+| Calendar colors | `gray-35`, `white`, `gray-60` |
 
-shared family events get no prefix and a `black` fill, Mark's events get `M:` and no
-fill, and Sara's get `S:` and a `gray-50` fill. That is what the screenshots above
+shared family events get no prefix and a `gray-35` fill, Mark's events get `M:` and a
+`white` fill, and Sara's get `S:` and a `gray-60` fill. That is what the screenshots above
 show, with week numbers on.
 
 - **Prefix**: shown before the title, followed by a space (`S: Standup`).
@@ -232,8 +231,7 @@ show, with week numbers on.
   - Color names use the framework's classes: solid greys on the TRMNL X (hues fall back
     to a grey), dither patterns with outlined text on 1-/2-bit screens, and real
     colors on color panels.
-  - Hex colors are painted as-is. Without dithering, a 1-bit screen snaps them to black
-    or white.
+  - Hex colors are painted as-is. A 1-bit screen snaps them to black or white.
   - `white` (or `#fff`) gets a thin grey outline, dotted on 1-/2-bit screens, like the
     grid lines, so its events don't vanish on a white day.
 - Events without a calendar color get a grey bar on the left with a bold title, and
@@ -268,8 +266,7 @@ filtering work as upstream. What changed:
 - **Explicit time zone handling**: events are converted to the configured zone, so the
   result doesn't depend on the renderer's system zone.
 - **Rendering fixes and additions**: FullCalendar measures correctly under the
-  framework's scale transform, a choice between adapted greys and full-screen dithering
-  on 1-/2-bit screens, and a notice when a calendar fails to load.
+  framework's scale transform, greys adapted to 1-/2-bit screens, and a notice when a calendar fails to load.
 - **Removed**: the time-grid helpers and FullCalendar's own header toolbar (the
   framework's title bar is used instead).
 
@@ -334,7 +331,6 @@ so `shared.liquid` corrects its measurements inside the calendar (see the commen
 cd preview && npm install
 node render.mjs                                   # sample events → out/preview.png
 node render.mjs --set display_event_end=no --set locale=nl
-node render.mjs --device og --set dither_greys=yes    # 1-bit, dithered greys
 HA_URL=http://homeassistant.local:8123 HA_TOKEN=... \
   HA_CALENDARS=calendar.family,calendar.work node render.mjs   # your real calendars
 ```
@@ -398,7 +394,7 @@ To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
   nginx in the browser preview.
 - Like LaraPaper, the preview reduces the screenshot to the device's grey levels. 4-bit
   is always dithered. 1-bit and 2-bit are dithered only when the page contains
-  `<img class="image-dither">`, which is what the `Dither` setting adds.
+  `<img class="image-dither">`, which the recipe doesn't add.
 - The token only goes into the request header. It is not written into the rendered page.
 
 ## License

@@ -71,7 +71,7 @@ spawn variants node variants.mjs check
 spawn sample-ics node sample-data.mjs check
 
 # The contexts for the PHP and trmnlp renders, first so those can start early
-render liquidjs-x --set calendar_colors=black,-,gray-65 --set dither_greys=yes --dump-context "$out/context.json"
+render liquidjs-x --set calendar_colors=black,-,gray-65 --dump-context "$out/context.json"
 context=$last
 render liquidjs-ics-x --ics --dump-context "$out/context-ics.json"
 context_ics=$last
@@ -81,7 +81,7 @@ render sample-x
 render sample-og --device og
 render sample-og-2bit --device og2
 render colors-x --set calendar_colors=black,-,gray-65 --set calendar_labels=-,M:,S: --set month_header=yes
-render colors-og-dither --device og --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S: --set dither_greys=yes
+render colors-og --device og --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:
 render options-x --set locale=nl --set first_day=0 --set show_week_numbers=yes --set time_format=am/pm \
     --set display_event_end=no --set rolling_advancement=day --set include_past_events=no
 
