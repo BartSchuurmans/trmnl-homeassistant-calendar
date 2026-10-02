@@ -168,6 +168,14 @@ server {
     # puts the prefix in front of them (larapaper/ingress/ingress.js).
     sub_filter '</head>' '<script src="\$ha_ingress_path/larapaper-local/ingress.js"></script></head>';
 
+    # Home Assistant opens the app at the ingress path's root. Laravel's cached routes
+    # match a copy of the request with the trailing slash cut off, which loses the
+    # prefix there (REQUEST_URI no longer contains the script's directory), so "/"
+    # can't be routed: send it to the dashboard (the login page when logged out).
+    location = / {
+        return 302 \$ha_ingress_path/dashboard;
+    }
+
     location / {
         try_files \$uri \$uri/ /index.php?\$query_string;
     }
