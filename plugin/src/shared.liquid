@@ -402,6 +402,9 @@
           .sort(function(a, b) { return parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10); })
           .map(function(k) { return payloadToCalendars(payload[k])[0] || { events: [] }; });
       }
+      // TRMNL.com hands over a private plugin's or recipe's data (Plugin Merge) wrapped as
+      // { merge_variables: <its data>, custom_fields_values, markup_*_blob_id }
+      if (payload.merge_variables && typeof payload.merge_variables === 'object') return payloadToCalendars(payload.merge_variables);
       // Home Assistant's daily forecast (weather_entity), through the app's proxy:
       // weather.get_forecasts' { service_response: { <entity>: { forecast: [...] } } }
       if (payload.service_response && typeof payload.service_response === 'object') {

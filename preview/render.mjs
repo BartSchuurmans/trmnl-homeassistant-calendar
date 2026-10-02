@@ -189,8 +189,10 @@ if (merge) {
   });
   payload = {};
   if (mergeWeather) {
-    const key = mergeWeather === 'trmnl' ? 'weather_10101' : 'daily_forecast_10102';
-    merged[key] = mergeWeather === 'trmnl' ? sampleTrmnlWeather() : sampleOpenMeteo(todayYmd);
+    const key = mergeWeather === 'trmnl' ? 'weather_10101' : 'private_plugin_10102';
+    // a recipe's data comes wrapped in merge_variables, a native plugin's as it is
+    merged[key] = mergeWeather === 'trmnl' ? sampleTrmnlWeather()
+      : { merge_variables: sampleOpenMeteo(todayYmd), custom_fields_values: { latitude: '52.37', longitude: '4.89', temperature_unit: 'celsius' } };
     if (!overrides.weather_plugin) customFields.weather_plugin = key;
   }
 }

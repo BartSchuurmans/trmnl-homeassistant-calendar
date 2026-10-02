@@ -121,7 +121,9 @@ looks up with `{{ [name] }}`; the data is `{events: [...]}` with
 that lookup, so it stays out of `shared.liquid`; `render.mjs --merge` covers it. The
 Weather dropdown (`weather_plugin`) goes last: TRMNL's Weather plugin
 (`forecast.today/tomorrow`, no dates: placed from today) or Open-Meteo's `daily` (the
-Daily Forecast recipe); `render.mjs --merge-weather trmnl|open-meteo`. The
+Daily Forecast recipe; a recipe's data arrives as `private_plugin_<id>: {merge_variables:
+...}`); `render.mjs --merge-weather trmnl|open-meteo`. TRMNL.com keeps boolean values as
+"true"/"false" text, so the TRMNL.com variant's boolean defaults are text too. The
 LaraPaper recipe dropped its Plugin Data API source (plugin IDs + API key): ICS feeds
 cover those calendars there.
 
