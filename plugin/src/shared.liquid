@@ -639,15 +639,14 @@
         baseOpts.dayCellClass = function(info) { return patternedGreys ? '' : shadeClass(info); };
         // Weather (weather_entity): an icon and the day's high (and low, "Weather
         // temperatures") left of the day number, from today on; what doesn't fit is hidden
-        // (CSS). No low next to the week number; narrow views show the icon only, and none
-        // where the week number sits.
+        // (CSS). Narrow views show the icon only, and none where the week number sits.
         var themeTopContent = window.trmnlMonoTheme.optionDefaults.dayCellTopContent;
         baseOpts.dayCellTopContent = function(info) {
           var content = themeTopContent(info);
           var forecast = !info.isPast && built.weather[info.date.toISOString().slice(0, 10)];
           var weekCell = settings.weekNumbers && info.dow === settings.firstDay % 7;
           if (!forecast || (info.isNarrow && weekCell)) return content;
-          var low = settings.weatherLows && forecast.low !== null && !weekCell;
+          var low = settings.weatherLows && forecast.low !== null;
           return { html: '<span class="trmnl-weather' + (weekCell ? ' trmnl-weather--after-week' : '') + '">' + weatherIcon(forecast.condition) +
             (info.isNarrow ? '' : '<span class="trmnl-weather-high">' + Math.round(forecast.high) + '°</span>' +
               (low ? '<span class="trmnl-weather-low">' + Math.round(forecast.low) + '°</span>' : '')) + '</span>' + content.html };
