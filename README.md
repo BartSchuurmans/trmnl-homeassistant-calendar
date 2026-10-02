@@ -233,11 +233,15 @@ show, with week numbers on.
     colors on color panels.
   - Hex colors are painted as-is. A 1-bit screen snaps them to black or white.
   - `white` (or `#fff`) gets a thin grey outline, dotted on 1-/2-bit screens, like the
-    grid lines, so its events don't vanish on a white day.
+    grid lines, so its events don't vanish on a white day. Where such an event goes on
+    in another week, that side of the outline stays open.
 - Events without a calendar color get a grey bar on the left with a bold title, and
   timed events the time in grey below it (the built-in calendar's look). Single-day
   all-day events are drawn the same way; multi-day events are a light grey band across
   their days.
+- A band that goes on in the previous or next week (or before or after the grid) has a
+  pointed end on that side. A timed event over several weeks shows when it starts in its
+  first week (`14:00 –`), when it ends in its last (`– 11:00`), and no time in between.
 - Titles wrap over at most two lines, then end in an ellipsis, for every kind of event.
 
 ## Differences from upstream

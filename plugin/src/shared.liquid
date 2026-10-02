@@ -103,16 +103,32 @@
   .mono-event--narrow .mono-event-bar { width: calc(2px * var(--mono-u)); }
 
   /* band (row) events: multi-day, or any with a colour of its own (FullCalendar's
-     --fc-event-color, defaulting to --mono-fill) */
-  .mono-event--fill { overflow: hidden; }
+     --fc-event-color, defaulting to --mono-fill). Where one continues from the previous
+     week or into the next (or past the grid's edge), that end is pointed. */
+  .mono-event--fill {
+    --mono-cut-start: var(--mono-arrow);
+    --mono-cut-end: var(--mono-arrow);
+    --mono-arrow: calc(6px * var(--mono-u));
+    overflow: hidden;
+    clip-path: polygon(var(--mono-cut-start) 0, calc(100% - var(--mono-cut-end)) 0, 100% 50%,
+      calc(100% - var(--mono-cut-end)) 100%, var(--mono-cut-start) 100%, 0 50%);
+  }
+  .mono-event--fill.mono-event--narrow { --mono-arrow: calc(3px * var(--mono-u)); }
+  .mono-event--fill.mono-event--start { --mono-cut-start: 0px; }
+  .mono-event--fill.mono-event--end { --mono-cut-end: 0px; }
   .mono-event--start { border-start-start-radius: calc(2px * var(--mono-u)); border-end-start-radius: calc(2px * var(--mono-u)); margin-inline-start: calc(3px * var(--mono-u)); }
   .mono-event--end { border-start-end-radius: calc(2px * var(--mono-u)); border-end-end-radius: calc(2px * var(--mono-u)); margin-inline-end: calc(3px * var(--mono-u)); }
   .mono-event--narrow.mono-event--start { margin-inline-start: calc(1px * var(--mono-u)); }
   .mono-event--narrow.mono-event--end { margin-inline-end: calc(1px * var(--mono-u)); }
   /* the text colour on the inner part, which a host's classes on the event don't reach */
   .mono-event--fill .mono-event-inner { color: var(--fc-event-contrast-color); }
-  .mono-event--fill .mono-event-inner { flex: 1 1 auto; padding: calc(1px * var(--mono-u)) calc(4px * var(--mono-u)); }
-  .mono-event--fill.mono-event--narrow .mono-event-inner { padding: calc(1px * var(--mono-u)) calc(2px * var(--mono-u)); }
+  .mono-event--fill .mono-event-inner {
+    flex: 1 1 auto;
+    padding: calc(1px * var(--mono-u)) calc(4px * var(--mono-u) + var(--mono-cut-end)) calc(1px * var(--mono-u)) calc(4px * var(--mono-u) + var(--mono-cut-start));
+  }
+  .mono-event--fill.mono-event--narrow .mono-event-inner {
+    padding: calc(1px * var(--mono-u)) calc(2px * var(--mono-u) + var(--mono-cut-end)) calc(1px * var(--mono-u)) calc(2px * var(--mono-u) + var(--mono-cut-start));
+  }
 
   /* "+N more" */
   .mono-more { font-weight: 700; margin-inline-start: calc(3px * var(--mono-u)); }
@@ -164,10 +180,13 @@
      white cell; TRMNL's publish check rejects the opacity property. */
   .screen--4bit .trmnl-calendar.fade-past .mono-event--past { filter: invert(1) brightness(0.6) invert(1); }
 
-  /* a white calendar colour has no edge on a white cell: outline it like the grid lines */
-  .trmnl-calendar .trmnl-event--white { box-shadow: inset 0 0 0 1px var(--gray-50); }
+  /* a white calendar colour has no edge on a white cell: outline it like the grid lines,
+     open (not pointed, which would cut the outline) where it continues in another week */
+  .trmnl-calendar .trmnl-event--white { clip-path: none; --mono-cut-start: 0px; --mono-cut-end: 0px; border: 1px solid var(--gray-50); }
   .screen--1bit .trmnl-calendar .trmnl-event--white,
-  .screen--2bit .trmnl-calendar .trmnl-event--white { box-shadow: none; outline: 1px dotted var(--black); outline-offset: -1px; }
+  .screen--2bit .trmnl-calendar .trmnl-event--white { border: 1px dotted var(--black); }
+  .trmnl-calendar .trmnl-event--white:not(.mono-event--start) { border-inline-start-style: none; }
+  .trmnl-calendar .trmnl-event--white:not(.mono-event--end) { border-inline-end-style: none; }
 
   /* patterned weekend cells make small text hard to read: back it with white */
   .screen--1bit .trmnl-calendar .mono-day-number,
@@ -192,6 +211,25 @@
     function escapeHtml(text) {
       return String(text).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
     }
+    // A timed event over several weeks has a band in each: the first shows when it
+    // starts ("14:00 –"), the last when it ends ("– 11:00"), the ones between no time.
+    // Cut from FullCalendar's own range text, so the separator is the locale's.
+    function eventContent(info) {
+      var text = info.timeText;
+      if (!text || info.event.allDay || (info.isStart && info.isEnd)) return true;
+      // the format as given (the view's own option is already compiled), else dayGrid's default
+      var fmt = info.view.calendar.getOption('eventTimeFormat') || { hour: 'numeric', minute: '2-digit', omitZeroMinute: true, meridiem: 'narrow' };
+      var start = info.view.calendar.formatDate(info.event.start, fmt);
+      var end = info.event.end ? info.view.calendar.formatDate(info.event.end, fmt) : '';
+      var hasEnd = end && text !== start && text.slice(-end.length) === end;
+      if (info.isStart) text = hasEnd ? text.slice(0, -end.length).trim() : text;
+      else if (info.isEnd && hasEnd) text = text.indexOf(start) === 0 ? text.slice(start.length).trim() : '\u2013 ' + end;
+      else text = '';
+      return {
+        html: (text ? '<div class="' + escapeHtml(info.timeClass) + '">' + escapeHtml(text) + '</div>' : '') +
+          '<div class="' + escapeHtml(info.titleClass) + '">' + (info.event.title ? escapeHtml(info.event.title) : '&nbsp;') + '</div>'
+      };
+    }
     var dayRow = {
       listItemEventClass: 'mono-event mono-event--bar',
       listItemEventBeforeClass: 'mono-event-bar',
@@ -209,6 +247,7 @@
         eventColor: 'var(--mono-fill)',
         eventContrastColor: 'var(--mono-fill-text)',
         eventClass: function(info) { return join(info.isPast && 'mono-event--past', info.isNarrow && 'mono-event--narrow'); },
+        eventContent: eventContent,
         eventTimeClass: 'mono-event-time',
         eventTitleClass: 'mono-event-title',
         dayHeaderRowClass: 'mono-header-row',
