@@ -36,6 +36,9 @@ for anyone who wants to change it.
    as you like.
 4. **Add it to your playlist.**
 
+For the weather next to the day numbers, pick a weather plugin in its **Weather**
+dropdown (see [Weather](#weather)).
+
 Updates arrive by themselves: every release of this repository updates the recipe on
 TRMNL.com.
 
@@ -172,12 +175,24 @@ to the feeds.
 
 ### Weather
 
-*LaraPaper (local) app only.* With **Home Assistant weather entity** set, each day from
-today on gets the weather entity's daily forecast left of its day number: an icon and
+Each day from today on can get its daily forecast left of its day number: an icon and
 the high, or the high and low with **Weather temperatures**. Where the line runs out of
 room (next to a week number or a month name, say) the low is left out, then the high,
-and narrow views (half and quadrant mashups) show only the icon. It works with ICS feeds as well as with
-Home Assistant calendars.
+and narrow views (half and quadrant mashups) show only the icon.
+
+**On TRMNL.com**, pick a weather plugin in the **Weather** dropdown, and keep that plugin
+in a playlist (hidden is fine) so it keeps refreshing:
+
+- TRMNL's own **Weather** plugin: today and tomorrow only, as that plugin shares no more.
+- The **Daily Forecast** recipe from this repository (`plugin/daily-forecast/`): the next
+  two weeks from [Open-Meteo](https://open-meteo.com), for the latitude and longitude you
+  give it, no account or key. It refreshes hourly and shows a week of forecasts itself.
+  Any other recipe that polls Open-Meteo's daily `weather_code`, `temperature_2m_max` and
+  `temperature_2m_min` works too.
+
+**With LaraPaper**, it takes the LaraPaper (local) app: set **Home Assistant weather
+entity**, and the forecast comes from that entity. It works with ICS feeds as well as
+with Home Assistant calendars.
 
 Home Assistant gives forecasts only to a `weather.get_forecasts` service call (a POST),
 and a recipe can only poll with GET. The app's proxy on `http://127.0.0.1:8124` turns
@@ -187,10 +202,9 @@ a Home Assistant URL of your own (Docker Compose).
 
 ## Settings
 
-Where the events come from is the only difference between the two: TRMNL.com has the
-**Calendar** dropdowns, LaraPaper the **ICS feed URLs** or **Home Assistant** fields
-(see the setup above). Everything else is the same, except the one marked
-*LaraPaper only*.
+Where the events and the weather come from is the only difference between the two:
+TRMNL.com has the **Calendar** and **Weather** dropdowns, LaraPaper the **ICS feed URLs**
+or **Home Assistant** fields (see the setup above). Everything else is the same.
 
 The form groups them in this order. On/off settings are toggles.
 
@@ -201,11 +215,12 @@ The form groups them in this order. On/off settings are toggles.
 | Calendar prefixes | – | Text shown before each event title, per calendar (e.g. `W:`) |
 | Calendar colors | – | Event background per calendar: a TRMNL color name (`black`, `gray-10` … `gray-75`, `red`, `blue-40`, …) or a hex color |
 
-#### Weather (*LaraPaper only*)
+#### Weather
 
 | Setting | Default | Notes |
 |---|---|---|
-| Home Assistant weather entity | – | With the Home Assistant app: the daily forecast next to each day number, see [Weather](#weather) |
+| Weather (*TRMNL.com*) | – | TRMNL's Weather plugin or the Daily Forecast recipe, see [Weather](#weather) |
+| Home Assistant weather entity (*LaraPaper*) | – | With the Home Assistant app: the daily forecast next to each day number, see [Weather](#weather) |
 | Weather temperatures | High | `High and low` adds the low where it fits |
 
 #### Grid
@@ -272,8 +287,8 @@ settings:
 
 shared family events get no prefix and a `gray-35` fill, Mark's events get `M:` and a
 `white` fill, and Sara's get `S:` and a `gray-60` fill. That is what the screenshots above
-show, with a weather entity set and **Weather temperatures** on `High and low` (see
-[Weather](#weather); LaraPaper only).
+show, with a weather forecast and **Weather temperatures** on `High and low` (see
+[Weather](#weather)).
 
 - **Prefix**: shown before the title, followed by a space (`S: Standup`).
 - **Color**: fills every event of that calendar, timed ones included, instead of a dot.
@@ -337,6 +352,8 @@ the changes in detail.
 - **The TRMNL.com recipe** (`plugin/trmnl-com/`): the same markup with the Plugin Merge
   strategy, built from `plugin/src` and uploaded to TRMNL.com on each release. See
   [plugin/README.md](plugin/README.md).
+- **The Daily Forecast recipe** (`plugin/daily-forecast/`): a small TRMNL.com recipe that
+  polls Open-Meteo's daily forecast, for the calendar's **Weather** dropdown.
 - **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
   the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
   in, so rendering a screen needs no internet access. See
@@ -351,6 +368,7 @@ the changes in detail.
 | `plugin/src/full.liquid`, `half_horizontal.liquid`, `half_vertical.liquid`, `quadrant.liquid` | The views: each prints the calendar from `shared.liquid` |
 | `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA / TRMNL plugin event mapping) and the markup (fork of `_full_month.html.erb`) |
 | `plugin/trmnl-com/` | The TRMNL.com variant: its settings and `merge.liquid` |
+| `plugin/daily-forecast/` | The Daily Forecast companion recipe (Open-Meteo), for the TRMNL.com variant's Weather dropdown |
 | `preview/` | Local renderer and CI render checks |
 | `preview/sample-data.mjs`, `docs/sample-ics/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
@@ -391,7 +409,9 @@ HA_URL=http://homeassistant.local:8123 HA_TOKEN=... \
 
 Options: `--set key=value` (any custom field), `--tz Europe/Amsterdam`,
 `--device og` / `og2` (800×480, 1-bit / 2-bit), `--raw` (skip the grey-level reduction), `--data payload.json`,
-`--ics` (hand the events over as parsed ICS feeds, as LaraPaper does), `--merge` (as TRMNL.com's Plugin Merge dropdowns), `--out file.png`. It needs a Chromium;
+`--ics` (hand the events over as parsed ICS feeds, as LaraPaper does), `--merge` (as TRMNL.com's Plugin Merge dropdowns),
+`--merge-weather trmnl|open-meteo` (the same, with TRMNL's Weather plugin or the Daily Forecast recipe in the Weather dropdown),
+`--recipe daily-forecast` (that recipe instead, with a sample forecast), `--out file.png`. It needs a Chromium;
 set `CHROMIUM_PATH` if Playwright can't find one.
 
 The preview uses the same window size, screen classes and framework version as
@@ -410,7 +430,8 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   URLs and headers for Home Assistant and ICS feeds), and through trmnlp
   (TRMNL's own Ruby Liquid, via Docker). The sample and some random calendars are also
   rendered as ICS feeds, in the shape LaraPaper parses them into, and the sample as TRMNL
-  calendar plugins' data. It
+  calendar plugins' data, with both weather plugins; the Daily Forecast recipe is rendered
+  too. It
   fails on template errors, JavaScript errors and renders that
   don't finish. The screenshots are attached to the run as the `renders` artifact.
 - **App** (`.github/workflows/app.yml`, on changes to `larapaper/` or the recipe): lints
@@ -428,7 +449,7 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   rendered rather than LaraPaper's error screen, the PNG size, and that events show up
   on the screen. The screens are attached as the `e2e-screens` artifact.
 - **TRMNL.com** (`.github/workflows/trmnl-com.yml`): on each release, uploads the
-  TRMNL.com recipe and checks that TRMNL.com matches the build; weekly, only compares
+  TRMNL.com recipe and the Daily Forecast recipe and checks that TRMNL.com matches the build; weekly, only compares
   them. See [plugin/README.md](plugin/README.md).
 
 To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run

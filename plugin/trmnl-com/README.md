@@ -10,7 +10,10 @@ How the data arrives: each dropdown stores the name TRMNL gives the chosen plugi
 (for example `caldav_12345`), and the data sits at the top level under that name, in the
 same shape as the Plugin Data API (`{events: [...], tz, ...}`). `merge.liquid` looks
 each one up (`{{ [name] }}`) and passes them to `shared.liquid` as
-`{IDX_0: ..., IDX_1: ...}`. It is a separate file because LaraPaper's Liquid (keepsuit)
+`{IDX_0: ..., IDX_1: ...}`. The **Weather** dropdown (`weather_plugin`) works the same
+way and comes last: TRMNL's Weather plugin (`{forecast: {today, tomorrow}}`, no dates) or
+the [Daily Forecast](../daily-forecast/README.md) recipe (Open-Meteo's `{daily: {time,
+weather_code, ...}}`); `shared.liquid` reads both. It is a separate file because LaraPaper's Liquid (keepsuit)
 can't parse that lookup; `render.mjs --merge` renders with it.
 
 ## Built from the repo

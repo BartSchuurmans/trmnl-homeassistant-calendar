@@ -109,6 +109,38 @@ export function sampleForecast(today, entity = 'weather.forecast_home') {
   return { changed_states: [], service_response: { [entity]: { forecast } } };
 }
 
+// The same forecast as Open-Meteo's daily forecast (on TRMNL.com: the Daily Forecast
+// recipe, plugin/daily-forecast): 16 days from `today`, conditions as WMO codes
+const WMO = { sunny: 0, 'clear-night': 0, partlycloudy: 2, cloudy: 3, windy: 3, fog: 45, rainy: 61, pouring: 65, snowy: 73, 'lightning-rainy': 95 };
+export function sampleOpenMeteo(today) {
+  const days = Array.from({ length: 16 }, (_, i) => FORECAST[i % FORECAST.length]);
+  return {
+    latitude: 52.38, longitude: 4.9, timezone: 'Europe/Amsterdam', utc_offset_seconds: 7200,
+    daily_units: { time: 'iso8601', weather_code: 'wmo code', temperature_2m_max: '°C', temperature_2m_min: '°C' },
+    daily: {
+      time: days.map((_, i) => ymd(Date.parse(`${today}T00:00:00Z`) + i * DAY_MS)),
+      weather_code: days.map(([condition]) => WMO[condition]),
+      temperature_2m_max: days.map(([, high]) => high + 0.3),
+      temperature_2m_min: days.map(([, , low]) => low - 0.2),
+    },
+  };
+}
+
+// The same forecast's first two days as TRMNL's Weather plugin shares them (its Plugin
+// Merge data): today and tomorrow, named in words, without dates
+export function sampleTrmnlWeather() {
+  const day = ([, high, low], icon, conditions) => ({ icon, conditions, maxtemp: high, mintemp: low, uv_index: 1,
+    precip: { icon: 'chance-rain', probability: 20 }, day_override: null });
+  return {
+    forecast: {
+      today: day(FORECAST[0], 'cloudy', 'Cloudy'),
+      tomorrow: day(FORECAST[1], 'rainy', 'Rain Likely'),
+      right_now: { icon: 'cloudy', conditions: 'Cloudy', temperature: 15, humidity: 70, feels_like: 15 },
+    },
+    temperature: 15, humidity: 70, utc_offset: 7200, data_provider: 'tempest', today_conditions: 'Cloudy',
+  };
+}
+
 // iCalendar feed of one calendar: each event repeats weekly with its interval, timed
 // ones in Amsterdam time (with its VTIMEZONE, like Google and iCloud send)
 export function sampleIcs(name) {

@@ -4,6 +4,9 @@
 //
 //   node trmnlp.mjs <context.json> <body.html> [full|half_horizontal|half_vertical|quadrant]
 //                                                   (context from render.mjs --dump-context)
+//   TRMNLP_VARIANT=trmnl-com node trmnlp.mjs ...    a variant or companion recipe in
+//                                                   plugin/ instead, put together as
+//                                                   scripts/build-variant.sh does
 //   node trmnlp.mjs --pull                          only fetches the image, if missing
 //   node trmnlp.mjs --lint                          runs `trmnlp lint` (see lint() below)
 //
@@ -43,9 +46,22 @@ if (contextFile === '--lint') process.exit(lint() ? 0 : 1);
 if (!contextFile || !bodyFile) throw new Error('usage: node trmnlp.mjs <context.json> <body.html> [size]');
 
 const context = JSON.parse(fs.readFileSync(contextFile, 'utf8'));
-const payload = context.data;
+// Plugin Merge (render.mjs --merge) has no polled `data`: the chosen plugins' data is at the top level
+const { size: _size, config: _config, trmnl: _trmnl, ...merged } = context;
+const payload = 'data' in context ? context.data : merged;
 const project = fs.mkdtempSync(path.join(os.tmpdir(), 'trmnlp-'));
-fs.cpSync(path.join(here, '..', 'plugin', 'src'), path.join(project, 'src'), { recursive: true });
+const plugin = path.join(here, '..', 'plugin');
+const variant = process.env.TRMNLP_VARIANT;
+fs.cpSync(path.join(plugin, variant && fs.existsSync(path.join(plugin, variant, 'full.liquid')) ? variant : 'src'),
+  path.join(project, 'src'), { recursive: true });
+if (variant && !fs.existsSync(path.join(plugin, variant, 'full.liquid'))) {
+  // a variant: its settings, and its own Liquid in front of the shared markup
+  const own = fs.readdirSync(path.join(plugin, variant)).filter((f) => f.endsWith('.liquid')).sort();
+  fs.copyFileSync(path.join(plugin, variant, 'settings.yml'), path.join(project, 'src', 'settings.yml'));
+  fs.writeFileSync(path.join(project, 'src', 'shared.liquid'),
+    own.map((f) => fs.readFileSync(path.join(plugin, variant, f), 'utf8')).join('')
+    + fs.readFileSync(path.join(plugin, 'src', 'shared.liquid'), 'utf8'));
+}
 fs.writeFileSync(path.join(project, '.trmnlp.yml'), yaml.dump({
   watch: false,
   time_zone: context.trmnl.user.time_zone_iana,
@@ -58,11 +74,12 @@ execFileSync('docker', ['run', '--rm', '--user', `${process.getuid()}:${process.
 
 // The view as trmnlp renders it: everything inside <div class="screen">
 const html = fs.readFileSync(path.join(project, '_build', `${size}.html`), 'utf8');
-const open = '<div class="screen">';
-const start = html.indexOf(open);
+// (screen--no-bleed and the like with no_screen_padding, as on TRMNL.com)
+const open = html.match(/<div class="screen(?: [^"]*)?">/);
+const start = open ? open.index + open[0].length : -1;
 const end = html.lastIndexOf('</div>', html.lastIndexOf('</body>'));
 if (start < 0 || end < start) throw new Error('unexpected trmnlp output');
-fs.writeFileSync(bodyFile, html.slice(start + open.length, end));
+fs.writeFileSync(bodyFile, html.slice(start, end));
 fs.rmSync(project, { recursive: true, force: true });
 
 // `trmnlp lint` (TRMNL's best-practice checks) on plugin/src (LaraPaper, polling) and on
