@@ -220,10 +220,10 @@ settings:
 |---|---|
 | Calendars | Family, Mark, Sara |
 | Calendar prefixes | `-`, `M:`, `S:` |
-| Calendar colors | `black`, `-`, `gray-50` |
+| Calendar colors | `gray-35`, `white`, `gray-60` |
 
-shared family events get no prefix and a `black` fill, Mark's events get `M:` and no
-fill, and Sara's get `S:` and a `gray-50` fill. That is what the screenshots above
+shared family events get no prefix and a `gray-35` fill, Mark's events get `M:` and a
+`white` fill, and Sara's get `S:` and a `gray-60` fill. That is what the screenshots above
 show, with week numbers on.
 
 - **Prefix**: shown before the title, followed by a space (`S: Standup`).
