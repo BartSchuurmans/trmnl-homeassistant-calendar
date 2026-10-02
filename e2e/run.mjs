@@ -16,7 +16,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { FEEDS, startFakeHa, SUPERVISOR_TOKEN, TOKEN } from './fake-ha.mjs';
+import { FEEDS, FORECAST_DAYS, startFakeHa, SUPERVISOR_TOKEN, TOKEN } from './fake-ha.mjs';
 
 const dir = path.dirname(new URL(import.meta.url).pathname);
 const opt = { container: 'app', url: 'http://localhost:4567', zip: path.join(dir, '../dist/rolling-month-calendar.zip'),
@@ -80,11 +80,13 @@ try {
     { name: 'ics-feeds', feeds: ['family', 'work'],
       config: { ics_urls: `${opt.ha}/feeds/family.ics, ${opt.ha}/feeds/work.ics`, calendar_colors: '-,black' },
       keys: ['IDX_0', 'IDX_1'] },
-    // the app's calendar proxy (the recipe's default URL) instead of a user token;
-    // last, since configure merges into the settings
+    // the app's calendar proxy (the recipe's default URL) instead of a user token, with a
+    // weather entity's forecast through the same proxy (a GET there, a POST service call
+    // to HA); last, since configure merges into the settings
     ...(opt.local ? [] : [{ name: 'app-proxy', token: SUPERVISOR_TOKEN,
-      config: { ha_url: 'http://127.0.0.1:8124', ha_token: '', calendars: 'calendar.family,calendar.work', calendar_colors: '-,black' },
-      keys: ['IDX_0', 'IDX_1'], events: { IDX_0: 100, IDX_1: 8 } }]),
+      config: { ha_url: 'http://127.0.0.1:8124', ha_token: '', calendars: 'calendar.family,calendar.work', calendar_colors: '-,black',
+        weather_entity: 'weather.forecast_home' },
+      keys: ['IDX_0', 'IDX_1', 'IDX_2'], events: { IDX_0: 100, IDX_1: 8 }, forecast: { IDX_2: FORECAST_DAYS } }]),
   ];
   const results = {};
   for (const s of scenarios) {
@@ -99,7 +101,8 @@ try {
     try { display = JSON.parse(body); } catch { console.log(body.slice(0, 2000)); }
     check(res.ok && display.status === 0 && !!display.image_url, `/api/display returns a screen (${res.status} ${display.image_url})`);
 
-    const polled = requests.slice(before);
+    const polled = requests.slice(before).filter((r) => !r.weather);
+    const weather = requests.slice(before).filter((r) => r.weather);
     const state = php('check');
     console.log(JSON.stringify(state.calendars), JSON.stringify(state.image));
     check(JSON.stringify(state.payload_keys) === JSON.stringify(s.keys), `payload shape ${JSON.stringify(state.payload_keys)}`);
@@ -125,8 +128,15 @@ try {
       check(polled.every((r) => r.authorization === `Bearer ${token}`), `sent the ${s.token ? 'app' : 'user'} access token`);
       check(polled.every((r) => r.start === dayOffset(-7) && r.end === dayOffset(43)),
         `window ${dayOffset(-7)} .. ${dayOffset(43)} (${[...new Set(polled.map((r) => `${r.start} .. ${r.end}`))].join(', ')})`);
-      check(JSON.stringify(state.calendars) === JSON.stringify(Object.fromEntries(
-        Object.entries(s.events).map(([k, n]) => [k, { events: n }]))), 'payload holds the fake events');
+      check(JSON.stringify(state.calendars) === JSON.stringify(Object.fromEntries([
+        ...Object.entries(s.events).map(([k, n]) => [k, { events: n }]),
+        ...Object.entries(s.forecast || {}).map(([k, n]) => [k, { forecast: n }])])), 'payload holds the fake events');
+      if (s.config.weather_entity) {
+        check(weather.length === 1 && weather[0].weather === s.config.weather_entity && weather[0].method === 'POST'
+          && weather[0].type === 'daily' && weather[0].query === '?return_response',
+          `forecast fetched with one daily get_forecasts call (${JSON.stringify(weather)})`);
+        check(weather.every((r) => r.authorization === `Bearer ${token}`), 'sent the app access token for the forecast');
+      }
     }
     // A render error leaves the plugin without an image and shows LaraPaper's error screen
     check(!!state.plugin_image && state.plugin_image === state.device_image, 'device shows the rendered recipe, not an error screen');
@@ -152,6 +162,7 @@ try {
 
   const unauthorized = await fetch(`http://localhost:8123/api/calendars/calendar.family?start=${today}&end=${today}`);
   check(unauthorized.status === 401, 'fake HA rejects requests without the token');
+
 } finally {
   server.close();
 }

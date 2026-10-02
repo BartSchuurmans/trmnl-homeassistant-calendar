@@ -25,6 +25,8 @@ const VARIANTS = {
       ha_url: 'Home Assistant would have to be reachable from the internet',
       ha_token: 'Home Assistant would have to be reachable from the internet',
       calendars: 'Home Assistant entities; replaced by the calendar_N dropdowns',
+      weather_entity: 'needs the LaraPaper (local) app\'s Home Assistant proxy',
+      weather_temperatures: 'only used with weather_entity',
     },
     own: /^calendar_\d+$/,
   },

@@ -12,11 +12,14 @@ polling_verb: get
 # (561600 s = 6.5 days back, 3758400 s = 43.5 days ahead: the half day keeps a 23- or
 # 25-hour DST day from moving the date), which PHP (LaraPaper) and Ruby (TRMNL, Terminus)
 # Liquid read alike. ICS feeds are fetched whole; the server parses them and keeps the
-# events around today.
+# events around today. A weather entity adds one more URL, last: its daily forecast,
+# through the LaraPaper (local) app's Home Assistant proxy (a GET there; Home Assistant
+# itself only gives forecasts to a POST service call).
 polling_url: |-
   {% if ics_urls contains "/" %}{% assign feeds = ics_urls | split: "," %}{% for feed in feeds %}{{ feed | strip | replace: "webcal://", "https://" }}
   {% endfor %}{% else %}{% assign cals = calendars | split: "," %}{% for cal in cals %}{{ ha_url }}/api/calendars/{{ cal | strip }}?start={{ "now" | date: "%Y-%m-%d" | date: "%s" | minus: 561600 | date: "%Y-%m-%d" }}&end={{ "now" | date: "%Y-%m-%d" | date: "%s" | plus: 3758400 | date: "%Y-%m-%d" }}
-  {% endfor %}{% endif %}
+  {% endfor %}{% endif %}{% if weather_entity contains "weather." %}{{ ha_url }}/api/weather/{{ weather_entity | strip }}
+  {% endif %}
 # Only Home Assistant gets the token. No "=" in the Liquid here, not even in an assign:
 # LaraPaper's importer turns every "=" into ":".
 polling_headers: '{% unless ics_urls contains "/" %}Authorization=Bearer {{ ha_token }}{% endunless %}'
@@ -52,6 +55,20 @@ custom_fields:
     description: One or more HA calendar entity IDs.
     placeholder: calendar.family
     optional: true
+  - keyname: weather_entity
+    field_type: string
+    name: Home Assistant weather entity
+    description: Optional. A weather entity (e.g. weather.forecast_home) whose daily forecast is shown next to each day number, from today on. Needs the LaraPaper (local) Home Assistant app and its default Home Assistant URL above; works with ICS feeds too.
+    placeholder: weather.forecast_home
+    optional: true
+  - keyname: weather_temperatures
+    field_type: select
+    name: Weather temperatures
+    description: With a weather entity, show each day's high, or its high and low. The low is left out where the day's line has no room for it (next to a week number or a month name).
+    options:
+      - High: high
+      - High and low: high_low
+    default: high
   - keyname: calendar_labels
     field_type: multi_string
     name: Calendar prefixes

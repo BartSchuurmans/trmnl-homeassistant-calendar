@@ -6,6 +6,7 @@
 //   node render.mjs                         sample events → out/preview.png
 //   HA_URL=http://ha:8123 HA_TOKEN=... HA_CALENDARS=calendar.family,calendar.work node render.mjs
 //   node render.mjs --set first_day=0 --set time_format=am/pm --device og
+//   node render.mjs --set weather_entity=weather.home      with a sample weather forecast
 //
 // For CI: --dump-context <file> writes the Liquid render context as JSON, --body <file>
 // screenshots markup rendered elsewhere (e.g. by LaraPaper's PHP Liquid, php/render.php),
@@ -44,7 +45,7 @@ import { fileURLToPath } from 'node:url';
 import { Liquid } from 'liquidjs';
 import * as yaml from 'js-yaml';
 import { chromium } from 'playwright-core';
-import { sampleData } from './sample-data.mjs';
+import { sampleData, sampleForecast } from './sample-data.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = path.join(here, '..', 'plugin', 'src');
@@ -176,6 +177,15 @@ if (ics) {
   if (!overrides.ics_urls) {
     customFields.ics_urls = (idx.length ? idx : ['IDX_0']).map((_, i) => `https://calendar.example/${i + 1}.ics`).join(',');
   }
+}
+
+// A weather entity (weather_entity) adds its forecast as the last polled URL; without
+// live data, the sample one
+const weatherEntity = (customFields.weather_entity || '').trim();
+if (weatherEntity.startsWith('weather.') && !merge && !dataFile && !process.env.HA_URL) {
+  const idx = Object.keys(payload).filter((k) => /^IDX_\d+$/.test(k));
+  if (!idx.length) payload = { IDX_0: payload };
+  payload[`IDX_${idx.length || 1}`] = sampleForecast(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`, weatherEntity);
 }
 
 // LaraPaper render context: `data` is the payload, then the payload keys are spread

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.43.1-3
+
+- The app's Home Assistant access also serves daily weather forecasts, for the
+  calendar recipe's new **Home Assistant weather entity** setting. It forwards only a
+  daily `weather.get_forecasts` call for one `weather.*` entity, as before only from
+  inside the app.
+
 ## 0.43.1-2
 
 - FullCalendar 7.1.0 is built in next to 6.1.21. The next calendar recipe release uses

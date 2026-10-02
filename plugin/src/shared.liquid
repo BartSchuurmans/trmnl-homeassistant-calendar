@@ -198,6 +198,18 @@
   .screen--1bit .trmnl-calendar.highlight-today .mono-day--today .mono-day-number,
   .screen--2bit .trmnl-calendar.highlight-today .mono-day--today .mono-day-number { background-color: var(--black); }
 
+  /* weather (weather_entity): icon and high at the left of the day's number line, after
+     the week number where that sits */
+  .trmnl-calendar .mono-day-label:has(.trmnl-weather) { flex: 1 1 auto; align-items: center; }
+  .trmnl-calendar .mono-day-label:has(.trmnl-weather) .mono-month { flex: none; }
+  .trmnl-calendar .trmnl-weather {
+    display: inline-flex; align-items: center; gap: calc(3px * var(--mono-u));
+    margin-right: auto; padding-right: 0.4em; color: var(--black); white-space: nowrap;
+  }
+  .trmnl-calendar .trmnl-weather--after-week { padding-left: 3em; }
+  .trmnl-calendar .trmnl-weather-icon { width: 1.25em; height: 1.25em; flex: none; }
+  .trmnl-calendar .trmnl-weather-high { font-weight: 700; }
+
   .trmnl-calendar-error { font-weight: 700; }
 </style>
 
@@ -358,6 +370,13 @@
           .sort(function(a, b) { return parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10); })
           .map(function(k) { return payloadToCalendars(payload[k])[0] || { events: [] }; });
       }
+      // Home Assistant's daily forecast (weather_entity), through the app's proxy:
+      // weather.get_forecasts' { service_response: { <entity>: { forecast: [...] } } }
+      if (payload.service_response && typeof payload.service_response === 'object') {
+        var forecast = Object.keys(payload.service_response).map(function(k) { return payload.service_response[k]; })
+          .filter(function(r) { return r && Array.isArray(r.forecast); })[0];
+        return [{ events: [], forecast: forecast ? forecast.forecast : [] }];
+      }
       if (Array.isArray(payload.ical)) return [{ events: payload.ical.map(fromIcal).filter(Boolean) }];
       if (Array.isArray(payload.events)) return [{ events: payload.events.map(fromNative).filter(Boolean) }];
       if (Array.isArray(payload.data)) return [{ events: payload.data }];
@@ -428,9 +447,23 @@
       var errors = [];
       var seen = {};
       var events = [];
+      var weather = {};
 
-      payloadToCalendars(payload).forEach(function(cal, i) {
-        if (cal.error) errors.push((cfg.calendarEntities[i] || 'calendar ' + (i + 1)) + ': ' + cal.error);
+      var calendars = payloadToCalendars(payload);
+      calendars.forEach(function(cal, i) {
+        // the forecast is the last URL polled (polling_url in settings.yml)
+        var isWeather = cfg.weatherEntity && i === calendars.length - 1;
+        if (cal.error) errors.push((isWeather ? cfg.weatherEntity : cfg.calendarEntities[i] || 'calendar ' + (i + 1)) + ': ' + cal.error);
+        if (cal.forecast) {
+          // a day's forecast is dated by its time in the configured zone
+          cal.forecast.forEach(function(f) {
+            if (!f || !f.datetime || typeof f.temperature !== 'number') return;
+            weather[wallClock(f.datetime, cfg.timeZoneName).slice(0, 10)] = {
+              condition: String(f.condition || ''), high: f.temperature, low: typeof f.templow === 'number' ? f.templow : null
+            };
+          });
+          return;
+        }
         (cal.events || []).forEach(function(raw) {
           // private events without details have no summary; upstream calls them 'Busy'
           raw.summary = raw.summary || 'Busy';
@@ -452,7 +485,7 @@
       });
 
       events.sort(function(a, b) { return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; });
-      return { events: events, errors: errors };
+      return { events: events, errors: errors, weather: weather };
     }
 
     return { splitList: splitList, splitAligned: splitAligned, wallClock: wallClock, buildEvents: buildEvents };
@@ -491,6 +524,27 @@
   }
 
   // Shared initializer: bootstrap any .trmnl-calendar element with data-calendar-config JSON
+  // Weather icons (24px line drawings) by Home Assistant's weather conditions
+  var WEATHER_ICONS = {
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    partly: '<path d="M8 3v1.5M3.5 8H2M4.8 4.8l1 1M12.2 4.8l-1 1"/><path d="M5.2 11.5A4 4 0 1 1 12 7.6"/><path d="M8 20h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4 1.4A3.3 3.3 0 0 0 8 20z"/>',
+    cloud: '<path d="M7 19h10a4.5 4.5 0 0 0 .4-9A6 6 0 0 0 6 11a4 4 0 0 0 1 8z"/>',
+    fog: '<path d="M7 14h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 7.5 3.5 3.5 0 0 0 7 14z"/><path d="M4 18h16M6 21.5h12"/>',
+    rain: '<path d="M7 15h10a4.5 4.5 0 0 0 .4-9A6 6 0 0 0 6 7a4 4 0 0 0 1 8z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+    snow: '<path d="M7 15h10a4.5 4.5 0 0 0 .4-9A6 6 0 0 0 6 7a4 4 0 0 0 1 8z"/><path d="M8 19h.01M12 19h.01M16 19h.01M10 22h.01M14 22h.01" stroke-width="3"/>',
+    storm: '<path d="M7 15h10a4.5 4.5 0 0 0 .4-9A6 6 0 0 0 6 7a4 4 0 0 0 1 8z"/><path d="M13 14l-3 4h4l-3 4"/>',
+    wind: '<path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/>'
+  };
+  var WEATHER_CONDITIONS = {
+    sunny: 'sun', 'clear-night': 'sun', partlycloudy: 'partly', cloudy: 'cloud', fog: 'fog',
+    rainy: 'rain', pouring: 'rain', snowy: 'snow', 'snowy-rainy': 'snow', hail: 'snow',
+    lightning: 'storm', 'lightning-rainy': 'storm', windy: 'wind', 'windy-variant': 'wind'
+  };
+  function weatherIcon(condition) {
+    return '<svg class="trmnl-weather-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      WEATHER_ICONS[WEATHER_CONDITIONS[condition] || 'cloud'] + '</svg>';
+  }
+
   window.trmnlInitCalendars = function(root) {
     try {
       var scope = root || document;
@@ -580,6 +634,21 @@
           return 'text--small ' + (highlightToday && info.dow === todayDow ? 'mono-header--today' : shadeClass(info));
         };
         baseOpts.dayCellClass = function(info) { return patternedGreys ? '' : shadeClass(info); };
+        // Weather (weather_entity): an icon and the day's high (and low, "Weather
+        // temperatures") left of the day number, from today on. The low only where nothing
+        // else shares the line; narrow views show the icon only, and none where the week
+        // number sits.
+        var themeTopContent = window.trmnlMonoTheme.optionDefaults.dayCellTopContent;
+        baseOpts.dayCellTopContent = function(info) {
+          var content = themeTopContent(info);
+          var forecast = !info.isPast && built.weather[info.date.toISOString().slice(0, 10)];
+          var weekCell = settings.weekNumbers && info.dow === settings.firstDay % 7;
+          if (!forecast || (info.isNarrow && weekCell)) return content;
+          var low = settings.weatherLows && forecast.low !== null && !weekCell && !info.monthText;
+          return { html: '<span class="trmnl-weather' + (weekCell ? ' trmnl-weather--after-week' : '') + '">' + weatherIcon(forecast.condition) +
+            (info.isNarrow ? '' : '<span class="trmnl-weather-high">' + Math.round(forecast.high) + '°</span>' +
+              (low ? '<span class="trmnl-weather-low">' + Math.round(forecast.low) + '°</span>' : '')) + '</span>' + content.html };
+        };
         var muted = patternedGreys ? '' : 'text--muted';
         baseOpts.dayCellTopInnerClass = function(info) { return 'text--small ' + (info.isPast ? muted : ''); };
         baseOpts.eventClass = 'text--small';
@@ -725,6 +794,8 @@
          "calendarEntities": {% if source != "ha" %}""{% else %}{{ s.calendars | default: "" | json | escape }}{% endif %},
          "calendarPrefixes": {{ s.calendar_labels | default: "" | json | escape }},
          "calendarColors": {{ s.calendar_colors | default: "" | json | escape }},
+         "weatherEntity": {% if source != "merge" and s.weather_entity contains "weather." %}{{ s.weather_entity | strip | json | escape }}{% else %}""{% endif %},
+         "weatherLows": {% if s.weather_temperatures == "high_low" %}true{% else %}false{% endif %},
          "ignoredPhrases": {{ s.ignored_phrases | default: "" | json | escape }},
          "ignoredPhrasesExactMatch": {{ s.ignored_phrases_exact_match | default: "" | json | escape }},
          "includePastEvents": {% if s.include_past_events == "no" %}false{% else %}true{% endif %},

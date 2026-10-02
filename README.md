@@ -143,6 +143,10 @@ open the settings of the **Rolling Month Calendar** recipe and fill in either:
   Home Assistant app, leave the URL at its default `http://127.0.0.1:8124` and the
   token empty: that is the app's own access to Home Assistant.
 
+With the Home Assistant app you can also fill in **Home Assistant weather entity**, e.g.
+`weather.forecast_home`, for each day's forecast next to its day number (see
+[Weather](#weather)).
+
 Add the recipe to the device's playlist (**Add to Playlist** on the recipe page).
 
 **Updating:** installing from the catalog again adds a second copy. To update in place
@@ -165,6 +169,21 @@ and has no such limit.
 
 A `webcal://` link is fetched over `https://`. The Home Assistant token is never sent
 to the feeds.
+
+### Weather
+
+*LaraPaper (local) app only.* With **Home Assistant weather entity** set, each day from
+today on gets the weather entity's daily forecast left of its day number: an icon and
+the high, or the high and low with **Weather temperatures**. The low is left out next
+to a week number or a month name, where the line has no room for it, and narrow views
+(half and quadrant mashups) show only the icon. It works with ICS feeds as well as with
+Home Assistant calendars.
+
+Home Assistant gives forecasts only to a `weather.get_forecasts` service call (a POST),
+and a recipe can only poll with GET. The app's proxy on `http://127.0.0.1:8124` turns
+`GET /api/weather/<weather entity>` into that one call (`type: daily`), so the recipe
+fetches the forecast from **Home Assistant URL** at its default. It doesn't work with
+a Home Assistant URL of your own (Docker Compose).
 
 ## Settings
 
@@ -191,6 +210,8 @@ Where the events come from is the only difference between the two: TRMNL.com has
 | Show week numbers | no | |
 | Locale | `en` | Day/month names, e.g. `nl`, `de` |
 | Ignore events containing / titled exactly | – | Hide events by title (and, for "containing", description) |
+| Home Assistant weather entity | – | *LaraPaper only*, with the Home Assistant app: the daily forecast next to each day number, see [Weather](#weather) |
+| Weather temperatures | High | `High and low` adds the low where it fits |
 
 The grid shows as many whole weeks (up to 6) as fit, and with ICS feeds no more than
 the feeds cover (see [ICS feeds](#ics-feeds)): busy weeks make rows taller, so
@@ -373,7 +394,8 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   that LaraPaper, points it at a fake Home Assistant (`e2e/fake-ha.mjs`) and fetches
   the screen like a TRMNL X does (`GET /api/display`). It checks the polled URLs and
   token, the stored payload for two, one and zero-event calendars and for two ICS feeds
-  it serves (recurring and all-day events, no token sent), that the recipe
+  it serves (recurring and all-day events, no token sent), the weather forecast call the
+  app's proxy makes, that the recipe
   rendered rather than LaraPaper's error screen, the PNG size, and that events show up
   on the screen. The screens are attached as the `e2e-screens` artifact.
 - **TRMNL.com** (`.github/workflows/trmnl-com.yml`): on each release, uploads the

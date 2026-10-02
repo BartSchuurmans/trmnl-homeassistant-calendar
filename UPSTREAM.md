@@ -87,6 +87,8 @@ treats its native plugins as source-available and is fine with them being remixe
   colour names go through `bg--*` classes; on 1-/2-bit screens the text gets
   `text-stroke`, like upstream's `adaptiveEventStroke`.
 - **Added**: optional per-calendar prefixes, a line above the grid naming any
-  calendar that failed to load.
+  calendar that failed to load, and an optional daily weather forecast (icon and high,
+  optionally the low) next to the day numbers from today on, from a Home Assistant
+  weather entity through the LaraPaper (local) app's proxy.
 - **Settings**: exposed as custom fields (`settings.yml`) and read from
   `trmnl.plugin_settings.custom_fields_values`.

@@ -92,6 +92,23 @@ export function sampleData(today, zone) {
   return Object.fromEntries(Object.keys(CALENDARS).map((name, i) => [`IDX_${i}`, { data: events(CALENDARS[name], name) }]));
 }
 
+// A weather entity's daily forecast as the LaraPaper (local) app's proxy hands it over
+// (Home Assistant's weather.get_forecasts response): ten days from `today`, each dated
+// at noon UTC, cycling through every condition the recipe draws.
+const FORECAST = [
+  ['cloudy', 17, 9], ['rainy', 15, 10], ['partlycloudy', 16, 8], ['sunny', 19, 9], ['partlycloudy', 18, 11],
+  ['pouring', 14, 9], ['cloudy', 13, 7], ['fog', 12, 6], ['lightning-rainy', 14, 8], ['snowy', 3, -2],
+  ['windy', 11, 5], ['clear-night', 15, 5],
+];
+export function sampleForecast(today, entity = 'weather.forecast_home') {
+  const forecast = Array.from({ length: 10 }, (_, i) => {
+    const [condition, temperature, templow] = FORECAST[i % FORECAST.length];
+    return { condition, datetime: `${ymd(Date.parse(`${today}T00:00:00Z`) + i * DAY_MS)}T12:00:00+00:00`,
+      temperature, templow, precipitation: 0 };
+  });
+  return { changed_states: [], service_response: { [entity]: { forecast } } };
+}
+
 // iCalendar feed of one calendar: each event repeats weekly with its interval, timed
 // ones in Amsterdam time (with its VTIMEZONE, like Google and iCloud send)
 export function sampleIcs(name) {
