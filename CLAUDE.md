@@ -147,8 +147,10 @@ dates with `getUTC*`.
 
 ## Releasing
 
-- Recipe: tag `vX.Y.Z` on main and push the tag. `release.yml` reruns the render suite
-  and publishes a GitHub release with `rolling-month-calendar.zip` (+ `.sha256`). The ZIP is
+- Recipe: tag `vX.Y.Z` on main and push the tag, or run the Release workflow on main
+  from the Actions tab with that version (it creates the tag with the release, after the
+  render suite passes). `release.yml` reruns the render suite and publishes a GitHub
+  release with `rolling-month-calendar.zip` (+ `.sha256`). The ZIP is
   reproducible (`build-zip.sh` dates it by the last `plugin/src` commit). Every render
   run also uploads the ZIP as an artifact.
   The release also attaches each variant's ZIP and uploads the TRMNL.com variants there

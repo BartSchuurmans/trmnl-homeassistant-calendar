@@ -1,10 +1,13 @@
 name: Release
 
-# Pushing a tag like v1.2.0 runs the render checks and publishes a GitHub release
+# Pushing a tag like v1.2.0, or running this workflow from the Actions tab on main with
+# that version, runs the render checks and publishes a GitHub release
 # with the recipe ZIP (dist/rolling-month-calendar.zip), one per variant
 # (rolling-month-calendar-<variant>.zip) and their SHA-256. The asset names stay the same,
 # so the README can link to releases/latest/download/rolling-month-calendar.zip. Then it
-# uploads the TRMNL.com variants there (trmnl-com.yml).
+# uploads the TRMNL.com variants there (trmnl-com.yml). A manual run creates the tag
+# along with the release, on the commit it ran on, once the render checks pass. A tag
+# created with the workflow's token doesn't start the push trigger, so it runs once.
 #
 # The Home Assistant app is released separately: Home Assistant offers an update
 # whenever `version` in larapaper/config.yaml changes on main.
@@ -12,16 +15,54 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, like v1.2.0
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
+  # The tag to release: the pushed one, or the version typed in on a manual run
+  tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "::error::Run this workflow on main, not $GITHUB_REF_NAME"
+            exit 1
+          fi
+          tag="v${VERSION#v}"
+          if ! echo "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::'$VERSION' is not a version like v1.2.0"
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --silent 2>/dev/null; then
+            echo "::error::$tag already exists"
+            exit 1
+          fi
+          echo "Releasing $tag from $GITHUB_SHA"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   render:
+    needs: tag
     uses: ./.github/workflows/render.yml
 
   release:
-    needs: render
+    needs: [tag, render]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,7 +75,7 @@ jobs:
         run: |
           git fetch --no-tags origin main
           if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::$GITHUB_REF_NAME is not on main"
+            echo "::error::$GITHUB_SHA is not on main"
             exit 1
           fi
 
@@ -44,12 +85,15 @@ jobs:
           sh scripts/build-variant.sh
           cd dist && for zip in rolling-month-calendar*.zip; do sha256sum "$zip" > "$zip.sha256" && cat "$zip.sha256"; done
 
+      # A pushed tag must exist; a manual run's tag is created here, on the commit it ran on
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.tag.outputs.tag }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/rolling-month-calendar*.zip dist/rolling-month-calendar*.zip.sha256 \
-            --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+          if [ "$GITHUB_EVENT_NAME" = push ]; then tag_option=--verify-tag; else tag_option="--target=$GITHUB_SHA"; fi
+          gh release create "$TAG" dist/rolling-month-calendar*.zip dist/rolling-month-calendar*.zip.sha256 \
+            "$tag_option" --title "$TAG" --generate-notes
 
   # The TRMNL.com variants follow releases, not main
   trmnl-com:
