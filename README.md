@@ -74,7 +74,8 @@ Settings → Apps → store → ⋮ → Repositories, add
 `https://github.com/BartSchuurmans/trmnl-rolling-month-calendar`, and install
 **LaraPaper (local)**. It bundles the TRMNL framework and FullCalendar, so rendering
 needs no internet access, and it reads your calendars with its own Home Assistant
-access, so you don't need an access token. Setup steps are in
+access, so you don't need an access token. Its web UI opens inside Home Assistant, so
+you can reach it wherever you reach Home Assistant. Setup steps are in
 [larapaper/DOCS.md](larapaper/DOCS.md).
 
 **Or with Docker Compose** on any machine:
@@ -450,7 +451,10 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   it serves (recurring and all-day events, no token sent), the weather forecast call the
   app's proxy makes, that the recipe
   rendered rather than LaraPaper's error screen, the PNG size, and that events show up
-  on the screen. The screens are attached as the `e2e-screens` artifact.
+  on the screen. `e2e/ingress.mjs` then logs in to the web UI through a fake Home
+  Assistant ingress and checks that the dashboard, the recipe preview and a render load
+  everything under the ingress path. The screens are attached as the `e2e-screens`
+  artifact.
 - **TRMNL.com** (`.github/workflows/trmnl-com.yml`): on each release, uploads the
   TRMNL.com recipe and checks that TRMNL.com matches the build; weekly, only compares
   them. See [plugin/README.md](plugin/README.md).

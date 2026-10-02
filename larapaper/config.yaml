@@ -1,5 +1,5 @@
 name: LaraPaper (local)
-version: "0.43.1-3"
+version: "0.43.1-4"
 slug: larapaper_local
 description: >-
   TRMNL BYOS server (LaraPaper) that renders screens without internet access:
@@ -14,11 +14,16 @@ init: false
 # The Supervisor token lets the bundled calendar proxy read Home Assistant calendars
 homeassistant_api: true
 startup: services
+# The web UI through Home Assistant (sidebar, Open Web UI), also away from home;
+# ingress_port is left at its default, 8099
+ingress: true
+panel_icon: mdi:tablet-dashboard
+panel_title: LaraPaper
+# The TRMNL device API (and the web UI) on the home network
 ports:
   8080/tcp: 4567
 ports_description:
-  8080/tcp: LaraPaper web UI and TRMNL device API
-webui: http://[HOST]:[PORT:8080]
+  8080/tcp: TRMNL device API and LaraPaper web UI
 options:
   app_url: ""
   registration_enabled: true

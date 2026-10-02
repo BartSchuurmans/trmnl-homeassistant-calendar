@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.43.1-4
+
+- The web UI opens inside Home Assistant (**Open Web UI**, or **Show in sidebar**), so
+  you can reach it wherever you reach Home Assistant, without opening a port to the
+  internet. You still log in to LaraPaper there. The TRMNL keeps using port 4567, and
+  so can your browser at home.
+
 ## 0.43.1-3
 
 - The app's Home Assistant access also serves daily weather forecasts, for the
