@@ -158,6 +158,9 @@ if [ -n "$trmnlp" ]; then
     # TRMNL.com's Plugin Merge lookups (merge.liquid) in Ruby Liquid
     spawn trmnlp-merge-weather-x trmnlp_render_variant trmnlp-merge-weather-x "$out/context-merge-weather.json" \
         "$out/trmnlp-merge-weather-body.html" trmnl-com --expect-events --merge-weather trmnl
+    # TRMNL.com's Home Assistant recipe (plugin/trmnl-com-ha): the polled calendars as IDX_n
+    spawn trmnlp-ha-x trmnlp_render_variant trmnlp-ha-x "$out/context.json" "$out/trmnlp-ha-body.html" \
+        trmnl-com-ha --expect-events
     # TRMNL's best-practice checks, as LaraPaper and TRMNL.com run the recipe
     spawn trmnlp-lint node trmnlp.mjs --lint
 else

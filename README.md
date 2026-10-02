@@ -11,7 +11,9 @@ There are two ways to use it. Pick the one that matches how your TRMNL is set up
 
 - **[On TRMNL.com](#on-trmnlcom)**: your device uses TRMNL's own servers. Install the
   recipe and pick the calendar plugins you already connected on trmnl.com (Google,
-  Outlook, Apple, CalDAV…). Nothing to host.
+  Outlook, Apple, CalDAV…). Nothing to host. If your calendars are in Home Assistant
+  instead, and it is reachable from the internet, there is a
+  [Home Assistant edition](#on-trmnlcom-with-home-assistant).
 - **[Self-hosted with LaraPaper](#self-hosted-with-larapaper)**: your device talks to
   [LaraPaper](https://github.com/usetrmnl/larapaper), a TRMNL server you run yourself,
   for example as a Home Assistant app. The calendar then reads **ICS feeds** or **Home
@@ -41,6 +43,32 @@ dropdown (see [Weather](#weather)).
 
 Updates arrive by themselves: every release of this repository updates the recipe on
 TRMNL.com.
+
+### On TRMNL.com with Home Assistant
+
+**Rolling Month Calendar (Home Assistant)** is the same calendar for Home Assistant
+calendar entities (Local Calendar, Google, CalDAV, iCloud…), on TRMNL.com. TRMNL's
+servers fetch the events from Home Assistant on every refresh, so Home Assistant has to
+be reachable from the internet: through [Home Assistant
+Cloud](https://www.nabucasa.com/config/remote/) (its remote URL, like
+`https://abcdefgh.ui.nabu.casa`) or your own [remote
+access](https://www.home-assistant.io/docs/configuration/remote/) address. If it isn't,
+or you'd rather keep it that way, run [LaraPaper](#self-hosted-with-larapaper) at home
+instead.
+
+1. **Make a long-lived access token** in Home Assistant: your profile → **Security** →
+   **Long-lived access tokens** → Create. A token can do anything its user can, so
+   preferably make a separate user for TRMNL that isn't an administrator (Settings →
+   People → Users), log in as that user and create the token there.
+2. **Install the recipe**: find **Rolling Month Calendar (Home Assistant)** among TRMNL's
+   recipes and install it.
+3. **Fill in** your Home Assistant URL (without a trailing slash), the token and your
+   calendar entity IDs (Settings → Devices & services → Entities, search for
+   `calendar.`). Set the other [settings](#settings) as you like.
+4. **Add it to your playlist.**
+
+This edition has no weather: Home Assistant gives forecasts only to a POST service call,
+and TRMNL.com polls with GET.
 
 ## Self-hosted with LaraPaper
 
@@ -212,8 +240,9 @@ a Home Assistant URL of your own (Docker Compose).
 ## Settings
 
 Where the events and the weather come from is the only difference between the two:
-TRMNL.com has the **Calendar** and **Weather** dropdowns, LaraPaper the **ICS feed URLs**
-or **Home Assistant** fields (see the setup above). Everything else is the same.
+TRMNL.com has the **Calendar** and **Weather** dropdowns, its Home Assistant edition the
+**Home Assistant** fields (no weather), LaraPaper the **ICS feed URLs** or **Home
+Assistant** fields (see the setup above). Everything else is the same.
 
 The form groups them in this order. On/off settings are toggles.
 
@@ -361,6 +390,8 @@ the changes in detail.
 - **The TRMNL.com recipe** (`plugin/trmnl-com/`): the same markup with the Plugin Merge
   strategy, built from `plugin/src` and uploaded to TRMNL.com on each release. See
   [plugin/README.md](plugin/README.md).
+- **The TRMNL.com Home Assistant recipe** (`plugin/trmnl-com-ha/`): the same markup polling
+  Home Assistant from TRMNL.com, built and released the same way.
 - **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
   the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
   in, so rendering a screen needs no internet access. See
@@ -375,6 +406,7 @@ the changes in detail.
 | `plugin/src/full.liquid`, `half_horizontal.liquid`, `half_vertical.liquid`, `quadrant.liquid` | The views: each prints the calendar from `shared.liquid` |
 | `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA / TRMNL plugin event mapping) and the markup (fork of `_full_month.html.erb`) |
 | `plugin/trmnl-com/` | The TRMNL.com variant: its settings and `merge.liquid` |
+| `plugin/trmnl-com-ha/` | The TRMNL.com Home Assistant variant: its settings |
 | `preview/` | Local renderer and CI render checks |
 | `preview/sample-data.mjs`, `docs/sample-ics/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
@@ -456,7 +488,7 @@ instead of LaraPaper's PHP Liquid, so small differences are possible.
   everything under the ingress path. The screens are attached as the `e2e-screens`
   artifact.
 - **TRMNL.com** (`.github/workflows/trmnl-com.yml`): on each release, uploads the
-  TRMNL.com recipe and checks that TRMNL.com matches the build; weekly, only compares
+  TRMNL.com recipes and checks that TRMNL.com matches the build; weekly, only compares
   them. See [plugin/README.md](plugin/README.md).
 
 To run the render checks locally, set up `FRAMEWORK_DIR` as in the workflow, run
