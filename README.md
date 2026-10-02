@@ -375,8 +375,8 @@ filtering work as upstream. What changed:
   The RSVP filter is gone, since HA doesn't expose attendees.
 - **Explicit time zone handling**: events are converted to the configured zone, so the
   result doesn't depend on the renderer's system zone.
-- **Rendering fixes and additions**: FullCalendar measures correctly under the
-  framework's scale transform, greys adapted to 1-/2-bit screens, and a notice when a calendar fails to load.
+- **Rendering fixes and additions**: greys adapted to 1-/2-bit screens, and a notice when a
+  calendar fails to load.
 - **Removed**: the time-grid helpers and FullCalendar's own header toolbar (the
   framework's title bar is used instead).
 
@@ -435,8 +435,8 @@ the framework classes above win wherever both apply.
 
 On the TRMNL X, LaraPaper renders at 1872×1404 with `screen--v2 screen--scale-xxlarge`.
 The framework lays that out at 1040×780 and scales the screen by 1.8 with a CSS
-`transform`, with a 1.5× UI scale on top. FullCalendar can't measure through a transform,
-so `shared.liquid` corrects its measurements inside the calendar (see the comment there).
+`transform`, with a 1.5× UI scale on top. FullCalendar 7 lays out correctly under that
+transform.
 
 ## Local preview
 
