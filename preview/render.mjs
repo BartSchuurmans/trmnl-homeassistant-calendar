@@ -45,6 +45,7 @@ import { fileURLToPath } from 'node:url';
 import { Liquid } from 'liquidjs';
 import * as yaml from 'js-yaml';
 import { chromium } from 'playwright-core';
+import { sampleData } from './sample-data.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = path.join(here, '..', 'plugin', 'src');
@@ -121,66 +122,6 @@ async function liveData() {
   return Object.fromEntries(results.map((r, i) => [`IDX_${i}`, r]));
 }
 
-// Sample events relative to today, in HA's /api/calendars response format.
-function sampleData() {
-  const today = new Date(now); today.setHours(0, 0, 0, 0);
-  // UTC offset of the preview time zone, as HA would send it
-  const offset = (() => {
-    const name = new Intl.DateTimeFormat('en-US', { timeZone: timeZone, timeZoneName: 'longOffset' })
-      .formatToParts(today).find((p) => p.type === 'timeZoneName').value;
-    return name === 'GMT' ? '+00:00' : name.replace('GMT', '');
-  })();
-  const pad = (n) => String(n).padStart(2, '0');
-  const local = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const timed = (day, from, to, summary, extra = {}) => ({
-    start: { dateTime: `${local(addDays(today, day))}T${from}:00${offset}` },
-    end: { dateTime: `${local(addDays(today, day))}T${to}:00${offset}` },
-    summary, description: null, location: null, uid: `${summary}-${day}`, recurrence_id: null, rrule: null, ...extra,
-  });
-  const allDay = (day, days, summary) => ({
-    start: { date: local(addDays(today, day)) }, end: { date: local(addDays(today, day + days)) },
-    summary, description: null, location: null, uid: `${summary}-${day}`, recurrence_id: null, rrule: null,
-  });
-  // first Saturday at least three days out, so the weekend is always Sat–Sun
-  const saturday = 3 + ((6 - (today.getDay() + 3) % 7) + 7) % 7;
-  // A family of two adults: a shared calendar plus one of their own each
-  const family = [
-    timed(-2, '18:30', '19:30', 'Swimming lessons'),
-    timed(2, '19:00', '21:00', 'Dinner with Anna & Tom'),
-    allDay(1, 1, 'Bin day'),
-    allDay(saturday, 2, 'Weekend in Antwerp'),
-    timed(5, '18:30', '19:30', 'Swimming lessons'),
-    timed(7, '15:00', '16:00', 'Parent-teacher meeting'),
-    allDay(10, 1, 'Birthday Oma'),
-    timed(10, '16:00', '19:00', 'Birthday party'),
-    timed(12, '18:30', '19:30', 'Swimming lessons'),
-    allDay(15, 1, 'Bin day'),
-    allDay(saturday + 14, 9, 'Autumn holiday'),
-    timed(26, '18:30', '19:30', 'Swimming lessons'),
-    timed(30, '20:00', '22:30', 'Concert'),
-  ];
-  const mark = [
-    timed(-1, '07:00', '08:00', 'Gym'),
-    timed(saturday, '09:00', '10:30', 'Football'),
-    timed(1, '12:00', '13:00', 'Lunch', { summary: null }),
-    timed(0, '11:00', '12:00', 'Dentist'),
-    timed(6, '09:00', '17:00', 'Offsite'),
-    timed(9, '07:00', '08:00', 'Gym'),
-    timed(22, '09:00', '09:30', 'Car service'),
-  ];
-  const sara = [
-    timed(-1, '13:00', '14:30', 'Quarterly planning'),
-    timed(0, '09:30', '10:00', 'Standup'),
-    timed(1, '18:00', '19:00', 'Yoga'),
-    // shared with the family calendar → de-duplicated
-    timed(7, '15:00', '16:00', 'Parent-teacher meeting'),
-    timed(15, '18:00', '19:00', 'Yoga'),
-    timed(13, '14:00', '15:00', 'Design review'),
-    allDay(26, 2, 'Conference'),
-  ];
-  return { IDX_0: { data: family }, IDX_1: { data: mark }, IDX_2: { data: sara } };
-}
-
 // HA events as LaraPaper hands over a parsed ICS feed (IcalResponseParser): uppercase
 // iCalendar keys, all-day dates at midnight in the server's zone (UTC), events without
 // an end dropped, and only events overlapping 7 days back to 30 days ahead.
@@ -214,7 +155,8 @@ function toNative(calendar) {
 }
 
 let payload = dataFile ? JSON.parse(fs.readFileSync(dataFile, 'utf8'))
-  : process.env.HA_URL ? await liveData() : sampleData();
+  : process.env.HA_URL ? await liveData()
+  : sampleData(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`, timeZone);
 if (!dataFile && !process.env.HA_URL && !overrides.calendars) customFields.calendars = 'calendar.family,calendar.mark,calendar.sara';
 // Plugin Merge: no polled payload, the chosen plugins' data sits at the top level
 let merged = {};

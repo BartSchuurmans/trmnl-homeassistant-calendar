@@ -301,6 +301,7 @@ the changes in detail.
 | `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA / TRMNL plugin event mapping) and the markup (fork of `_full_month.html.erb`) |
 | `plugin/trmnl-com/` | The TRMNL.com variant: its settings and `merge.liquid` |
 | `preview/` | Local renderer and CI render checks |
+| `preview/sample-data.mjs`, `docs/sample-ics/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
 | `scripts/build-variant.sh` | Builds the variants, such as the TRMNL.com recipe |
 | `larapaper/`, `repository.yaml` | The LaraPaper (local) Home Assistant app |

@@ -1,0 +1,143 @@
+// The sample calendars: a family of two adults, with a shared calendar and one of
+// their own each. They repeat every six weeks, so any rolling month shows a full one.
+// render.mjs draws them (README screenshots, CI), and the same events are published as
+// ICS feeds in docs/sample-ics/ for TRMNL.com's marketplace preview, which polls them
+// whenever its screenshot is regenerated.
+//
+//   node sample-data.mjs write    regenerates docs/sample-ics/*.ics
+//   node sample-data.mjs check    fails when they differ from this file (ci.sh)
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Week 0 of the cycle; the README screenshots are taken in it (Wednesday 30 September)
+const ANCHOR = '2026-09-28';
+const CYCLE = 6;
+const TZID = 'Europe/Amsterdam';
+const DAYS = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+
+// week: week of the cycle (0-5); every: repeats every so many weeks (a divisor of six)
+const timed = (week, day, from, to, summary, every = CYCLE) => ({ week, day: DAYS[day], from, to, summary, every });
+const allDay = (week, day, days, summary, every = CYCLE) => ({ week, day: DAYS[day], days, summary, every });
+
+export const CALENDARS = {
+  family: [
+    timed(0, 'Mon', '18:30', '19:30', 'Swimming lessons', 1),
+    allDay(0, 'Thu', 1, 'Bin day', 2),
+    timed(0, 'Fri', '19:00', '21:00', 'Dinner with Anna & Tom'),
+    allDay(0, 'Sat', 2, 'Weekend in Antwerp'),
+    timed(1, 'Wed', '15:00', '16:00', 'Parent-teacher meeting'),
+    allDay(1, 'Sat', 1, 'Birthday Oma'),
+    timed(1, 'Sat', '16:00', '19:00', 'Birthday party'),
+    allDay(2, 'Sat', 9, 'Holiday'),
+    timed(4, 'Fri', '20:00', '22:30', 'Concert'),
+    timed(5, 'Fri', '19:30', '22:00', 'Movie night'),
+    allDay(5, 'Sat', 2, 'Grandparents visiting'),
+  ],
+  mark: [
+    timed(0, 'Tue', '07:00', '08:00', 'Gym', 1),
+    timed(0, 'Wed', '11:00', '12:00', 'Dentist'),
+    timed(0, 'Thu', '12:00', '13:00', null), // no title: shown as busy
+    timed(0, 'Sat', '09:00', '10:30', 'Football', 2),
+    timed(1, 'Tue', '09:00', '17:00', 'Offsite'),
+    timed(3, 'Thu', '09:00', '09:30', 'Car service'),
+    timed(5, 'Wed', '17:30', '18:00', 'Haircut'),
+  ],
+  sara: [
+    timed(0, 'Tue', '13:00', '14:30', 'Quarterly planning'),
+    timed(0, 'Wed', '09:30', '10:00', 'Standup'),
+    timed(0, 'Thu', '18:00', '19:00', 'Yoga', 2),
+    // shared with the family calendar → de-duplicated
+    timed(1, 'Wed', '15:00', '16:00', 'Parent-teacher meeting'),
+    timed(2, 'Tue', '14:00', '15:00', 'Design review'),
+    timed(3, 'Thu', '19:00', '21:00', 'Team dinner'),
+    allDay(4, 'Mon', 2, 'Conference'),
+    timed(5, 'Tue', '20:00', '21:30', 'Book club'),
+  ],
+};
+
+const DAY_MS = 86400000;
+const ymd = (ms) => new Date(ms).toISOString().slice(0, 10);
+// first date of an event in the cycle, as UTC midnight
+const first = (e) => Date.parse(`${ANCHOR}T00:00:00Z`) + (e.week * 7 + e.day) * DAY_MS;
+
+// UTC offset of `zone` at noon on `date`, as HA writes it (+02:00)
+function offset(date, zone) {
+  const name = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' })
+    .formatToParts(new Date(`${date}T12:00:00Z`)).find((p) => p.type === 'timeZoneName').value;
+  return name === 'GMT' ? '+00:00' : name.replace('GMT', '');
+}
+
+// The calendars in HA's /api/calendars response format, every occurrence from a week
+// before `today` (YYYY-MM-DD) to seven weeks after it, in time zone `zone`
+export function sampleData(today, zone) {
+  const from = Date.parse(`${today}T00:00:00Z`) - 7 * DAY_MS, to = from + 8 * 7 * DAY_MS;
+  const occurrences = (e) => {
+    const step = e.every * 7 * DAY_MS, start = first(e);
+    const out = [];
+    for (let t = start + Math.floor((from - start) / step) * step; t < to; t += step) {
+      if (t + (e.days || 1) * DAY_MS > from) out.push(t);
+    }
+    return out;
+  };
+  const events = (list, name) => list.flatMap((e) => occurrences(e).map((t) => {
+    const date = ymd(t);
+    const at = e.days ? { start: { date }, end: { date: ymd(t + e.days * DAY_MS) } } : {
+      start: { dateTime: `${date}T${e.from}:00${offset(date, zone)}` },
+      end: { dateTime: `${date}T${e.to}:00${offset(date, zone)}` },
+    };
+    return { ...at, summary: e.summary, description: null, location: null, uid: `${name}-${list.indexOf(e)}-${date}`,
+      recurrence_id: null, rrule: null };
+  }));
+  return Object.fromEntries(Object.keys(CALENDARS).map((name, i) => [`IDX_${i}`, { data: events(CALENDARS[name], name) }]));
+}
+
+// iCalendar feed of one calendar: each event repeats weekly with its interval, timed
+// ones in Amsterdam time (with its VTIMEZONE, like Google and iCloud send)
+export function sampleIcs(name) {
+  const compact = (s) => s.replace(/[-:]/g, '');
+  const escape = (s) => s.replace(/[\\;,]/g, (c) => `\\${c}`);
+  const events = CALENDARS[name].flatMap((e, i) => {
+    const date = compact(ymd(first(e)));
+    return [
+      'BEGIN:VEVENT', `UID:${name}-${i}@rolling-month-calendar.sample`, `DTSTAMP:${compact(ANCHOR)}T000000Z`,
+      ...(e.days ? [`DTSTART;VALUE=DATE:${date}`, `DTEND;VALUE=DATE:${compact(ymd(first(e) + e.days * DAY_MS))}`]
+        : [`DTSTART;TZID=${TZID}:${date}T${compact(e.from)}00`, `DTEND;TZID=${TZID}:${date}T${compact(e.to)}00`]),
+      `RRULE:FREQ=WEEKLY;INTERVAL=${e.every}`,
+      ...(e.summary ? [`SUMMARY:${escape(e.summary)}`] : []),
+      'END:VEVENT',
+    ];
+  });
+  return [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Rolling Month Calendar//sample//EN', 'CALSCALE:GREGORIAN',
+    `X-WR-CALNAME:${name[0].toUpperCase()}${name.slice(1)} (sample)`, `X-WR-TIMEZONE:${TZID}`,
+    'BEGIN:VTIMEZONE', `TZID:${TZID}`,
+    'BEGIN:DAYLIGHT', 'TZOFFSETFROM:+0100', 'TZOFFSETTO:+0200', 'TZNAME:CEST', 'DTSTART:19700329T020000',
+    'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU', 'END:DAYLIGHT',
+    'BEGIN:STANDARD', 'TZOFFSETFROM:+0200', 'TZOFFSETTO:+0100', 'TZNAME:CET', 'DTSTART:19701025T030000',
+    'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU', 'END:STANDARD', 'END:VTIMEZONE',
+    ...events, 'END:VCALENDAR', '',
+  ].join('\r\n');
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../docs/sample-ics');
+  const mode = process.argv[2];
+  if (mode !== 'write' && mode !== 'check') {
+    console.error('usage: node sample-data.mjs write|check');
+    process.exit(2);
+  }
+  let stale = 0;
+  for (const name of Object.keys(CALENDARS)) {
+    const file = path.join(dir, `${name}.ics`);
+    const ics = sampleIcs(name);
+    if (mode === 'write') {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(file, ics);
+    } else if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== ics) {
+      console.error(`${path.relative(process.cwd(), file)} is out of date: run node preview/sample-data.mjs write`);
+      stale++;
+    }
+  }
+  if (stale) process.exit(1);
+}
