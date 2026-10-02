@@ -17,7 +17,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as yaml from 'js-yaml';
 
-// Per variant: the plugin/src settings it leaves out (and why), and the settings only it has
+// Per variant: the plugin/src settings it leaves out (and why), the settings only it has,
+// and (optional) properties of shared settings it sets its own way (and why)
 const VARIANTS = {
   'trmnl-com': {
     leftOut: {
@@ -28,6 +29,21 @@ const VARIANTS = {
       weather_entity: 'needs the LaraPaper (local) app\'s Home Assistant proxy; replaced by the weather_plugin dropdown',
     },
     own: /^(calendar_\d+|weather_plugin)$/,
+  },
+  'trmnl-com-ha': {
+    leftOut: {
+      ics_urls: 'TRMNL.com polls JSON only; an .ics feed fails as "Malformed JSON"',
+      weather_entity: 'Home Assistant gives forecasts only to a POST and calendars only to a GET, and TRMNL.com polls every URL with one verb',
+      weather_temperatures: 'no weather (see weather_entity)',
+    },
+    own: /^$/,
+    differs: {
+      name: 'its own recipe on TRMNL.com, named after its data source',
+      'ha_url.default': 'the default is the LaraPaper (local) app\'s proxy; TRMNL.com needs the public URL',
+      'ha_url.optional': 'Home Assistant is the only source here',
+      'ha_token.optional': 'TRMNL.com reaches Home Assistant from the internet, always with a token',
+      'calendars.optional': 'Home Assistant is the only source here',
+    },
   },
 };
 // Differ on purpose: each About describes its own data sources
@@ -63,7 +79,9 @@ function check() {
     }
     const variant = load(path.join(root, 'plugin', name, 'settings.yml'));
     const at = `plugin/${name}/settings.yml`;
+    const differs = rules.differs || {};
     for (const key of SHARED_SETTINGS) {
+      if (differs[key]) continue;
       if (!same(src[key], variant[key])) errors.push(`${key}: ${src[key]} in plugin/src, ${variant[key]} in ${at}`);
     }
     const fields = new Map(variant.custom_fields.map((f) => [f.keyname, f]));
@@ -81,6 +99,7 @@ function check() {
       if (rules.leftOut[key]) errors.push(`${key}: in ${at}, but its leftOut says ${rules.leftOut[key]}`);
       const props = OWN_TEXT.includes(key) ? ['field_type'] : ['field_type', 'name', 'options', 'default', 'optional'];
       for (const prop of props) {
+        if (differs[`${key}.${prop}`]) continue;
         // a boolean's default may be text ('true') in a variant (see plugin/trmnl-com/settings.yml)
         const text = (v) => (prop === 'default' && field.field_type === 'boolean' && typeof v === 'boolean' ? String(v) : v);
         if (!same(text(field[prop]), text(other[prop]))) {

@@ -38,6 +38,8 @@ jobs:
         include:
           - variant: trmnl-com
             plugin_id_var: TRMNL_PLUGIN_ID
+          - variant: trmnl-com-ha
+            plugin_id_var: TRMNL_PLUGIN_ID_HA
     env:
       TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
       TRMNL_PLUGIN_ID: ${{ vars[matrix.plugin_id_var] }}

@@ -16,15 +16,18 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   (`random-data.mjs`), PHP Liquid check (`php/render.php`), sample calendars
   (`sample-data.mjs`: a six-week cycle, also written to `docs/sample-ics/*.ics` with
   `node preview/sample-data.mjs write`; TRMNL.com's marketplace preview polls those feeds
-  from main, and `ci.sh` checks they're in step).
+  from main, and `ci.sh` checks they're in step; `docs/sample-ha/` has them as static
+  Home Assistant `/api/calendars/<entity>` responses up to `SAMPLE_HA_END`, a stand-in
+  Home Assistant for trying `plugin/trmnl-com-ha/`).
 - `larapaper/` + `repository.yaml` — Home Assistant app: official LaraPaper image plus
   bundled TRMNL framework, fonts and FullCalendar (`assets.txt`, pinned by SHA-256).
 - `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
   in-container helper.
-- `plugin/<variant>/` (now `trmnl-com/`, see `plugin/README.md`) — the recipe for another
-  channel: its own `settings.yml` and `*.liquid` put in front of `src/shared.liquid`.
-  `trmnl-com/`: TRMNL.com, Plugin Merge strategy, `merge.liquid`. Never edit the markup
-  on TRMNL.com; releases upload it.
+- `plugin/<variant>/` (now `trmnl-com/` and `trmnl-com-ha/`, see `plugin/README.md`) — the
+  recipe for another channel: its own `settings.yml` and `*.liquid` put in front of
+  `src/shared.liquid`. `trmnl-com/`: TRMNL.com, Plugin Merge strategy, `merge.liquid`.
+  `trmnl-com-ha/`: TRMNL.com polling a public Home Assistant with a token (no ICS, no
+  weather). Never edit the markup on TRMNL.com; releases upload it.
 - `scripts/build-zip.sh` — builds `dist/rolling-month-calendar.zip` for LaraPaper's recipe import;
   `scripts/build-variant.sh` builds the variants (`dist/<variant>/src`, ZIP each).
 - `LICENSE` (MIT, own code) and `THIRD_PARTY_NOTICES.md` (upstream plugin, bundled
@@ -103,7 +106,9 @@ minus: 561600 | date: "%Y-%m-%d"`), which PHP and Ruby Liquid (TRMNL, Terminus) 
 the extra half day keeps DST days (23 or 25 h) from shifting the date, as counting whole
 days from "now" did in the hour after midnight; PHP-only wording like `"today -7 days"`
 comes out as text in Ruby. Don't use `T` in date formats there (PHP treats it as a
-timezone). HA accepts date-only `start`/`end`. LaraPaper's importer turns every `=` in
+timezone). HA accepts date-only `start`/`end`. Ruby Liquid renders a block holding only whitespace
+(`{% unless forloop.last %}` + line break) as nothing, so a line break between URLs sits
+next to output (see `plugin/trmnl-com-ha/settings.yml`). LaraPaper's importer turns every `=` in
 `polling_headers` into `:`, so the header's Liquid can't use `=`, `==` or `assign`.
 
 **ICS feeds.** Set `ics_urls` and they replace the HA entities (URL, no token). LaraPaper

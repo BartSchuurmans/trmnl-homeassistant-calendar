@@ -2,9 +2,15 @@
 // their own each. They repeat every six weeks, so any rolling month shows a full one.
 // render.mjs draws them (README screenshots, CI), and the same events are published as
 // ICS feeds in docs/sample-ics/ for TRMNL.com's marketplace preview, which polls them
-// whenever its screenshot is regenerated.
+// whenever its screenshot is regenerated. docs/sample-ha/ has them as a stand-in Home
+// Assistant for the TRMNL.com Home Assistant recipe (plugin/trmnl-com-ha): its Home
+// Assistant URL set to that folder on jsDelivr (cdn.jsdelivr.net/gh/<repo>@main/docs/
+// sample-ha; raw.githubusercontent.com answers 404 to the token header), any token, the entities
+// calendar.family, calendar.mark and calendar.sara. Those files are HA's
+// /api/calendars/<entity> responses with every occurrence from the cycle's start to
+// SAMPLE_HA_END (a static server ignores ?start=&end=), so move that on before it passes.
 //
-//   node sample-data.mjs write    regenerates docs/sample-ics/*.ics
+//   node sample-data.mjs write    regenerates docs/sample-ics/*.ics and docs/sample-ha/
 //   node sample-data.mjs check    fails when they differ from this file (ci.sh)
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +20,8 @@ import { fileURLToPath } from 'node:url';
 const ANCHOR = '2026-09-28';
 const CYCLE = 6;
 const TZID = 'Europe/Amsterdam';
+// Last day (exclusive) in docs/sample-ha/
+const SAMPLE_HA_END = '2028-01-03';
 const DAYS = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
 
 // week: week of the cycle (0-5); every: repeats every so many weeks (a divisor of six)
@@ -68,10 +76,10 @@ function offset(date, zone) {
   return name === 'GMT' ? '+00:00' : name.replace('GMT', '');
 }
 
-// The calendars in HA's /api/calendars response format, every occurrence from a week
-// before `today` (YYYY-MM-DD) to seven weeks after it, in time zone `zone`
-export function sampleData(today, zone) {
-  const from = Date.parse(`${today}T00:00:00Z`) - 7 * DAY_MS, to = from + 8 * 7 * DAY_MS;
+// One calendar in HA's /api/calendars response format: every occurrence that overlaps
+// `from` to `to` (ms, UTC midnights), timed ones in time zone `zone`
+function haEvents(name, from, to, zone) {
+  const list = CALENDARS[name];
   const occurrences = (e) => {
     const step = e.every * 7 * DAY_MS, start = first(e);
     const out = [];
@@ -80,7 +88,7 @@ export function sampleData(today, zone) {
     }
     return out;
   };
-  const events = (list, name) => list.flatMap((e) => occurrences(e).map((t) => {
+  return list.flatMap((e) => occurrences(e).map((t) => {
     const date = ymd(t);
     const at = e.days ? { start: { date }, end: { date: ymd(t + e.days * DAY_MS) } } : {
       start: { dateTime: `${date}T${e.from}:00${offset(date, zone)}` },
@@ -89,7 +97,20 @@ export function sampleData(today, zone) {
     return { ...at, summary: e.summary, description: null, location: null, uid: `${name}-${list.indexOf(e)}-${date}`,
       recurrence_id: null, rrule: null };
   }));
-  return Object.fromEntries(Object.keys(CALENDARS).map((name, i) => [`IDX_${i}`, { data: events(CALENDARS[name], name) }]));
+}
+
+// The calendars as polled from HA: every occurrence from a week before `today`
+// (YYYY-MM-DD) to seven weeks after it, in time zone `zone`
+export function sampleData(today, zone) {
+  const from = Date.parse(`${today}T00:00:00Z`) - 7 * DAY_MS, to = from + 8 * 7 * DAY_MS;
+  return Object.fromEntries(Object.keys(CALENDARS).map((name, i) => [`IDX_${i}`, { data: haEvents(name, from, to, zone) }]));
+}
+
+// docs/sample-ha/api/calendars/calendar.<name>: the cycle's start to SAMPLE_HA_END, in
+// Amsterdam time, one event per line
+export function sampleHa(name) {
+  const events = haEvents(name, Date.parse(`${ANCHOR}T00:00:00Z`), Date.parse(`${SAMPLE_HA_END}T00:00:00Z`), TZID);
+  return `[\n${events.map((e) => JSON.stringify(e)).join(',\n')}\n]\n`;
 }
 
 // A weather entity's daily forecast as the LaraPaper (local) app's proxy hands it over
@@ -170,20 +191,22 @@ export function sampleIcs(name) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../docs/sample-ics');
+  const docs = path.join(path.dirname(fileURLToPath(import.meta.url)), '../docs');
   const mode = process.argv[2];
   if (mode !== 'write' && mode !== 'check') {
     console.error('usage: node sample-data.mjs write|check');
     process.exit(2);
   }
   let stale = 0;
-  for (const name of Object.keys(CALENDARS)) {
-    const file = path.join(dir, `${name}.ics`);
-    const ics = sampleIcs(name);
+  const files = Object.keys(CALENDARS).flatMap((name) => [
+    [path.join(docs, 'sample-ics', `${name}.ics`), sampleIcs(name)],
+    [path.join(docs, 'sample-ha', 'api', 'calendars', `calendar.${name}`), sampleHa(name)],
+  ]);
+  for (const [file, content] of files) {
     if (mode === 'write') {
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(file, ics);
-    } else if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== ics) {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, content);
+    } else if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== content) {
       console.error(`${path.relative(process.cwd(), file)} is out of date: run node preview/sample-data.mjs write`);
       stale++;
     }

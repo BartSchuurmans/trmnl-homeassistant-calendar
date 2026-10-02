@@ -1,0 +1,155 @@
+# The recipe on TRMNL.com for Home Assistant (trmnlp format): the settings of
+# plugin/src/settings.yml, polling Home Assistant's calendar API from TRMNL's servers.
+# scripts/build-variant.sh puts this next to plugin/src's views and shared.liquid; see
+# plugin/README.md.
+#
+# TRMNL.com polls from the internet, so Home Assistant has to be reachable from there
+# (Home Assistant Cloud's remote URL, or an own domain) and the request carries a
+# long-lived access token. No ICS feeds (TRMNL.com only polls JSON) and no weather: Home
+# Assistant only gives forecasts to a POST service call, its calendars only to GET, and
+# TRMNL.com polls every URL with the same verb and body.
+#
+# On/off fields default to 'true'/'false' as text, as in plugin/trmnl-com/settings.yml.
+# preview/variants.mjs checks that the settings this and plugin/src both have match.
+name: Rolling Month Calendar (Home Assistant)
+# The text on the public recipe page (see plugin/trmnl-com/settings.yml).
+recipe_overview: |-
+  Rolling Month Calendar (Home Assistant) shows the calendars of your Home Assistant on a month grid that always starts at the current week, so the days ahead stay on screen and you never look at a month that is half over. It fits as many whole weeks as your screen has room for, usually five or six. On busy weeks it shows fewer weeks rather than cutting days off, or ends a full day with "+N more" if you prefer.
+
+  Events come from any Home Assistant calendar entity: Local Calendar, Google, CalDAV, iCloud, Office 365 and the rest. List as many as you like and they share one grid. TRMNL fetches them from Home Assistant every refresh, so Home Assistant has to be reachable from the internet, through Home Assistant Cloud or your own domain, with a long-lived access token.
+
+  Give each calendar its own color and a prefix such as "W:" so you can tell them apart. Start the week on Sunday, Monday or Saturday, and choose 24-hour or AM/PM times, week numbers, shaded weekends, faded past events and hiding events by keyword. Besides the full screen it has half and quadrant layouts, so it fits in a mashup next to your other plugins. It is built for the TRMNL X and also renders on the OG.
+refresh_interval: 15
+strategy: polling
+polling_verb: get
+# One URL per calendar entity, covering the current week plus up to 6 weeks ahead: the
+# dates as in plugin/src/settings.yml (from the timestamp of today's midnight). One per
+# line with no line after the last; Liquid drops a block holding only a line break, so
+# the break sits next to the URL.
+polling_url: |-
+  {% assign cals = calendars | split: "," %}{% for cal in cals %}{% if forloop.first %}{{ ha_url | strip }}{% else %}
+  {{ ha_url | strip }}{% endif %}/api/calendars/{{ cal | strip }}?start={{ "now" | date: "%Y-%m-%d" | date: "%s" | minus: 561600 | date: "%Y-%m-%d" }}&end={{ "now" | date: "%Y-%m-%d" | date: "%s" | plus: 3758400 | date: "%Y-%m-%d" }}{% endfor %}
+polling_headers: Authorization=Bearer {{ ha_token }}
+no_screen_padding: 'yes'
+dark_mode: 'no'
+static_data: ''
+framework_version: 3.3.1
+custom_fields:
+  - keyname: about
+    field_type: author_bio
+    name: About
+    category: calendar
+    description: "The calendars of your Home Assistant in one rolling month grid:<br/>• any number of Home Assistant calendar entities (Local Calendar, Google, CalDAV, iCloud, ...) in one grid<br/>• a color and a prefix per calendar<br/>• half and quadrant views for mashups<br/>• busy weeks never cut off: fewer weeks, or \"+N more\"<br/>• finished events faded<br/>Needs: Home Assistant reachable from the internet (Home Assistant Cloud or your own domain) and a long-lived access token, preferably of a Home Assistant user made for this that isn't an administrator."
+    github_url: https://github.com/BartSchuurmans/trmnl-rolling-month-calendar
+    email_address: bart@minnozz.com
+  - keyname: ha_url
+    field_type: url
+    name: Home Assistant URL
+    description: The address of your Home Assistant on the internet, as TRMNL's servers reach it, without a trailing slash. With <a href="https://www.nabucasa.com/config/remote/" class="underline" target="_blank">Home Assistant Cloud</a> that is the remote URL (Settings → Home Assistant Cloud → Remote control); otherwise your own <a href="https://www.home-assistant.io/docs/configuration/remote/" class="underline" target="_blank">remote access</a> address. A local address (homeassistant.local, 192.168.…) doesn't work here.
+    placeholder: https://abcdefgh.ui.nabu.casa
+  - keyname: ha_token
+    field_type: password
+    name: Home Assistant access token
+    description: A <a href="https://www.home-assistant.io/docs/authentication/" class="underline" target="_blank">long-lived access token</a> (your Home Assistant profile → Security → Long-lived access tokens). It can do anything its user can, so preferably make a separate Home Assistant user for TRMNL that isn't an administrator, and create the token there.
+  - keyname: calendars
+    field_type: multi_string
+    name: Home Assistant calendar entities
+    description: One or more Home Assistant <a href="https://www.home-assistant.io/integrations/calendar/" class="underline" target="_blank">calendar</a> entity IDs (Settings → Devices &amp; services → Entities, search for calendar.).
+    placeholder: calendar.family
+  - keyname: calendar_labels
+    field_type: multi_string
+    name: Calendar prefixes
+    description: Optional text shown before each event title, one per calendar in the same order as the calendar entities above (e.g. W:, Kids). Use - for a calendar without one.
+    optional: true
+  - keyname: calendar_colors
+    field_type: multi_string
+    name: Calendar colors
+    description: Optional event background, one per calendar in the same order as the calendar entities above. A <a href="https://trmnl.com/framework/docs/3.3/colors" class="underline" target="_blank">TRMNL color name</a> (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
+    optional: true
+  - keyname: first_day
+    field_type: select
+    name: Week starts on
+    options:
+    - Sunday: '0'
+    - Monday: '1'
+    - Saturday: '6'
+    default: '1'
+  - keyname: rolling_advancement
+    field_type: select
+    name: Advance
+    description: Start the grid at the beginning of the current week, or at today.
+    options:
+    - Weekly: week
+    - Daily: day
+    default: week
+  - keyname: week_overflow
+    field_type: select
+    name: Busy weeks
+    description: When the weeks don't all fit, show fewer weeks so every event stays visible, or keep at least 3 weeks and end a full day with "+N more".
+    options:
+    - Show fewer weeks: fewer_weeks
+    - Show "+N more": more
+    default: fewer_weeks
+  - keyname: show_week_numbers
+    field_type: boolean
+    name: Show week numbers
+    default: 'false'
+  - keyname: highlight_today
+    field_type: boolean
+    name: Highlight today
+    default: 'true'
+  - keyname: shade_weekends
+    field_type: boolean
+    name: Shade weekends
+    default: 'true'
+  - keyname: month_header
+    field_type: boolean
+    name: Show title bar
+    description: TRMNL title bar at the bottom with the recipe name and the visible date range.
+    default: 'false'
+  - keyname: time_format
+    field_type: select
+    name: Time format
+    options:
+    - 24 hour: 24h
+    - AM/PM: am/pm
+    default: 24h
+  - keyname: include_event_time
+    field_type: boolean
+    name: Show event times
+    default: 'true'
+  - keyname: display_event_end
+    field_type: boolean
+    name: Show event end times
+    default: 'true'
+  - keyname: include_past_events
+    field_type: boolean
+    name: Show past events
+    description: Show events on days before today that are still in the grid.
+    default: 'true'
+  - keyname: fade_past_events
+    field_type: boolean
+    name: Fade past events
+    description: Grey out events that are over (on earlier days). Greyscale screens only; 1-bit and 2-bit screens show them as usual.
+    default: 'true'
+  - keyname: ignored_phrases
+    field_type: multi_string
+    name: Ignore events containing
+    description: Events whose title or description contains any of these phrases are hidden.
+    optional: true
+  - keyname: ignored_phrases_exact_match
+    field_type: multi_string
+    name: Ignore events titled exactly
+    description: Events whose title is exactly one of these are hidden.
+    optional: true
+  - keyname: time_zone
+    field_type: time_zone
+    name: Time zone
+    description: Leave empty to use your account's time zone.
+    optional: true
+  - keyname: locale
+    field_type: string
+    name: Locale
+    description: Language for day and month names, e.g. en, nl, de, fr (a <a href="https://fullcalendar.io/docs/locale" class="underline" target="_blank">FullCalendar locale</a> code).
+    default: en
+    optional: true
