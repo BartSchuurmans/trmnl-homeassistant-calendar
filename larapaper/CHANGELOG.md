@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.1-5
+
+- Opening the web UI from Home Assistant no longer shows "405 Method Not Allowed":
+  it now starts at the dashboard (or the login page).
+
 ## 0.43.1-4
 
 - The web UI opens inside Home Assistant (**Open Web UI**, or **Show in sidebar**), so
