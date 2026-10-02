@@ -256,7 +256,7 @@ filtering work as upstream. What changed:
   where upstream does it server-side.
 - **Liquid recipe instead of ERB.** Runs on TRMNL.com and LaraPaper; the settings are
   custom fields.
-- **Open-source parts only.** The public FullCalendar 6.1 build instead of TRMNL's
+- **Open-source parts only.** The public FullCalendar 7.1 build instead of TRMNL's
   private one, and styles rebuilt from TRMNL framework classes, because upstream's
   calendar stylesheets aren't published. The look matches upstream's month preview.
 - **Per-calendar colors and prefixes** replace Google's calendar and event colors.
@@ -318,7 +318,9 @@ The recipe renders inside the [TRMNL framework](https://github.com/usetrmnl/trmn
 - **Layout**: `layout` → optional `title_bar` (the `view` wrapper comes from TRMNL or LaraPaper), with spacing from `--ui-scale`.
 
 The calendar grid itself (borders, cells, event blocks) is custom CSS, as upstream,
-because the framework has no calendar component.
+because the framework has no calendar component: a small FullCalendar 7 theme ("Mono" in
+`shared.liquid`) whose colours sit in a cascade layer below the framework's utilities, so
+the framework classes above win wherever both apply.
 
 On the TRMNL X, LaraPaper renders at 1872×1404 with `screen--v2 screen--scale-xxlarge`.
 The framework lays that out at 1040×780 and scales the screen by 1.8 with a CSS

@@ -35,13 +35,14 @@ treats its native plugins as source-available and is fine with them being remixe
 - **Time zones**: timed events are converted to the configured zone's wall-clock time and
   given to FullCalendar with `timeZone: 'UTC'`, so the result doesn't depend on the
   renderer's system zone. Day numbers and month labels read UTC dates to match.
-- **FullCalendar**: the open-source 6.1 build instead of the private build at
+- **FullCalendar**: the open-source 7.1 build instead of the private build at
   trmnl.com, loaded from `/rolling-month-calendar/...` (served by the LaraPaper (local) app) with
   jsDelivr as fallback. No `schedulerLicenseKey`, since dayGrid doesn't need one.
 - **Styles**: upstream links `plugins/calendars` and `plugins/calendars_full_month`
-  stylesheets that aren't published. Here fonts, text sizes and greys come from TRMNL
-  framework classes put on FullCalendar's elements through its `*ClassNames` hooks. The
-  grid CSS in `shared.liquid` is written from scratch and sized with `--ui-scale`.
+  stylesheets that aren't published. Here the look is a FullCalendar 7 theme written from
+  scratch ("Mono" in `shared.liquid`: class hooks naming the grid's parts, CSS sized with
+  `--ui-scale`), on FullCalendar's skeleton.css only. Fonts, text sizes and greys come
+  from TRMNL framework classes added through the same hooks.
 - **Transform fix**: `getBoundingClientRect()` is corrected inside the calendar, so
   FullCalendar sizes correctly under the framework's `transform: scale(--pixel-ratio)`.
 - **Event look**: matched to upstream's month-layout preview. Timed events use
@@ -72,8 +73,8 @@ treats its native plugins as source-available and is fine with them being remixe
   the same markup as the full view (upstream's month layouts are full-screen only). Grids
   under 600 CSS px wide (`.trmnl-calendar--narrow`) show start times only, with tighter
   spacing, and titles over up to three lines that break between words where they can.
-  A one-week grid keeps weekday-only headers (`dayHeaderFormat`) and month labels, which
-  FullCalendar would otherwise swap for dates in the header.
+  A one-week grid has no day numbers in FullCalendar 7, so its header names the dates
+  ("Mon 5").
 - **Removed**: time-grid helpers (`trmnlAllDaySlotAuto`, `trmnlSlotBoundsAuto`, the
   week-view now indicator, `dayHeaders`), the Google colour options (`colorize_events`,
   `palette_colors`), replaced by per-calendar colours, and the
