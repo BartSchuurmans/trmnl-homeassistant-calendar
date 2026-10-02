@@ -184,11 +184,15 @@ and narrow views (half and quadrant mashups) show only the icon.
 in a playlist (hidden is fine) so it keeps refreshing:
 
 - TRMNL's own **Weather** plugin: today and tomorrow only, as that plugin shares no more.
+- The **Daily Weather** recipe (by Daniel Sitnik), which you may already have: about a
+  week from [Open-Meteo](https://open-meteo.com).
 - The **Daily Forecast** recipe from this repository (`plugin/daily-forecast/`): the next
-  two weeks from [Open-Meteo](https://open-meteo.com), for the latitude and longitude you
-  give it, no account or key. It refreshes hourly and shows a week of forecasts itself.
-  Any other recipe that polls Open-Meteo's daily `weather_code`, `temperature_2m_max` and
-  `temperature_2m_min` works too.
+  two weeks from Open-Meteo, so the grid's later weeks get weather too, for the latitude
+  and longitude you give it, no account or key. It refreshes hourly and shows a week of
+  forecasts itself.
+
+Any other recipe that polls Open-Meteo's daily `weather_code`, `temperature_2m_max` and
+`temperature_2m_min` works as well.
 
 **With LaraPaper**, it takes the LaraPaper (local) app: set **Home Assistant weather
 entity**, and the forecast comes from that entity. It works with ICS feeds as well as
