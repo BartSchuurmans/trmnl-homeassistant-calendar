@@ -37,6 +37,7 @@ $config = $context['trmnl']['plugin_settings']['custom_fields_values'];
 $config['ha_url'] = 'http://homeassistant:8123';
 $config['ha_token'] = 'test.token';
 $config['ics_urls'] = ''; // the markup is rendered from the context as it is, whatever the source
+$config['weather_entity'] = ''; // checked below
 
 $environment = EnvironmentFactory::new()->setRethrowErrors(true)->build();
 $resolve = fn (string $template, array $data) => $environment->parseString($template)->render($environment->newRenderContext(data: $data));
@@ -64,6 +65,15 @@ $icsUrls = array_values(array_filter(array_map('trim', explode("\n", $resolve($s
 $icsUrls === ['https://calendar.example/a.ics', 'https://calendar.example/b.ics?x=1&y=2']
     || fail('unexpected ICS polling URLs: '.implode(' ', $icsUrls));
 $header($ics) === '' || fail('the Home Assistant token is sent to ICS feeds: '.$header($ics));
+
+// A weather entity adds its forecast, through the app's proxy at the Home Assistant URL,
+// as the last URL; with ICS feeds too
+$weather = fn (array $values) => array_values(array_filter(array_map('trim',
+    explode("\n", $resolve($settings['polling_url'], [...$values, 'weather_entity' => ' weather.forecast_home '])))));
+$weather($config) === [...$urls, 'http://homeassistant:8123/api/weather/weather.forecast_home']
+    || fail('unexpected polling URLs with a weather entity: '.implode(' ', $weather($config)));
+$weather($ics) === [...$icsUrls, 'http://homeassistant:8123/api/weather/weather.forecast_home']
+    || fail('unexpected ICS polling URLs with a weather entity: '.implode(' ', $weather($ics)));
 
 // Markup, with the same filters and context shape as Plugin::render; the view wrapper is
 // what PluginImportService::ensureLiquidViewWrapper adds to full.liquid on import

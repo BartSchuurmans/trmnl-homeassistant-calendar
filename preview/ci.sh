@@ -90,6 +90,11 @@ render ics-x --ics
 render ics-og --device og --ics --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:
 render ics-options-x --ics --set rolling_advancement=day --set first_day=0 --set week_overflow=more
 
+# A weather entity's forecast next to the day numbers (sample forecast)
+render weather-x --set weather_entity=weather.forecast_home --set show_week_numbers=yes --set month_header=yes
+render weather-lows-og --device og --set weather_entity=weather.forecast_home --set weather_temperatures=high_low
+render weather-ics-half-vertical-x --ics --size half_vertical --set weather_entity=weather.forecast_home --set show_week_numbers=yes --expect-events
+
 # The sample as TRMNL.com's Plugin Merge dropdowns (plugin/trmnl-com/merge.liquid)
 render merge-x --merge --expect-events --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:
 # ... at TRMNL.com's default screen scale (regular; LaraPaper's X is xxlarge)

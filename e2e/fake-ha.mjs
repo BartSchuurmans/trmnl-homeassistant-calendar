@@ -1,7 +1,9 @@
 // Fake Home Assistant for the end-to-end test: serves /api/calendars/<entity> like HA
 // does (date-only start/end, bearer token, timed events with an offset) and records
 // every request. The events are placed around today so they land in the rolling month.
-// It also serves ICS feeds under /feeds/<name>.ics (no token, like a secret feed link).
+// It also serves ICS feeds under /feeds/<name>.ics (no token, like a secret feed link),
+// and weather.forecast_home's daily forecast to a weather.get_forecasts service call
+// (POST, as HA only gives forecasts to that), which the app's proxy makes.
 import http from 'node:http';
 
 export const TOKEN = 'e2e-token';
@@ -27,6 +29,15 @@ function events(entity) {
     return null;
   }
   return list.map((e, i) => ({ ...e, description: '', location: '', uid: `${entity}-${i}` }));
+}
+
+// weather.get_forecasts' response for a daily forecast of `days` days from today
+export const FORECAST_DAYS = 7;
+function forecast(entity) {
+  if (entity !== 'weather.forecast_home') return null;
+  const conditions = ['sunny', 'rainy', 'cloudy', 'partlycloudy', 'snowy', 'lightning', 'fog'];
+  return { changed_states: [], service_response: { [entity]: { forecast: Array.from({ length: FORECAST_DAYS }, (_, i) => ({
+    datetime: `${day(i)}T10:00:00+00:00`, condition: conditions[i % conditions.length], temperature: 20 - i, templow: 10 - i })) } } };
 }
 
 // ICS feeds: a daily recurring event in Amsterdam time (with its VTIMEZONE, like Google
@@ -84,6 +95,20 @@ export function startFakeHa(port = 8123) {
       const body = feed(feedMatch[1]);
       res.writeHead(body ? 200 : 404, { 'Content-Type': 'text/calendar; charset=utf-8' });
       return res.end(body || '');
+    }
+    if (url.pathname === '/api/services/weather/get_forecasts') {
+      let body = '';
+      req.on('data', (c) => { body += c; });
+      req.on('end', () => {
+        let call = {};
+        try { call = JSON.parse(body); } catch { /* recorded as is */ }
+        requests.push({ weather: call.entity_id, type: call.type, method: req.method, query: url.search,
+          path: url.pathname, authorization: req.headers.authorization });
+        const result = req.method === 'POST' && url.search === '?return_response' && call.type === 'daily' && forecast(call.entity_id);
+        res.writeHead(result ? 200 : 400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result || { message: 'Bad request' }));
+      });
+      return;
     }
     const match = url.pathname.match(/^\/api\/calendars\/([\w.]+)$/);
     const entity = match?.[1];

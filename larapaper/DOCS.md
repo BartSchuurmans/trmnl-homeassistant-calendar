@@ -11,8 +11,8 @@ image with these additions:
 - The database, generated screens and app key are kept in `/data`, so they survive
   updates and are part of Home Assistant backups.
 - The calendar recipe reads Home Assistant through `http://127.0.0.1:8124`, which
-  forwards calendar requests (and nothing else) to Home Assistant with the app's own
-  access. It is only reachable from inside the app.
+  forwards calendar requests and daily weather forecasts (and nothing else) to Home
+  Assistant with the app's own access. It is only reachable from inside the app.
 
 Installing or updating the app downloads a prebuilt image
 (`ghcr.io/bartschuurmans/larapaper-local`, amd64 and aarch64), which needs internet.
@@ -41,7 +41,9 @@ listed in `assets.txt`, each checked against a pinned SHA-256.
    calendar entities and leave **Home Assistant URL** at `http://127.0.0.1:8124` and the access token empty: the app
    reads your calendars with its own Home Assistant access, so you don't need to create
    a token. A recipe you set up before keeps its URL and token when you update; change
-   the URL to `http://127.0.0.1:8124` and clear the token to switch.
+   the URL to `http://127.0.0.1:8124` and clear the token to switch. For the weather
+   forecast next to each day, also fill in **Home Assistant weather entity**, e.g.
+   `weather.forecast_home`.
 
 ## What still goes online
 

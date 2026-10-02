@@ -6,7 +6,7 @@
 set -eu
 cd "$(dirname "$0")"
 docs=../docs
-common="--strict --tz Europe/Amsterdam --now 2026-09-30 --set show_week_numbers=yes \
+common="--strict --tz Europe/Amsterdam --now 2026-09-30 --set weather_entity=weather.forecast_home --set weather_temperatures=high_low \
     --set calendar_colors=gray-35,white,gray-60 --set calendar_labels=-,M:,S:"
 
 # shellcheck disable=SC2086 # $common is a list of arguments

@@ -90,7 +90,8 @@ switch ($command) {
         $summary = [];
         foreach ($calendars as $key => $calendar) {
             $summary[$key] = isset($calendar['error']) ? ['error' => $calendar['error']]
-                : (isset($calendar['ical']) ? ['ical' => count($calendar['ical'])] : ['events' => count($calendar['data'] ?? [])]);
+                : (isset($calendar['service_response']) ? ['forecast' => count(current($calendar['service_response'])['forecast'] ?? [])]
+                : (isset($calendar['ical']) ? ['ical' => count($calendar['ical'])] : ['events' => count($calendar['data'] ?? [])]));
         }
 
         $image = null;
