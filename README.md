@@ -244,7 +244,7 @@ settings:
 
 shared family events get no prefix and a `gray-35` fill, Mark's events get `M:` and a
 `white` fill, and Sara's get `S:` and a `gray-60` fill. That is what the screenshots above
-show, with week numbers on.
+show, with a weather entity set (see [Weather](#weather); LaraPaper only).
 
 - **Prefix**: shown before the title, followed by a space (`S: Standup`).
 - **Color**: fills every event of that calendar, timed ones included, instead of a dot.
