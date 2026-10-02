@@ -52,12 +52,12 @@ custom_fields:
   - keyname: calendar_colors
     field_type: multi_string
     name: Calendar colors
-    description: Optional event background, one per calendar in the same order as the calendars above. A TRMNL color name (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
+    description: Optional event background, one per calendar in the same order as the calendars above. A <a href="https://trmnl.com/framework/docs/3.3/colors" class="underline" target="_blank">TRMNL color name</a> (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
     optional: true
   - keyname: weather_plugin
     field_type: plugin_instance_select
     name: Weather
-    description: 'Optional: a weather forecast next to each day number, from today on. Pick TRMNL''s Weather plugin (today and tomorrow) or the Daily Weather recipe (about a week). Keep it in a playlist (it can be hidden), or the forecast stops refreshing.'
+    description: 'Optional: a weather forecast next to each day number, from today on. Pick TRMNL''s Weather plugin (today and tomorrow) or the <a href="https://trmnl.com/recipes/150460" class="underline" target="_blank">Daily Weather</a> recipe (about a week). Keep it in a playlist (it can be hidden), or the forecast stops refreshing.'
     optional: true
   - keyname: weather_temperatures
     field_type: select
@@ -151,6 +151,6 @@ custom_fields:
   - keyname: locale
     field_type: string
     name: Locale
-    description: Language for day and month names, e.g. en, nl, de, fr.
+    description: Language for day and month names, e.g. en, nl, de, fr (a <a href="https://fullcalendar.io/docs/locale" class="underline" target="_blank">FullCalendar locale</a> code).
     default: en
     optional: true
