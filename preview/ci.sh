@@ -89,6 +89,8 @@ render ics-options-x --ics --set rolling_advancement=day --set first_day=0 --set
 
 # The sample as TRMNL.com's Plugin Merge dropdowns (plugin/trmnl-com/merge.liquid)
 render merge-x --merge --expect-events --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:
+# ... at TRMNL.com's default screen scale (regular; LaraPaper's X is xxlarge)
+render merge-regular-x --merge --scale regular --expect-events
 
 # The half and quadrant views, as part of a mashup
 render half-horizontal-x --size half_horizontal --expect-events

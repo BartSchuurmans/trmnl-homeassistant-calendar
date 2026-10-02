@@ -527,12 +527,16 @@
         // 1-/2-bit screens print grey as a dot pattern, which breaks up the pixel fonts of the
         // events on top of it: there the weekend is shaded in the header row only.
         var patternedGreys = depth <= 2 && !settings.ditherGreys;
-        // The framework's small text is Inter at 13px on high-density screens (the TRMNL X):
-        // a calendar packs a lot of it, so one size down there. Pixel fonts (low-density
-        // screens) only come in their own sizes and stay as they are.
+        // On high-density screens (the TRMNL X) the framework's small text is Inter at 13px
+        // times the screen's scale, which differs per server: LaraPaper's X is xxlarge (1.5),
+        // a TRMNL.com device regular (1) unless its owner picks another. The calendar keeps
+        // one size there, like upstream: 16px, scaled by the device and the "text scale"
+        // setting only. Pixel fonts (low-density screens) only come in their own sizes and
+        // stay as they are.
         if (screenStyles.getPropertyValue('--font-small-font-smoothing').trim() !== 'none') {
-          node.style.setProperty('--font-small-font-size', 'calc(11px * var(--text-ui-scale))');
-          node.style.setProperty('--font-small-line-height', 'calc(15px * var(--text-ui-scale))');
+          var textScale = 'var(--device-ui-scale, 1) * var(--modifier-text-scale, 1)';
+          node.style.setProperty('--font-small-font-size', 'calc(16px * ' + textScale + ')');
+          node.style.setProperty('--font-small-line-height', 'calc(22px * ' + textScale + ')');
         }
         var shadeClass = function(info) {
           return (info.dow === 0 || info.dow === 6) && settings.shadeWeekends && !settings.ditherGreys ? 'bg--gray-75' : '';

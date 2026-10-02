@@ -61,7 +61,9 @@ TRMNL X it uses a 1872×1404 window at 1×, classes `screen--v2 screen--4bit
 screen--scale-xxlarge`. The framework lays that out at 1040×780 and applies
 `transform: scale(1.8)` to `.screen`, plus `--ui-scale: 1.5`. `render.mjs` reproduces
 this; previews without the framework loaded are misleading (no fonts → Times New
-Roman, wrong sizes).
+Roman, wrong sizes). TRMNL.com renders the X at the scale its owner picked (regular,
+`--ui-scale: 1`, by default; `render.mjs --scale regular`), so the calendar's text size
+doesn't follow `--ui-scale` (see the `--font-small-font-size` override in `shared.liquid`).
 
 **FullCalendar under the transform.** FullCalendar measures with
 `getBoundingClientRect()`, which includes the transform, so `shared.liquid` patches it
