@@ -24,7 +24,9 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 - `plugin/<variant>/` (now `trmnl-com/`, see `plugin/README.md`) — the recipe for another
   channel: its own `settings.yml` and `*.liquid` put in front of `src/shared.liquid`.
   `trmnl-com/`: TRMNL.com, Plugin Merge strategy, `merge.liquid`. Never edit the markup
-  on TRMNL.com; releases upload it.
+  on TRMNL.com; releases upload it. A folder with its own `full.liquid` is a companion
+  recipe, built from its own files: `daily-forecast/` (Open-Meteo, for the TRMNL.com
+  Weather dropdown).
 - `scripts/build-zip.sh` — builds `dist/rolling-month-calendar.zip` for LaraPaper's recipe import;
   `scripts/build-variant.sh` builds the variants (`dist/<variant>/src`, ZIP each).
 - `LICENSE` (MIT, own code) and `THIRD_PARTY_NOTICES.md` (upstream plugin, bundled
@@ -117,6 +119,9 @@ fakes that shape; `e2e/fake-ha.mjs` serves real feeds.
 looks up with `{{ [name] }}`; the data is `{events: [...]}` with
 `start_full`/`end_full`/`all_day` (`fromNative` in `shared.liquid`). keepsuit can't parse
 that lookup, so it stays out of `shared.liquid`; `render.mjs --merge` covers it. The
+Weather dropdown (`weather_plugin`) goes last: TRMNL's Weather plugin
+(`forecast.today/tomorrow`, no dates: placed from today) or Open-Meteo's `daily` (the
+Daily Forecast recipe); `render.mjs --merge-weather trmnl|open-meteo`. The
 LaraPaper recipe dropped its Plugin Data API source (plugin IDs + API key): ICS feeds
 cover those calendars there.
 

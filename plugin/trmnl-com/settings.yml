@@ -19,7 +19,7 @@ custom_fields:
     field_type: author_bio
     name: About
     category: calendar
-    description: "All your TRMNL calendar plugins in one rolling month grid, with what the built-in layout lacks:<br/>• up to four calendars from different accounts and providers (Google, Outlook, CalDAV, ...) in one grid<br/>• a color and a prefix per calendar<br/>• half and quadrant views for mashups<br/>• busy weeks never cut off: fewer weeks, or \"+N more\"<br/>• finished events faded<br/>Setup: set each calendar plugin's layout to Rolling Month, keep it in a playlist (it can be hidden), then pick it below."
+    description: "All your TRMNL calendar plugins in one rolling month grid, with what the built-in layout lacks:<br/>• up to four calendars from different accounts and providers (Google, Outlook, CalDAV, ...) in one grid<br/>• a color and a prefix per calendar<br/>• half and quadrant views for mashups<br/>• busy weeks never cut off: fewer weeks, or \"+N more\"<br/>• finished events faded<br/>• the weather forecast next to the day numbers (optional)<br/>Setup: set each calendar plugin's layout to Rolling Month, keep it in a playlist (it can be hidden), then pick it below."
     github_url: https://github.com/BartSchuurmans/trmnl-rolling-month-calendar
     email_address: bart@minnozz.com
   - keyname: calendar_1
@@ -51,6 +51,19 @@ custom_fields:
     name: Calendar colors
     description: Optional event background, one per calendar in the same order as the calendars above. A TRMNL color name (black, gray-10 … gray-75, red, blue-40, …) or a hex color. Names become solid greys on the TRMNL X and dither patterns on 1-bit screens. Use - for a calendar without one.
     optional: true
+  - keyname: weather_plugin
+    field_type: plugin_instance_select
+    name: Weather
+    description: 'Optional: a weather forecast next to each day number, from today on. Pick TRMNL''s Weather plugin (today and tomorrow) or the Daily Forecast recipe (Open-Meteo, the next two weeks). Keep it in a playlist (it can be hidden), or the forecast stops refreshing.'
+    optional: true
+  - keyname: weather_temperatures
+    field_type: select
+    name: Weather temperatures
+    description: With a weather plugin, show each day's high, or its high and low. The low is left out where the day's line has no room for it.
+    options:
+    - High: high
+    - High and low: high_low
+    default: high
   - keyname: first_day
     field_type: select
     name: Week starts on

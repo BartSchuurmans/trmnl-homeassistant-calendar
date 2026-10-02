@@ -56,6 +56,13 @@ trmnlp_render() {
     node trmnlp.mjs "$2" "$3" ${4:+"$4"}
     render_now "$1" --body "$3" --expect-events
 }
+# ... a variant or companion recipe (plugin/<variant>); the rest are render.mjs options
+trmnlp_render_variant() {
+    name=$1 context=$2 body=$3 variant=$4
+    shift 4
+    TRMNLP_VARIANT=$variant node trmnlp.mjs "$context" "$body"
+    render_now "$name" --body "$body" "$@"
+}
 trmnlp=
 if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
     trmnlp=yes
@@ -100,6 +107,17 @@ render weather-ics-half-vertical-x --ics --size half_vertical --set weather_enti
 render merge-x --merge --expect-events --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:
 # ... at TRMNL.com's default screen scale (regular; LaraPaper's X is xxlarge)
 render merge-regular-x --merge --scale regular --expect-events
+# ... with a forecast from the Weather dropdown: TRMNL's Weather plugin, the Daily Forecast recipe
+render merge-weather-trmnl-x --merge-weather trmnl --expect-events --set weather_temperatures=high_low \
+    --dump-context "$out/context-merge-weather.json"
+context_merge_weather=$last
+render merge-weather-open-meteo-og --device og --merge-weather open-meteo --expect-events --set show_week_numbers=true
+
+# The Daily Forecast companion recipe (plugin/daily-forecast), sample Open-Meteo forecast
+render forecast-x --recipe daily-forecast --dump-context "$out/context-forecast.json"
+context_forecast=$last
+render forecast-half-vertical-og --recipe daily-forecast --device og --size half_vertical
+render forecast-quadrant-x --recipe daily-forecast --size quadrant
 
 # The half and quadrant views, as part of a mashup
 render half-horizontal-x --size half_horizontal --expect-events
@@ -109,7 +127,7 @@ render quadrant-x --size quadrant --expect-events
 render quadrant-og --device og --size quadrant --expect-events
 
 # The contexts are written by now (their renders were the first to start)
-wait "$context" "$context_ics" || true
+wait "$context" "$context_ics" "$context_merge_weather" "$context_forecast" || true
 spawn php-x php_render php-x "$out/context.json" "$out/php-body.html"
 spawn php-ics-x php_render php-ics-x "$out/context-ics.json" "$out/php-ics-body.html"
 
@@ -143,6 +161,11 @@ if [ -n "$trmnlp" ]; then
     spawn trmnlp-ics-x trmnlp_render trmnlp-ics-x "$out/context-ics.json" "$out/trmnlp-ics-body.html"
     spawn trmnlp-half-vertical-x trmnlp_render trmnlp-half-vertical-x "$out/context.json" "$out/trmnlp-half-vertical-body.html" half_vertical
     spawn trmnlp-quadrant-x trmnlp_render trmnlp-quadrant-x "$out/context.json" "$out/trmnlp-quadrant-body.html" quadrant
+    # TRMNL.com's Plugin Merge lookups (merge.liquid) and the companion recipe in Ruby Liquid
+    spawn trmnlp-merge-weather-x trmnlp_render_variant trmnlp-merge-weather-x "$out/context-merge-weather.json" \
+        "$out/trmnlp-merge-weather-body.html" trmnl-com --expect-events --merge-weather trmnl
+    spawn trmnlp-forecast-x trmnlp_render_variant trmnlp-forecast-x "$out/context-forecast.json" \
+        "$out/trmnlp-forecast-body.html" daily-forecast --recipe daily-forecast
     # TRMNL's best-practice checks, as LaraPaper and TRMNL.com run the recipe
     spawn trmnlp-lint node trmnlp.mjs --lint
 else

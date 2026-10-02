@@ -364,6 +364,33 @@
       };
     }
 
+    // WMO weather codes (Open-Meteo's weather_code) as Home Assistant conditions
+    function wmoCondition(code) {
+      if (code <= 1) return 'sunny';
+      if (code === 2) return 'partlycloudy';
+      if (code === 3) return 'cloudy';
+      if (code === 45 || code === 48) return 'fog';
+      if (code === 65 || code === 82) return 'pouring';
+      if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'rainy';
+      if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snowy';
+      if (code >= 95) return 'lightning-rainy';
+      return 'cloudy';
+    }
+
+    // TRMNL's Weather plugin names a day's weather in words (its icon, e.g.
+    // "partly-cloudy-day", and its conditions, e.g. "Rain Likely"), which vary by provider
+    function trmnlWeatherCondition(day) {
+      var text = (String(day.icon || '') + ' ' + String(day.conditions || '')).toLowerCase();
+      if (/thunder|storm|lightning/.test(text)) return 'lightning-rainy';
+      if (/snow|sleet|hail|ice|flurr/.test(text)) return 'snowy';
+      if (/rain|drizzle|shower/.test(text)) return 'rainy';
+      if (/fog|mist|haze|smoke/.test(text)) return 'fog';
+      if (/wind/.test(text)) return 'windy';
+      if (/partly|mostly (clear|sunny)/.test(text)) return 'partlycloudy';
+      if (/clear|sunny|fair/.test(text)) return 'sunny';
+      return 'cloudy';
+    }
+
     // LaraPaper stores one polled URL as its JSON (a bare list becomes { data: [...] }, and
     // is also spread into the top-level `data`) and several as { IDX_0: ..., IDX_1: ... }.
     function payloadToCalendars(payload) {
@@ -381,6 +408,23 @@
         var forecast = Object.keys(payload.service_response).map(function(k) { return payload.service_response[k]; })
           .filter(function(r) { return r && Array.isArray(r.forecast); })[0];
         return [{ events: [], forecast: forecast ? forecast.forecast : [] }];
+      }
+      // Open-Meteo's daily forecast (on TRMNL.com: the Daily Forecast recipe in
+      // plugin/daily-forecast, or any recipe polling Open-Meteo with these daily values),
+      // dated in the location's own zone
+      if (payload.daily && Array.isArray(payload.daily.time)) {
+        var daily = payload.daily, max = daily.temperature_2m_max || [], min = daily.temperature_2m_min || [], codes = daily.weather_code || daily.weathercode || [];
+        return [{ events: [], forecast: daily.time.map(function(date, i) {
+          return { date: String(date).slice(0, 10), condition: wmoCondition(codes[i]), temperature: max[i], templow: min[i] };
+        }) }];
+      }
+      if (payload.error === true && payload.reason) return [{ events: [], error: payload.reason }];
+      // TRMNL's Weather plugin (on TRMNL.com): today and tomorrow, without dates
+      if (payload.forecast && typeof payload.forecast === 'object' && payload.forecast.today) {
+        return [{ events: [], forecast: ['today', 'tomorrow'].map(function(day, i) {
+          var f = payload.forecast[day];
+          return f && { offset: i, condition: trmnlWeatherCondition(f), temperature: f.maxtemp, templow: f.mintemp };
+        }).filter(Boolean) }];
       }
       if (Array.isArray(payload.ical)) return [{ events: payload.ical.map(fromIcal).filter(Boolean) }];
       if (Array.isArray(payload.events)) return [{ events: payload.events.map(fromNative).filter(Boolean) }];
@@ -420,6 +464,12 @@
         cfg.ignoredPhrasesExactMatch.indexOf(description.trim()) !== -1;
     }
 
+    function addDays(date, days) {
+      var d = new Date(date + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
     // all-day end dates are exclusive: a one-day event ends the next day (or has no end)
     function isSingleDay(start, end) {
       if (!end) return true;
@@ -456,14 +506,18 @@
 
       var calendars = payloadToCalendars(payload);
       calendars.forEach(function(cal, i) {
-        // the forecast is the last URL polled (polling_url in settings.yml)
-        var isWeather = cfg.weatherEntity && i === calendars.length - 1;
-        if (cal.error) errors.push((isWeather ? cfg.weatherEntity : cfg.calendarEntities[i] || 'calendar ' + (i + 1)) + ': ' + cal.error);
+        // the forecast is the last URL polled (polling_url in settings.yml), or the last
+        // of TRMNL.com's dropdowns (merge.liquid)
+        var isWeather = (cfg.weatherEntity || cfg.weatherPlugin) && i === calendars.length - 1;
+        if (cal.error) errors.push((isWeather ? cfg.weatherEntity || 'weather' : cfg.calendarEntities[i] || 'calendar ' + (i + 1)) + ': ' + cal.error);
         if (cal.forecast) {
-          // a day's forecast is dated by its time in the configured zone
+          // a day's forecast is dated by its date, its place after today (TRMNL's Weather
+          // plugin) or its time in the configured zone (Home Assistant)
           cal.forecast.forEach(function(f) {
-            if (!f || !f.datetime || typeof f.temperature !== 'number') return;
-            weather[wallClock(f.datetime, cfg.timeZoneName).slice(0, 10)] = {
+            if (!f || typeof f.temperature !== 'number') return;
+            var date = f.date || (typeof f.offset === 'number' ? addDays(today, f.offset) : f.datetime && wallClock(f.datetime, cfg.timeZoneName).slice(0, 10));
+            if (!date) return;
+            weather[date] = {
               condition: String(f.condition || ''), high: f.temperature, low: typeof f.templow === 'number' ? f.templow : null
             };
           });
@@ -811,6 +865,7 @@
          "calendarPrefixes": {{ s.calendar_labels | default: "" | json | escape }},
          "calendarColors": {{ s.calendar_colors | default: "" | json | escape }},
          "weatherEntity": {% if source != "merge" and s.weather_entity contains "weather." %}{{ s.weather_entity | strip | json | escape }}{% else %}""{% endif %},
+         "weatherPlugin": {% if merge_weather %}true{% else %}false{% endif %},
          "weatherLows": {% if s.weather_temperatures == "high_low" %}true{% else %}false{% endif %},
          "ignoredPhrases": {{ s.ignored_phrases | default: "" | json | escape }},
          "ignoredPhrasesExactMatch": {{ s.ignored_phrases_exact_match | default: "" | json | escape }},

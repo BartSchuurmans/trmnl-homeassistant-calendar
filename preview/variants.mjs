@@ -25,10 +25,9 @@ const VARIANTS = {
       ha_url: 'Home Assistant would have to be reachable from the internet',
       ha_token: 'Home Assistant would have to be reachable from the internet',
       calendars: 'Home Assistant entities; replaced by the calendar_N dropdowns',
-      weather_entity: 'needs the LaraPaper (local) app\'s Home Assistant proxy',
-      weather_temperatures: 'only used with weather_entity',
+      weather_entity: 'needs the LaraPaper (local) app\'s Home Assistant proxy; replaced by the weather_plugin dropdown',
     },
-    own: /^calendar_\d+$/,
+    own: /^(calendar_\d+|weather_plugin)$/,
   },
 };
 // Differ on purpose: each About describes its own data sources
@@ -54,8 +53,10 @@ if (errors.length) {
 function check() {
   const src = load(path.join(root, 'plugin/src/settings.yml'));
   const srcFields = new Map(src.custom_fields.map((f) => [f.keyname, f]));
+  // companion recipes (views of their own, e.g. daily-forecast) have settings of their own
   const variants = fs.readdirSync(path.join(root, 'plugin'))
-    .filter((name) => name !== 'src' && fs.existsSync(path.join(root, 'plugin', name, 'settings.yml')));
+    .filter((name) => name !== 'src' && fs.existsSync(path.join(root, 'plugin', name, 'settings.yml'))
+      && !fs.existsSync(path.join(root, 'plugin', name, 'full.liquid')));
   for (const name of variants) {
     const rules = VARIANTS[name];
     if (!rules) {
