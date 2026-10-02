@@ -27,6 +27,10 @@
 //
 // --expect-events fails the render when no event made it onto the grid.
 //
+// --scale regular|large|... renders at that screen scale (screen--scale-*) instead of the
+// device's: LaraPaper's TRMNL X is xxlarge, a TRMNL.com device the scale its owner picked
+// (regular by default).
+//
 // Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
 // reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
 // 1-/2-bit only when the page contains <img class="image-dither">. --raw skips this.
@@ -66,6 +70,7 @@ let ics = false;
 let size = 'full';
 let merge = false;
 let expectEvents = false;
+let scale = null;
 let now = new Date();
 let out = path.join(outDir, 'preview.png');
 let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -84,8 +89,10 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--ics') ics = true;
   else if (args[i] === '--merge') merge = true;
   else if (args[i] === '--expect-events') expectEvents = true;
+  else if (args[i] === '--scale') scale = args[++i];
 }
 const device = DEVICES[deviceName];
+if (device && scale) device.classes = device.classes.replace(/ screen--scale-\S+|$/, ` screen--scale-${scale}`);
 if (!device) throw new Error(`unknown device ${deviceName}`);
 
 const settings = yaml.load(fs.readFileSync(path.join(src, 'settings.yml'), 'utf8'));
