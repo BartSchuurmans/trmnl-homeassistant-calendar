@@ -4,7 +4,8 @@
 // ICS feeds in docs/sample-ics/ for TRMNL.com's marketplace preview, which polls them
 // whenever its screenshot is regenerated. docs/sample-ha/ has them as a stand-in Home
 // Assistant for the TRMNL.com Home Assistant recipe (plugin/trmnl-com-ha): its Home
-// Assistant URL set to that folder on raw.githubusercontent.com, any token, the entities
+// Assistant URL set to that folder on jsDelivr (cdn.jsdelivr.net/gh/<repo>@main/docs/
+// sample-ha; raw.githubusercontent.com answers 404 to the token header), any token, the entities
 // calendar.family, calendar.mark and calendar.sara. Those files are HA's
 // /api/calendars/<entity> responses with every occurrence from the cycle's start to
 // SAMPLE_HA_END (a static server ignores ?start=&end=), so move that on before it passes.

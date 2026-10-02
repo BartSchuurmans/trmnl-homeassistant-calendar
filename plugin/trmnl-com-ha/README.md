@@ -30,7 +30,9 @@ overview](../README.md). Don't edit the plugin on TRMNL.com itself.
 
 `docs/sample-ha/` stands in for a Home Assistant with the sample calendars (the six-week
 cycle of `preview/sample-data.mjs`, which writes it). Set **Home Assistant URL** to
-`https://raw.githubusercontent.com/BartSchuurmans/trmnl-rolling-month-calendar/main/docs/sample-ha`,
+`https://cdn.jsdelivr.net/gh/BartSchuurmans/trmnl-rolling-month-calendar@main/docs/sample-ha`,
 any text as the token, and `calendar.family`, `calendar.mark`, `calendar.sara` as the
-entities. A static server ignores the `?start=&end=` window, so each file holds every
-occurrence up to `SAMPLE_HA_END` there; move that on (and `write`) before it passes.
+entities. jsDelivr ignores the `?start=&end=` window and the token, so each file holds
+every occurrence up to `SAMPLE_HA_END` there; move that on (and `write`) before it
+passes. raw.githubusercontent.com doesn't work: it answers 404 to any request with an
+`Authorization` header, and the recipe always sends one.
