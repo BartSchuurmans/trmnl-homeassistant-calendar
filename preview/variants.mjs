@@ -83,7 +83,9 @@ function check() {
       if (rules.leftOut[key]) errors.push(`${key}: in ${at}, but its leftOut says ${rules.leftOut[key]}`);
       const props = OWN_TEXT.includes(key) ? ['field_type'] : ['field_type', 'name', 'options', 'default', 'optional'];
       for (const prop of props) {
-        if (!same(field[prop], other[prop])) {
+        // a boolean's default may be text ('true') in a variant (see plugin/trmnl-com/settings.yml)
+        const text = (v) => (prop === 'default' && field.field_type === 'boolean' && typeof v === 'boolean' ? String(v) : v);
+        if (!same(text(field[prop]), text(other[prop]))) {
           errors.push(`${key}.${prop}: ${JSON.stringify(other[prop])} in plugin/src, ${JSON.stringify(field[prop])} in ${at}`);
         }
       }
