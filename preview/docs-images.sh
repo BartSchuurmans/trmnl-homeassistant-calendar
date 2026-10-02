@@ -12,5 +12,7 @@ common="--strict --tz Europe/Amsterdam --now 2026-09-30 --set show_week_numbers=
 # shellcheck disable=SC2086 # $common is a list of arguments
 node render.mjs $common --set month_header=yes --out "$docs/preview.png"
 # shellcheck disable=SC2086
-node render.mjs $common --device og --out "$docs/preview-1bit-adapt.png"
+node render.mjs $common --device og --out "$docs/preview-1bit.png"
+# shellcheck disable=SC2086
+node render.mjs $common --device og2 --out "$docs/preview-2bit.png"
 rm -f "$docs"/preview*.html

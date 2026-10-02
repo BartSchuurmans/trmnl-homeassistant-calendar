@@ -203,8 +203,8 @@ On 1-bit and 2-bit screens greys become the framework's dot patterns. Weekends a
 shaded in the header row only and event times are solid black, because the patterns
 make the pixel fonts on top of them hard to read.
 
-<sub>The same calendar on a 1-bit screen.</sub><br>
-<img src="docs/preview-1bit-adapt.png" width="49%">
+<sub>The same calendar on a 1-bit (left) and a 2-bit (right) screen.</sub><br>
+<img src="docs/preview-1bit.png" width="49%"> <img src="docs/preview-2bit.png" width="49%">
 
 ### Multiple calendars
 
