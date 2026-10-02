@@ -171,19 +171,14 @@
   /* 1-/2-bit can't print grey lines (dotted black instead) or grey text (solid black) */
   .screen--1bit .trmnl-calendar.mono,
   .screen--2bit .trmnl-calendar.mono { --mono-line: var(--black); --mono-line-style: dotted; --mono-muted: var(--black); }
-  /* "Dither" setting: skip the framework's per-depth greys (patterns on 1-/2-bit) and
-     paint the raw palette greys; LaraPaper then dithers the whole screen. */
-  .trmnl-calendar.dither-greys.mono { --mono-bar: var(--gray-50); --mono-muted: var(--gray-30); }
-  .trmnl-calendar.dither-greys.shade-weekends.mono { --mono-weekend: var(--gray-75); }
   /* "Highlight today" off: no pill */
   .trmnl-calendar:not(.highlight-today) .mono-day--today .mono-day-number { background: none; color: inherit; font-weight: inherit; }
 
-  /* "Fade past events": events that are over recede. Only where greys print as greys (4-bit,
-     or the "Dither" setting); a 1-/2-bit pattern would make them unreadable instead.
+  /* "Fade past events": events that are over recede. Only where greys print as greys (4-bit);
+     a 1-/2-bit pattern would make them unreadable instead.
      invert/brightness/invert mixes every pixel 40% towards white, like 60% opacity on a
      white cell; TRMNL's publish check rejects the opacity property. */
-  .screen--4bit .trmnl-calendar.fade-past .mono-event--past,
-  .trmnl-calendar.fade-past.dither-greys .mono-event--past { filter: invert(1) brightness(0.6) invert(1); }
+  .screen--4bit .trmnl-calendar.fade-past .mono-event--past { filter: invert(1) brightness(0.6) invert(1); }
 
   /* a white calendar colour has no edge on a white cell: outline it like the grid lines,
      open (not pointed, which would cut the outline) where it continues in another week */
@@ -193,7 +188,7 @@
   .trmnl-calendar .trmnl-event--white:not(.mono-event--start) { border-inline-start-style: none; }
   .trmnl-calendar .trmnl-event--white:not(.mono-event--end) { border-inline-end-style: none; }
 
-  /* patterned or dithered weekend cells make small text hard to read: back it with white */
+  /* patterned weekend cells make small text hard to read: back it with white */
   .screen--1bit .trmnl-calendar .mono-day-number,
   .screen--2bit .trmnl-calendar .mono-day-number,
   .screen--1bit .trmnl-calendar .mono-month,
@@ -552,9 +547,7 @@
 
         // Base options shared by all calendars: the Mono theme, and on top of it the TRMNL
         // framework's classes through the same hooks: text--* picks the device's font and
-        // size, bg--gray-* paints solid on 4-bit and a dither pattern on 1-/2-bit. The
-        // "Dither" setting paints raw greys through the theme's variables instead (see
-        // .dither-greys).
+        // size, bg--gray-* paints solid on 4-bit and a dither pattern on 1-/2-bit.
         var baseOpts = {
           plugins: [window.trmnlMonoTheme],
           headerToolbar: false,
@@ -565,7 +558,7 @@
         var depth = parseInt(screenStyles.getPropertyValue('--framework-bit-depth'), 10) || 4;
         // 1-/2-bit screens print grey as a dot pattern, which breaks up the pixel fonts of the
         // events on top of it: there the weekend is shaded in the header row only.
-        var patternedGreys = depth <= 2 && !settings.ditherGreys;
+        var patternedGreys = depth <= 2;
         // On high-density screens (the TRMNL X) the framework's small text is Inter at 13px
         // times the screen's scale, which differs per server: LaraPaper's X is xxlarge (1.5),
         // a TRMNL.com device regular (1) unless its owner picks another. The calendar keeps
@@ -578,7 +571,7 @@
           node.style.setProperty('--font-small-line-height', 'calc(22px * ' + textScale + ')');
         }
         var shadeClass = function(info) {
-          return (info.dow === 0 || info.dow === 6) && settings.shadeWeekends && !settings.ditherGreys ? 'bg--gray-75' : '';
+          return (info.dow === 0 || info.dow === 6) && settings.shadeWeekends ? 'bg--gray-75' : '';
         };
         // today's weekday column; the rolling grid always starts in today's week
         var highlightToday = node.classList.contains('highlight-today');
@@ -587,13 +580,13 @@
           return 'text--small ' + (highlightToday && info.dow === todayDow ? 'mono-header--today' : shadeClass(info));
         };
         baseOpts.dayCellClass = function(info) { return patternedGreys ? '' : shadeClass(info); };
-        var muted = settings.ditherGreys || patternedGreys ? '' : 'text--muted';
+        var muted = patternedGreys ? '' : 'text--muted';
         baseOpts.dayCellTopInnerClass = function(info) { return 'text--small ' + (info.isPast ? muted : ''); };
         baseOpts.eventClass = 'text--small';
         // Upstream look: timed events get a grey bar and a grey time (on 1-/2-bit a muted
         // pattern is hard to read, so solid black there); single-day all-day events are drawn
         // the same, without the time (see toEvent)
-        baseOpts.listItemEventBeforeClass = settings.ditherGreys ? '' : 'bg--gray-50';
+        baseOpts.listItemEventBeforeClass = 'bg--gray-50';
         baseOpts.listItemEventTimeClass = muted;
         baseOpts.moreLinkClass = 'text--small';
         baseOpts.inlineWeekNumberClass = 'text--small';
@@ -603,18 +596,17 @@
 
         // Band events (multi-day, or from a coloured calendar): a light grey band, or the
         // calendar's colour, painted with its bg--* class (solid on 4-bit, dither pattern on
-        // 1-/2-bit), or in "Dither" mode as the raw colour, which LaraPaper then dithers with
-        // the rest; a hex colour as-is. Text is black or white by lightness on screens that
+        // 1-/2-bit); a hex colour as-is. Text is black or white by lightness on screens that
         // print greys solid; on 1-/2-bit the fill is a dither pattern, so black text with the
         // framework's contrast outline (text-stroke), like upstream's adaptiveEventStroke.
         built.events.forEach(function(ev) {
           var color = ev.extendedProps.color || { token: 'gray-70' };
           var raw = color.hex || screenStyles.getPropertyValue('--' + color.token).trim();
           var classes = [];
-          if (color.hex || settings.ditherGreys) ev.color = color.hex || 'var(--' + color.token + ')';
+          if (color.hex) ev.color = color.hex;
           else classes.push('bg--' + color.token);
           if (color.token === 'white' || /^#f{3}(f{3})?$/i.test(raw)) classes.push('trmnl-event--white');
-          var patterned = depth <= 2 && !settings.ditherGreys && color.token && color.token !== 'black' && color.token !== 'white';
+          var patterned = depth <= 2 && color.token && color.token !== 'black' && color.token !== 'white';
           ev.contrastColor = patterned || !isDark(raw) ? 'var(--black)' : 'var(--white)';
           if (patterned) classes.push('text-stroke', 'text-stroke--small');
           ev.extendedProps.fillClass = classes.join(' ');
@@ -723,16 +715,8 @@
 {% comment %} TRMNL.com's Plugin Merge dropdowns, collected by plugin/trmnl-com/merge.liquid {% endcomment %}
 {% if merge_sources %}{% assign source = "merge" %}{% assign events_json = merge_json %}{% endif %}
 
-{% if s.dither_greys == "yes" %}
-  {% comment %}
-    LaraPaper only dithers 1-/2-bit output when the page has an img with class
-    "image-dither" (ImageGenerationService::markupContainsDitherImage). This hidden
-    pixel is that switch; 4-bit output is dithered regardless.
-  {% endcomment %}
-  <img class="image-dither" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" alt="" style="display:none">
-{% endif %}
 <div class="layout layout--col layout--stretch">
-  <div class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends != 'no' %} shade-weekends{% endif %}{% if s.fade_past_events != 'no' %} fade-past{% endif %}{% if s.dither_greys == 'yes' %} dither-greys{% endif %}"
+  <div class="trmnl-calendar trmnl-calendar--month{% if s.highlight_today != 'no' %} highlight-today{% endif %}{% if s.shade_weekends != 'no' %} shade-weekends{% endif %}{% if s.fade_past_events != 'no' %} fade-past{% endif %}"
        data-events="{{ events_json | escape }}"
        data-calendar-config='{
          "timeZoneName": {{ time_zone | json | escape }},
@@ -752,7 +736,6 @@
          "displayEventEnd": {% if s.display_event_end == "no" %}false{% else %}true{% endif %},
          "weekNumbers": {% if s.show_week_numbers == "yes" %}true{% else %}false{% endif %},
          "shadeWeekends": {% if s.shade_weekends == "no" %}false{% else %}true{% endif %},
-         "ditherGreys": {% if s.dither_greys == "yes" %}true{% else %}false{% endif %},
          "locale": {{ locale | json | escape }}
        }'></div>
 </div>

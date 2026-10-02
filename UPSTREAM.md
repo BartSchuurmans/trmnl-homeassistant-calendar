@@ -66,8 +66,8 @@ treats its native plugins as source-available and is fine with them being remixe
   long one, which got cut off. A past day's month label is muted like its number, and
   only the 1st of a month gets a bold number (FullCalendar also bolds the grid's first day). Today's weekday is also inverted in the header row,
   on top of upstream's pill around the number (now bold). Events that are over are faded
-  (`fade_past_events`, greyscale screens and `Dither` only).
-- **1-/2-bit screens** (`Adapt styles`): weekend shading only in the header row, and
+  (`fade_past_events`, greyscale screens only).
+- **1-/2-bit screens**: weekend shading only in the header row, and
   event times in solid black instead of `text--muted`, since grey patterns break up
   the pixel fonts.
 - **Title bar**: the framework's `title_bar` with the visible date range replaces
@@ -87,7 +87,6 @@ treats its native plugins as source-available and is fine with them being remixe
   colour names go through `bg--*` classes; on 1-/2-bit screens the text gets
   `text-stroke`, like upstream's `adaptiveEventStroke`.
 - **Added**: optional per-calendar prefixes, a line above the grid naming any
-  calendar that failed to load, and the 1-/2-bit grey handling setting (adapted
-  styles, or LaraPaper's `image-dither` switch for Floyd–Steinberg dithering).
+  calendar that failed to load.
 - **Settings**: exposed as custom fields (`settings.yml`) and read from
   `trmnl.plugin_settings.custom_fields_values`.

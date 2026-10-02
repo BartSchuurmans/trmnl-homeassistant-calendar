@@ -72,8 +72,6 @@ $markup = file_get_contents($src.'shared.liquid')."\n".'<div class="view view--{
 $html = $resolve($markup, $context);
 
 str_contains($html, 'data-calendar-config=') || fail('rendered markup has no calendar element');
-$dither = ($config['dither_greys'] ?? 'no') === 'yes';
-str_contains($html, 'class="image-dither"') === $dither || fail('dither marker does not match the dither_greys setting');
 foreach (['file:', '//localhost', '//127.'] as $blocked) { // Browsershot::setHtml rejects these
     stripos($html, $blocked) === false || fail("rendered markup contains \"$blocked\", which Browsershot rejects");
 }

@@ -134,14 +134,6 @@ custom_fields:
       - 'Yes': 'yes'
       - 'No': 'no'
     default: 'yes'
-  - keyname: dither_greys
-    field_type: select
-    name: Greys on 1-bit / 2-bit screens
-    description: Adapt swaps greys for pixel patterns and solid black text. Dither keeps the greys and has LaraPaper dither the whole screen (text edges get slightly grainy). No effect on 4-bit screens like the TRMNL X, which LaraPaper always dithers.
-    options:
-      - Adapt styles: 'no'
-      - Dither: 'yes'
-    default: 'no'
   - keyname: week_overflow
     field_type: select
     name: Busy weeks

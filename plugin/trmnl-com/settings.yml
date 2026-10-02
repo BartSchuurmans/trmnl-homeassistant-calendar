@@ -5,8 +5,7 @@
 #
 # The form fields are the same settings as plugin/src/settings.yml, minus the sources
 # TRMNL.com can't use (ICS feeds need a server that parses them, Home Assistant would have
-# to be public) and the LaraPaper-only "Dither" option, with "Calendar" dropdowns instead
-# of plugin IDs and an API key. preview/variants.mjs checks that the settings both have
+# to be public), with "Calendar" dropdowns instead of plugin IDs and an API key. preview/variants.mjs checks that the settings both have
 # match in type, name, options, default and order.
 name: Rolling Month Calendar
 refresh_interval: 15

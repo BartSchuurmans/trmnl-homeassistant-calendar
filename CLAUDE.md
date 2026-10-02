@@ -139,9 +139,7 @@ grid has no day numbers (FullCalendar shows them from two weeks on).
 **Greys and fonts.** Use framework classes (`text--small`, `bg--gray-*`,
 `text--muted`) on FullCalendar elements via its class hooks, so each bit depth gets its
 own rendering (solid on 4-bit, dither patterns on 1-/2-bit, pixel fonts on low-density
-screens). The "Dither" setting paints raw palette vars (`var(--gray-70)`) through the
-theme's variables and event colours instead, and emits LaraPaper's
-`<img class="image-dither">` switch.
+screens).
 
 **Time zones.** HA sends timed events with offsets; they are converted to wall-clock
 time in the configured zone and given to FullCalendar with `timeZone: 'UTC'`. Read

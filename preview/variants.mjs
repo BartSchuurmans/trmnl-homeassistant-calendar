@@ -25,7 +25,6 @@ const VARIANTS = {
       ha_url: 'Home Assistant would have to be reachable from the internet',
       ha_token: 'Home Assistant would have to be reachable from the internet',
       calendars: 'Home Assistant entities; replaced by the calendar_N dropdowns',
-      dither_greys: 'LaraPaper\'s own dithering (the image-dither switch)',
     },
     own: /^calendar_\d+$/,
   },
