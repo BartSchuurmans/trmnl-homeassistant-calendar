@@ -22,7 +22,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import * as yaml from 'js-yaml';
 
-const IMAGE = 'trmnl/trmnlp:v0.13.0';
+const IMAGE = 'trmnl/trmnlp:v0.13.2';
 // `trmnlp lint` findings that don't apply to this recipe
 const LINT_ALLOWED = [
   // Counts words like padding, margin and font-size anywhere in the markup, stylesheet

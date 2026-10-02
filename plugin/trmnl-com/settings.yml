@@ -11,6 +11,15 @@
 # to be public), with "Calendar" dropdowns instead of plugin IDs and an API key. preview/variants.mjs checks that the settings both have
 # match in type, name, options, default and order.
 name: Rolling Month Calendar
+# The text on the public recipe page (line breaks kept; the first 120 characters are its
+# link preview, and 100 words or more let search engines list it). Credits and links go
+# in the About field. trmnlp push uploads it; without the key TRMNL.com keeps its own.
+recipe_overview: |-
+  Rolling Month Calendar shows your events on a month grid that always starts at the current week, so the days ahead stay on screen and you never look at a month that is half over. It fits as many whole weeks as your screen has room for, usually five or six. On busy weeks it shows fewer weeks rather than cutting days off, or ends a full day with "+N more" if you prefer.
+
+  Events come from the TRMNL calendar plugins you already use, such as Google, Outlook, Apple or CalDAV. Pick up to four of them, even from different accounts, and they share one grid. Set each of those plugins' layout to Rolling Month and keep it in your playlist; it can be hidden. Pick a weather plugin as well, TRMNL's Weather or the Daily Weather recipe, and the days ahead show their forecast next to the day number.
+
+  Give each calendar its own color and a prefix such as "W:" so you can tell them apart. Start the week on Sunday, Monday or Saturday, and choose 24-hour or AM/PM times, week numbers, shaded weekends, faded past events and hiding events by keyword. Besides the full screen it has half and quadrant layouts, so it fits in a mashup next to your other plugins. It is built for the TRMNL X and also renders on the OG.
 refresh_interval: 15
 strategy: plugin_merge
 no_screen_padding: 'yes'
