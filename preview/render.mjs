@@ -98,9 +98,16 @@ if (!device) throw new Error(`unknown device ${deviceName}`);
 
 const settings = yaml.load(fs.readFileSync(path.join(src, 'settings.yml'), 'utf8'));
 const customFields = {};
-for (const f of settings.custom_fields) if (f.default !== undefined) customFields[f.keyname] = String(f.default);
+// Like LaraPaper: boolean fields hold true/false, the rest text. --set x=true|false gives a
+// boolean field a boolean; "yes"/"no" stay text, as installs from before the booleans saved them.
+const booleans = new Set(settings.custom_fields.filter((f) => f.field_type === 'boolean').map((f) => f.keyname));
+for (const f of settings.custom_fields) {
+  if (f.default !== undefined) customFields[f.keyname] = booleans.has(f.keyname) ? f.default : String(f.default);
+}
 if (process.env.HA_CALENDARS) customFields.calendars = process.env.HA_CALENDARS;
-Object.assign(customFields, overrides);
+for (const [k, v] of Object.entries(overrides)) {
+  customFields[k] = booleans.has(k) && (v === 'true' || v === 'false') ? v === 'true' : v;
+}
 
 const iso = (d) => d.toISOString().slice(0, 10);
 const addDays = (d, n) => new Date(d.getTime() + n * 86400000);

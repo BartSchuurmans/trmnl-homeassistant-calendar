@@ -86,5 +86,30 @@ foreach (['file:', '//localhost', '//127.'] as $blocked) { // Browsershot::setHt
     stripos($html, $blocked) === false || fail("rendered markup contains \"$blocked\", which Browsershot rejects");
 }
 
-fwrite(STDERR, 'ok: '.count($urls)." polling URL(s), header, markup\n");
+// On/off settings: boolean fields now, "yes"/"no" text in installs from before. Each must
+// read the same either way, fall back to its default when unset, and change the markup.
+$withSetting = function (string $key, mixed $value) use ($context): array {
+    $values = &$context['trmnl']['plugin_settings']['custom_fields_values'];
+    if ($value === null) unset($values[$key]); else $values[$key] = $value;
+    return $context;
+};
+$read = function (array $context) use ($resolve, $markup): string {
+    $html = $resolve($markup, $context);
+    preg_match('/<div class="(trmnl-calendar [^"]*)"/', $html, $class);
+    preg_match("/data-calendar-config='([^']*)'/", $html, $config);
+    return ($class[1] ?? '?').' '.preg_replace('/"nowUtc": *\d+/', '', $config[1] ?? '?').(str_contains($html, 'class="title_bar"') ? ' title_bar' : '');
+};
+$toggles = array_filter($settings['custom_fields'], fn ($f) => $f['field_type'] === 'boolean');
+count($toggles) > 0 || fail('no boolean fields in settings.yml');
+foreach ($toggles as $field) {
+    $key = $field['keyname'];
+    $on = $read($withSetting($key, true));
+    $off = $read($withSetting($key, false));
+    $on !== $off || fail("$key: true and false render the same");
+    $read($withSetting($key, 'yes')) === $on || fail("$key: \"yes\" doesn't read as true");
+    $read($withSetting($key, 'no')) === $off || fail("$key: \"no\" doesn't read as false");
+    $read($withSetting($key, null)) === ($field['default'] ? $on : $off) || fail("$key: unset doesn't read as its default");
+}
+
+fwrite(STDERR, 'ok: '.count($urls)." polling URL(s), header, markup, ".count($toggles)." on/off settings\n");
 echo $html;

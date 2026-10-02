@@ -92,6 +92,9 @@ normalises all shapes. TRMNL and trmnlp have no `data` for several URLs, only to
 LaraPaper uses keepsuit/liquid (PHP) with its own filters
 (`json` etc.) and regex preprocessing of `date:` filters — test with `php/render.php`,
 liquidjs alone is not proof.
+On/off settings are `boolean` fields (true/false) since after v2.1.0; earlier installs
+keep "yes"/"no" text, which LaraPaper's form shows as ticked. `shared.liquid` reads both
+(through `| json`), and `php/render.php` checks every boolean field reads alike either way.
 
 **Polling URL.** Resolved by PHP Liquid with only the custom fields as variables. The
 dates use timestamp maths from local midnight (`"now" | date: "%Y-%m-%d" | date: "%s" |
