@@ -199,7 +199,8 @@ Use Home Assistant's [Open-Meteo](https://www.home-assistant.io/integrations/ope
 integration (free, no key) rather than Met.no, the one Home Assistant sets up as
 `weather.forecast_home`. Met.no's forecast for today covers only the hours still ahead,
 so by the evening today's high is about the current temperature. Open-Meteo's covers
-the whole day.
+the whole day. Its entity is named after the zone it forecasts for, e.g. `weather.home`
+for the Home zone.
 
 Home Assistant gives forecasts only to a `weather.get_forecasts` service call (a POST),
 and a recipe can only poll with GET. The app's proxy on `http://127.0.0.1:8124` turns

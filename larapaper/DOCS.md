@@ -44,8 +44,9 @@ listed in `assets.txt`, each checked against a pinned SHA-256.
    the URL to `http://127.0.0.1:8124` and clear the token to switch. For the weather
    forecast next to each day, also fill in **Home Assistant weather entity**, e.g.
    `weather.forecast_home`. Prefer an entity from Home Assistant's Open-Meteo
-   integration over Met.no (`weather.forecast_home`): Met.no's forecast for today leaves
-   out the hours already past, so today's high drops through the day.
+   integration (named after its zone, e.g. `weather.home`) over Met.no
+   (`weather.forecast_home`): Met.no's forecast for today leaves out the hours already
+   past, so today's high drops through the day.
 
 ## What still goes online
 
