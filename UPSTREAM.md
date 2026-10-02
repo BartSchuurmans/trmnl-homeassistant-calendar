@@ -50,6 +50,9 @@ treats its native plugins as source-available and is fine with them being remixe
   and the time in grey below it. Multi-day events get a light grey fill (`bg--gray-70`)
   with a bold title; events from a coloured calendar have bold titles too. Single-day all-day events differ from upstream (which fills them
   too): they are drawn like timed events, with the bar and no time.
+  Bands that go on in another week have a pointed end on that side (upstream: square),
+  and a timed event over several weeks shows only its start time in its first week and
+  only its end time in its last (FullCalendar shows the whole range in every week).
   Titles differ too: every title, of any kind of event, wraps over at most two lines and
   then ends in an ellipsis, where upstream wraps timed titles in full.
   Grid lines are thin grey (dotted on 1-/2-bit), headers are centred and bold with the
