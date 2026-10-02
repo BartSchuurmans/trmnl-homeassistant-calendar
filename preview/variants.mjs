@@ -10,7 +10,8 @@
 //                                            Run by ci.sh.
 //   node variants.mjs diff <variant> <dir>   a trmnlp project pulled from TRMNL.com
 //                                            (`trmnlp pull`) against dist/<variant>/src:
-//                                            markup, form fields and the settings we set.
+//                                            markup, form fields and the settings we set
+//                                            (bar the encrypted ones TRMNL keeps back).
 //                                            Run by .github/workflows/trmnl-com.yml.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -50,6 +51,8 @@ const VARIANTS = {
 const OWN_TEXT = ['about'];
 // Top-level settings every variant runs with
 const SHARED_SETTINGS = ['name', 'refresh_interval', 'framework_version'];
+// Settings TRMNL keeps encrypted, which `trmnlp pull` doesn't return
+const SECRET_SETTINGS = ['polling_headers', 'polling_body'];
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const load = (file) => yaml.load(fs.readFileSync(file, 'utf8'));
@@ -130,6 +133,9 @@ function diff(variant, pulled) {
   // TRMNL keeps text settings (recipe_overview) with CRLF line ends too
   const text = (value) => String(value ?? '').replace(/\r\n/g, '\n').trimEnd();
   for (const key of Object.keys(ours).filter((k) => k !== 'custom_fields')) {
+    // TRMNL stores polling headers and body encrypted and `trmnlp pull` leaves them out
+    // (null); the plugin's own page only says "[set]", so they can't be compared
+    if (SECRET_SETTINGS.includes(key) && live[key] == null) continue;
     if (text(ours[key]) !== text(live[key])) errors.push(`settings ${key}: ${JSON.stringify(live[key])} on TRMNL.com, ${JSON.stringify(ours[key])} here`);
   }
   if (!same(live.custom_fields, ours.custom_fields)) {
