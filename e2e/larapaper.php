@@ -9,6 +9,8 @@
 //       merges into the recipe configuration and drops cached data and image
 //   php larapaper.php check
 //       polled payload summary, cached images, and the screen's size and grey levels
+//   php larapaper.php login
+//       a new password for the user (after setup), to log in to the web UI
 
 use App\Models\Device;
 use App\Models\DeviceModel;
@@ -122,7 +124,13 @@ switch ($command) {
             'image' => $image,
         ]);
 
+    case 'login':
+        $user = User::where('email', 'e2e@example.com')->firstOrFail();
+        $password = bin2hex(random_bytes(16));
+        $user->forceFill(['password' => $password, 'email_verified_at' => now()])->save();
+        out(['email' => $user->email, 'password' => $password, 'plugin_id' => plugin()->id]);
+
     default:
-        fwrite(STDERR, "usage: php larapaper.php setup|configure|check ...\n");
+        fwrite(STDERR, "usage: php larapaper.php setup|configure|check|login ...\n");
         exit(2);
 }

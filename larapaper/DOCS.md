@@ -24,7 +24,7 @@ listed in `assets.txt`, each checked against a pinned SHA-256.
 1. Set **App URL** to the address your TRMNL uses to reach this app, e.g.
    `http://192.168.1.10:4567`. The device downloads its screen image from there, so use
    an IP address or a name the device can resolve (`.local` names usually don't work).
-2. Start the app and open the web UI. Register your account, then turn off
+2. Start the app and click **Open Web UI**. Register your account, then turn off
    **Allow registration**.
 3. Point the TRMNL at the server. A new device starts in Wi-Fi pairing mode; to get
    back to it, hold the left and right ends of the touch bar until the screen flashes
@@ -47,6 +47,17 @@ listed in `assets.txt`, each checked against a pinned SHA-256.
    integration (named after its zone, e.g. `weather.home`) over Met.no
    (`weather.forecast_home`): Met.no's forecast for today leaves out the hours already
    past, so today's high drops through the day.
+
+## The web UI
+
+**Open Web UI** (and **Show in sidebar** on the app's page) shows LaraPaper inside Home
+Assistant, which passes it on through its own connection (ingress). It works wherever
+Home Assistant does, for example through Home Assistant Cloud or your own remote
+access, so LaraPaper itself never has to be reachable from the internet. You still log
+in to LaraPaper there; passkeys you created at `http://<ha-ip>:4567` don't work under
+Home Assistant's address, a password does.
+
+At home, the web UI is also at the App URL (port 4567), next to the TRMNL's device API.
 
 ## What still goes online
 

@@ -51,7 +51,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   homeassistant:host-gateway`), polls the fake HA in `e2e/fake-ha.mjs`, fetches the
   TRMNL X screen via `/api/display` and checks payloads and pixels; screens in
   `e2e/out/`. `e2e/larapaper.php` runs inside the container through LaraPaper's own
-  services. `--local <larapaper checkout>` runs it without Docker.
+  services. `--local <larapaper checkout>` runs it without Docker. `node e2e/ingress.mjs`
+  (after it) drives the web UI in Chromium through a fake Home Assistant ingress.
 - CI: `.github/workflows/render.yml` (recipe), `trmnl-com.yml` (uploads the TRMNL.com
   variants on a release, compares TRMNL.com with the latest release weekly) and `app.yml` (builds and smoke-tests
   the Home Assistant app, then runs the end-to-end test; on main it publishes the image).
@@ -136,6 +137,16 @@ forwards only GET `/api/calendars/` to `http://supervisor/core/api` with the app
 `SUPERVISOR_TOKEN` (`homeassistant_api: true`), so no user token is needed. It listens
 on loopback only; don't publish it or widen its paths. Docker Compose setups still use a
 URL and long-lived token. CI and the e2e test point it at the fake HA via `HA_API_URL`.
+
+**Ingress.** The web UI also opens through Home Assistant (`ingress: true`), on an nginx
+server on port 8099 written by the same entrypoint script, which answers only the
+Supervisor (172.30.32.2; `HA_INGRESS_PROXY` in CI). HA strips `/api/hassio_ingress/<token>`
+and sends it as `X-Ingress-Path`; nginx passes it to PHP as the script's directory
+(`SCRIPT_NAME`/`REQUEST_URI`), so Laravel's URLs carry it, plus host/scheme from
+`X-Forwarded-*`. Root-relative paths Laravel doesn't make still break there: the
+framework's `/fonts/` (nginx `sub_filter`), the recipe preview's assets
+(`larapaper/ingress/ingress.js`) and APP_URL screen links
+(`larapaper/ingress/IngressServiceProvider.php`).
 
 **FullCalendar 7 and the Mono theme.** v7 has no semantic `.fc-*` classes (they are
 hashed); everything is styled through class hooks (`dayCellClass`, `listItemEventClass`,

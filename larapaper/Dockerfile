@@ -38,3 +38,10 @@ RUN view=/var/www/html/resources/views/vendor/trmnl/components/screen.blade.php 
 
 COPY rootfs /
 RUN chmod +x /etc/entrypoint.d/10-ha-calendar.sh
+
+# Home Assistant ingress: see IngressServiceProvider.php and 10-ha-calendar.sh
+COPY --chown=www-data:www-data ingress/IngressServiceProvider.php /var/www/html/app/Providers/
+COPY --chown=www-data:www-data ingress/ingress.js /var/www/html/public/larapaper-local/
+RUN providers=/var/www/html/bootstrap/providers.php \
+    && sed -i 's/^];$/    App\\Providers\\IngressServiceProvider::class,\n];/' "$providers" \
+    && grep -q 'App\\Providers\\IngressServiceProvider::class' "$providers"

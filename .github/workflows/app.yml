@@ -4,7 +4,8 @@ name: App
 # /data to check that LaraPaper comes up, serves the bundled framework, fonts and
 # FullCalendar, and picked up the app options. It then runs the end-to-end test
 # (e2e/run.mjs): the recipe ZIP is imported into that LaraPaper, polls a fake Home
-# Assistant and is rendered for a TRMNL X through the device API. On pull requests it
+# Assistant and is rendered for a TRMNL X through the device API; and drives the web UI
+# through a fake Home Assistant ingress (e2e/ingress.mjs). On pull requests it
 # also checks that changes to the image come with a new app version: Home Assistant
 # only offers an update when `version` in config.yaml changes. On main, once all of that
 # passes, it publishes the image for each architecture to GHCR under `image` from
@@ -88,8 +89,11 @@ jobs:
           echo '{"app_url": "http://localhost:4567/", "registration_enabled": false}' > "$RUNNER_TEMP/data/options.json"
           # homeassistant:8123 is the fake Home Assistant of the end-to-end test; the
           # calendar proxy goes there too, with the token the Supervisor would provide
-          docker run -d --name app -p 4567:8080 -e TZ=Europe/Amsterdam \
+          # the ingress port is published for e2e/ingress.mjs, which plays Home Assistant
+          # (Home Assistant itself reaches it over its own network, as 172.30.32.2)
+          docker run -d --name app -p 4567:8080 -p 127.0.0.1:8099:8099 -e TZ=Europe/Amsterdam \
             -e SUPERVISOR_TOKEN=e2e-supervisor-token -e HA_API_URL=http://homeassistant:8123/api \
+            -e HA_INGRESS_PROXY=172.16.0.0/12 \
             --add-host homeassistant:host-gateway -v "$RUNNER_TEMP/data:/data" larapaper-local:ci
           for i in $(seq 1 90); do
             if curl -fsS -o /dev/null http://localhost:4567/up; then echo "up after ${i}x2s"; exit 0; fi
@@ -140,6 +144,20 @@ jobs:
           # not published: the port only listens inside the container
           ! curl -fsS -o /dev/null --max-time 5 http://localhost:8124/api/calendars/calendar.work
 
+      - name: Check ingress only answers Home Assistant, with an ingress path
+        run: |
+          status() {
+            # shellcheck disable=SC2016 # PHP code
+            docker exec app php -r '$c = stream_context_create(["http" => ["header" => $argv[2], "ignore_errors" => true]]);
+              @file_get_contents($argv[1], false, $c); echo explode(" ", $http_response_header[0] ?? "x 000")[1];' "$1" "$2"
+          }
+          # from inside the app, not the allowed proxy address
+          test "$(status http://127.0.0.1:8099/up 'X-Ingress-Path: /api/hassio_ingress/abc')" = 403
+          # from the allowed address, but without a (valid) ingress path
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8099/up)" = 400
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'X-Ingress-Path: /elsewhere' http://127.0.0.1:8099/up)" = 400
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'X-Ingress-Path: /api/hassio_ingress/abc' http://127.0.0.1:8099/up)" = 200
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -148,6 +166,11 @@ jobs:
         run: |
           sh scripts/build-zip.sh
           node e2e/run.mjs --container app --url http://localhost:4567 --zip dist/rolling-month-calendar.zip
+
+      - name: Web UI through Home Assistant ingress (login, dashboard, recipe preview and render)
+        run: |
+          (cd preview && npm ci && npx playwright-core install --only-shell chromium)
+          node e2e/ingress.mjs --container app --ingress http://localhost:8099
 
       - uses: actions/upload-artifact@v7
         if: always()
