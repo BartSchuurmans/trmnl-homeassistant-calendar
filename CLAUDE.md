@@ -77,6 +77,8 @@ this; previews without the framework loaded are misleading (no fonts → Times N
 Roman, wrong sizes). TRMNL.com renders the X at the scale its owner picked (regular,
 `--ui-scale: 1`, by default; `render.mjs --scale regular`), so the calendar's text size
 doesn't follow `--ui-scale` (see the `--font-small-font-size` override in `shared.liquid`).
+Every recipe sets `no_screen_padding: 'yes'` (`screen--no-bleed`, which `render.mjs` adds);
+LaraPaper's importer ignores it, so there the user ticks "Remove bleed margin?".
 
 **FullCalendar under the transform.** FullCalendar 7 sizes the grid from ResizeObserver
 border boxes, which ignore the transform, so it lays out correctly without help. (v6
