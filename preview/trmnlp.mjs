@@ -22,15 +22,12 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import * as yaml from 'js-yaml';
 
-const IMAGE = 'trmnl/trmnlp:v0.13.2';
+const IMAGE = 'trmnl/trmnlp:v0.15.0';
 // `trmnlp lint` findings that don't apply to this recipe
-const LINT_ALLOWED = [
-  // Counts words like padding, margin and font-size anywhere in the markup, stylesheet
-  // included. Ours are all in shared.liquid's stylesheet for FullCalendar's generated
-  // elements, which framework classes mostly can't reach (where they can, the recipe adds
-  // them through FullCalendar's class hooks).
-  'Markup uses too many inline styles, add more native Framework classes.',
-];
+// Rule IDs (as `trmnlp lint` prints them, e.g. no_opacity) of findings that don't apply
+// here, each with why. Empty since trmnlp 0.15.0 counts only real style attributes in its
+// inline-styles check (it used to count CSS words in shared.liquid's stylesheet).
+const LINT_ALLOWED = [];
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const [contextFile, bodyFile, size = 'full'] = process.argv.slice(2);
@@ -104,17 +101,19 @@ function lint() {
         .map((field) => [field.keyname, String(field.default ?? 'x')])),
     }));
     const run = spawnSync('docker', ['run', '--rm', '--user', `${process.getuid()}:${process.getgid()}`,
-      '--volume', `${dir}:/plugin`, IMAGE, 'lint'], { encoding: 'utf8' });
+      '--volume', `${dir}:/plugin`, IMAGE, 'lint', '--format', 'json'], { encoding: 'utf8' });
     fs.rmSync(dir, { recursive: true, force: true });
-    const output = `${run.stdout ?? ''}${run.stderr ?? ''}`.replace(/\x1b\[[0-9;]*m/g, '').trim();
-    const findings = [...output.matchAll(/^ {2}\d+\. (.+)$/gm)].map((match) => match[1].trim());
-    const unexpected = findings.filter((finding) => !LINT_ALLOWED.includes(finding));
-    // A failed run without findings is trmnlp itself failing (settings, Docker, ...)
-    if (unexpected.length || (run.status !== 0 && !findings.length)) {
+    let report = null;
+    try { report = JSON.parse(run.stdout); } catch { /* trmnlp itself failed (settings, Docker, ...) */ }
+    const unexpected = report?.issues.filter((issue) => !LINT_ALLOWED.includes(issue.rule_id));
+    if (!report || unexpected.length) {
       ok = false;
-      console.log(`${name}: FAILED\n${output || run.error}`);
+      const where = (issue) => issue.locations.map((l) => `\n     ${l.path}:${l.line}:${l.column}`).join('');
+      const findings = unexpected?.map((issue) => `\n  [${issue.rule_id}] ${issue.message}${where(issue)}`).join('');
+      console.log(`${name}: FAILED${findings || `\n${run.stdout ?? ''}${run.stderr ?? ''}${run.error ?? ''}`}`);
     } else {
-      console.log(`${name}: ok${findings.length ? ` (allowed: ${findings.join(' ')})` : ''}`);
+      const allowed = report.issues.map((issue) => issue.rule_id);
+      console.log(`${name}: ok${allowed.length ? ` (allowed: ${allowed.join(', ')})` : ''}`);
     }
   }
   return ok;
