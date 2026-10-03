@@ -22,7 +22,7 @@ import * as yaml from 'js-yaml';
 // Per variant: the plugin/src settings it leaves out (and why), the settings only it has,
 // and (optional) properties of shared settings it sets its own way (and why)
 const VARIANTS = {
-  'trmnl-com': {
+  'trmnl-com-merge': {
     leftOut: {
       ics_urls: 'TRMNL.com polls JSON only; an .ics feed fails as "Malformed JSON"',
       ha_url: 'Home Assistant would have to be reachable from the internet',
@@ -35,7 +35,7 @@ const VARIANTS = {
       name: 'its own recipe on TRMNL.com, named after its data source (TRMNL\'s calendar plugins)',
     },
   },
-  'trmnl-com-ha': {
+  'trmnl-com-polling': {
     leftOut: {
       ics_urls: 'TRMNL.com polls JSON only; an .ics feed fails as "Malformed JSON"',
     },
@@ -105,7 +105,7 @@ function check() {
       const props = OWN_TEXT.includes(key) ? ['field_type'] : ['field_type', 'name', 'options', 'default', 'optional'];
       for (const prop of props) {
         if (differs[`${key}.${prop}`]) continue;
-        // a boolean's default may be text ('true') in a variant (see plugin/trmnl-com/settings.yml)
+        // a boolean's default may be text ('true') in a variant (see plugin/trmnl-com-merge/settings.yml)
         const text = (v) => (prop === 'default' && field.field_type === 'boolean' && typeof v === 'boolean' ? String(v) : v);
         if (!same(text(field[prop]), text(other[prop]))) {
           errors.push(`${key}.${prop}: ${JSON.stringify(other[prop])} in plugin/src, ${JSON.stringify(field[prop])} in ${at}`);

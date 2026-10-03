@@ -27,8 +27,8 @@ several as `IDX_0`, `IDX_1`, ... at the top level, which `shared.liquid` already
 
 This folder holds `settings.yml` (polling URL and header, framework 3.3.1, bleed margin
 removed, its form fields, the recipe page's `recipe_overview`) and `transform.js`.
-`scripts/build-variant.sh trmnl-com-ha` builds the plugin, and releases upload it to
-TRMNL.com once the `TRMNL_PLUGIN_ID_HA` variable names its plugin; see [the variants
+`scripts/build-variant.sh trmnl-com-polling` builds the plugin, and releases upload it to
+TRMNL.com once the `TRMNL_PLUGIN_ID_POLLING` variable names its plugin; see [the variants
 overview](../README.md). Don't edit the plugin on TRMNL.com itself.
 
 ## Trying it without your own Home Assistant

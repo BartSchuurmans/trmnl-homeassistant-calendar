@@ -8,18 +8,18 @@ another place to publish it. A variant has only what differs:
 
 - `settings.yml` — its whole trmnlp settings: strategy, form fields, framework.
 - optional `*.liquid` — put in front of `src/shared.liquid` (in name order), for data
-  handling `src/` can't hold. `trmnl-com/merge.liquid` is one: LaraPaper's Liquid can't
+  handling `src/` can't hold. `trmnl-com-merge/merge.liquid` is one: LaraPaper's Liquid can't
   parse its lookup.
 - optional `transform.js` — a TRMNL.com serverless function: runs after polling (Polling
-  and Webhook strategies only) and returns the template's data. `trmnl-com-ha/transform.js`
+  and Webhook strategies only) and returns the template's data. `trmnl-com-polling/transform.js`
   fetches the weather. LaraPaper has nothing like it, so its output must be a shape
   `src/shared.liquid` already reads.
 
 | Variant | Where | Data |
 |---|---|---|
 | `src/` | LaraPaper | ICS feeds, Home Assistant (polling) |
-| [`trmnl-com/`](trmnl-com/README.md) | TRMNL.com | TRMNL calendar and weather plugins (Plugin Merge) |
-| [`trmnl-com-ha/`](trmnl-com-ha/README.md) | TRMNL.com | Home Assistant calendar entities (polling, public URL + token) and weather (serverless function) |
+| [`trmnl-com-merge/`](trmnl-com-merge/README.md) | TRMNL.com | TRMNL calendar and weather plugins (Plugin Merge) |
+| [`trmnl-com-polling/`](trmnl-com-polling/README.md) | TRMNL.com | Home Assistant calendar entities (polling, public URL + token) and weather (serverless function) |
 
 `scripts/build-variant.sh [variant...]` builds each variant into `dist/<variant>/src` (a
 trmnlp project) and `dist/rolling-month-calendar-<variant>.zip`. Lint (`trmnlp lint`)
@@ -38,8 +38,8 @@ and checks that TRMNL.com then matches the build. Weekly (and on demand from the
 tab) the same workflow only compares TRMNL.com with the latest release, so an edit made on
 TRMNL.com itself shows up as a failed run with the differences in its summary. It needs
 the `TRMNL_API_KEY` secret and, per variant, the plugin ID variable named in the
-workflow's matrix (`TRMNL_PLUGIN_ID` for `trmnl-com`, `TRMNL_PLUGIN_ID_HA` for
-`trmnl-com-ha`). Don't edit the markup on TRMNL.com,
+workflow's matrix (`TRMNL_PLUGIN_ID_MERGE` for `trmnl-com-merge`, `TRMNL_PLUGIN_ID_POLLING` for
+`trmnl-com-polling`). Don't edit the markup on TRMNL.com,
 in its editor or through the TRMNL MCP connector: change it here and release.
 
 **Adding a variant** (say a TRMNL.com recipe polling Home Assistant):

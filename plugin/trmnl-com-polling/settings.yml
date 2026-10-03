@@ -10,10 +10,10 @@
 # to a POST service call, its calendars only to GET, and TRMNL.com polls every URL with
 # the same verb and body, so the function makes that call itself.
 #
-# On/off fields default to 'true'/'false' as text, as in plugin/trmnl-com/settings.yml.
+# On/off fields default to 'true'/'false' as text, as in plugin/trmnl-com-merge/settings.yml.
 # preview/variants.mjs checks that the settings this and plugin/src both have match.
 name: Rolling Month Calendar (Home Assistant)
-# The text on the public recipe page (see plugin/trmnl-com/settings.yml).
+# The text on the public recipe page (see plugin/trmnl-com-merge/settings.yml).
 recipe_overview: |-
   Rolling Month Calendar (Home Assistant) shows the calendars of your Home Assistant on a month grid that always starts at the current week, so the days ahead stay on screen and you never look at a month that is half over. It fits as many whole weeks as your screen has room for, usually five or six. On busy weeks it shows fewer weeks rather than cutting days off, or ends a full day with "+N more" if you prefer.
 

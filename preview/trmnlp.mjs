@@ -4,7 +4,7 @@
 //
 //   node trmnlp.mjs <context.json> <body.html> [full|half_horizontal|half_vertical|quadrant]
 //                                                   (context from render.mjs --dump-context)
-//   TRMNLP_VARIANT=trmnl-com node trmnlp.mjs ...    a variant in plugin/ instead, put
+//   TRMNLP_VARIANT=trmnl-com-merge node trmnlp.mjs ...    a variant in plugin/ instead, put
 //                                                   together as
 //                                                   scripts/build-variant.sh does
 //   node trmnlp.mjs --pull                          only fetches the image, if missing

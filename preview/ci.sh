@@ -71,13 +71,13 @@ if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
     pull=$!
 fi
 
-# The variants' settings (plugin/trmnl-com, ...) in step with plugin/src's (no rendering)
+# The variants' settings (plugin/trmnl-com-merge, ...) in step with plugin/src's (no rendering)
 spawn variants node variants.mjs check
 
 # docs/sample-ics (TRMNL.com's marketplace preview) in step with the sample calendars
 spawn sample-ics node sample-data.mjs check
 
-# TRMNL.com's serverless function (plugin/trmnl-com-ha/transform.js) against the fake Home
+# TRMNL.com's serverless function (plugin/trmnl-com-polling/transform.js) against the fake Home
 # Assistant of e2e/, and the weather it adds on the screen
 transform_render() {
     node transforms.mjs "$out/$1.json"
@@ -112,7 +112,7 @@ render weather-x --set weather_entity=weather.forecast_home --set show_week_numb
 render weather-lows-og --device og --set weather_entity=weather.forecast_home --set weather_temperatures=high_low
 render weather-ics-half-vertical-x --ics --size half_vertical --set weather_entity=weather.forecast_home --set show_week_numbers=true --expect-events
 
-# The sample as TRMNL.com's Plugin Merge dropdowns (plugin/trmnl-com/merge.liquid)
+# The sample as TRMNL.com's Plugin Merge dropdowns (plugin/trmnl-com-merge/merge.liquid)
 render merge-x --merge --expect-events --set calendar_colors=black,-,gray-50 --set calendar_labels=-,M:,S:
 # ... at TRMNL.com's default screen scale (regular; LaraPaper's X is xxlarge)
 render merge-regular-x --merge --scale regular --expect-events
@@ -166,10 +166,10 @@ if [ -n "$trmnlp" ]; then
     spawn trmnlp-quadrant-x trmnlp_render trmnlp-quadrant-x "$out/context.json" "$out/trmnlp-quadrant-body.html" quadrant
     # TRMNL.com's Plugin Merge lookups (merge.liquid) in Ruby Liquid
     spawn trmnlp-merge-weather-x trmnlp_render_variant trmnlp-merge-weather-x "$out/context-merge-weather.json" \
-        "$out/trmnlp-merge-weather-body.html" trmnl-com --expect-events --merge-weather trmnl
-    # TRMNL.com's Home Assistant recipe (plugin/trmnl-com-ha): the polled calendars as IDX_n
+        "$out/trmnlp-merge-weather-body.html" trmnl-com-merge --expect-events --merge-weather trmnl
+    # TRMNL.com's Home Assistant recipe (plugin/trmnl-com-polling): the polled calendars as IDX_n
     spawn trmnlp-ha-x trmnlp_render_variant trmnlp-ha-x "$out/context.json" "$out/trmnlp-ha-body.html" \
-        trmnl-com-ha --expect-events
+        trmnl-com-polling --expect-events
     # TRMNL's best-practice checks, as LaraPaper and TRMNL.com run the recipe
     spawn trmnlp-lint node trmnlp.mjs --lint
 else

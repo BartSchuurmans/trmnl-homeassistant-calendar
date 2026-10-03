@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { startFakeHa, TOKEN, FORECAST_DAYS } from '../e2e/fake-ha.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const code = fs.readFileSync(path.join(here, '..', 'plugin', 'trmnl-com-ha', 'transform.js'), 'utf8');
+const code = fs.readFileSync(path.join(here, '..', 'plugin', 'trmnl-com-polling', 'transform.js'), 'utf8');
 const [outFile] = process.argv.slice(2);
 
 // as trmnlp's Node wrapper (lib/trmnlp/transform_backend/wrapper.rb) and TRMNL.com do it
