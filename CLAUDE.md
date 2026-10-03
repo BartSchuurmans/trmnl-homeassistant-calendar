@@ -45,7 +45,10 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   that don't apply are listed in `LINT_ALLOWED` there, with why). Renders run in parallel (`JOBS`, default one per CPU); each
   one's output is printed as it finishes. Needs `npm ci` in `preview/`, `composer install` in
   `preview/php/`, and `FRAMEWORK_DIR` set up as in `.github/workflows/render.yml`.
-  Screenshots land in `preview/out/ci/` — look at them after visual changes.
+  Screenshots land in `preview/out/ci/` — look at them after visual changes. The TRMNL.com
+  variants also get trmnlp's own PNG (`*-trmnlp.png`, `TRMNLP_PNG` in `preview/trmnlp.mjs`):
+  a TRMNL X at TRMNL.com's regular scale, rendered as TRMNL's converter does, with the
+  framework from trmnl.com and FullCalendar from jsDelivr, so it needs internet access.
 - `node preview/render.mjs --device x|og|og2 --set key=value ...` for one-off renders;
   `--size half_horizontal|half_vertical|quadrant` renders that view inside a mashup.
 - `node preview/variants.mjs check` (in `ci.sh`) — each variant's `settings.yml` in step
@@ -74,6 +77,8 @@ this; previews without the framework loaded are misleading (no fonts → Times N
 Roman, wrong sizes). TRMNL.com renders the X at the scale its owner picked (regular,
 `--ui-scale: 1`, by default; `render.mjs --scale regular`), so the calendar's text size
 doesn't follow `--ui-scale` (see the `--font-small-font-size` override in `shared.liquid`).
+Every recipe sets `no_screen_padding: 'yes'` (`screen--no-bleed`, which `render.mjs` adds);
+LaraPaper's importer ignores it, so there the user ticks "Remove bleed margin?".
 
 **FullCalendar under the transform.** FullCalendar 7 sizes the grid from ResizeObserver
 border boxes, which ignore the transform, so it lays out correctly without help. (v6

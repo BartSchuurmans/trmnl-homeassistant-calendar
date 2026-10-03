@@ -23,6 +23,10 @@ polling_url: |-
 # Only Home Assistant gets the token. No "=" in the Liquid here, not even in an assign:
 # LaraPaper's importer turns every "=" into ":".
 polling_headers: '{% unless ics_urls contains "/" %}Authorization=Bearer {{ ha_token }}{% endunless %}'
+# No padding around the calendar (screen--no-bleed), as on TRMNL.com: more room for
+# weeks. LaraPaper's importer doesn't read this (0.43.1); there it's the recipe's "Remove
+# bleed margin?" box.
+no_screen_padding: 'yes'
 static_data: '{}'
 # Framework version this recipe is built and tested against (LaraPaper's default).
 framework_version: 3.3.1

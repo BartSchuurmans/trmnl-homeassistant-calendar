@@ -56,12 +56,14 @@ trmnlp_render() {
     node trmnlp.mjs "$2" "$3" ${4:+"$4"}
     render_now "$1" --body "$3" --expect-events
 }
-# ... a variant (plugin/<variant>); the rest are render.mjs options
+# ... a variant (plugin/<variant>, each a TRMNL.com one); the rest are render.mjs options.
+# Rendered at TRMNL.com's scale (regular), so it compares with
+# trmnlp's own PNG ($name-trmnlp.png), the nearest to TRMNL.com's screen
 trmnlp_render_variant() {
     name=$1 context=$2 body=$3 variant=$4
     shift 4
-    TRMNLP_VARIANT=$variant node trmnlp.mjs "$context" "$body"
-    render_now "$name" --body "$body" "$@"
+    TRMNLP_VARIANT=$variant TRMNLP_PNG="$out/$name-trmnlp.png" node trmnlp.mjs "$context" "$body" &&
+        render_now "$name" --body "$body" --scale regular "$@"
 }
 trmnlp=
 if command -v docker > /dev/null || [ -n "${CI:-}" ]; then

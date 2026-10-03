@@ -102,6 +102,9 @@ if (device && scale) device.classes = device.classes.replace(/ screen--scale-\S+
 if (!device) throw new Error(`unknown device ${deviceName}`);
 
 const settings = yaml.load(fs.readFileSync(path.join(src, 'settings.yml'), 'utf8'));
+// no_screen_padding: 'yes' (as every variant has it) is screen--no-bleed on TRMNL.com and in
+// LaraPaper (its "Remove bleed margin?" box)
+if (settings.no_screen_padding === 'yes') device.classes += ' screen--no-bleed';
 const customFields = {};
 // Like LaraPaper: boolean fields hold true/false, the rest text. --set x=true|false gives a
 // boolean field a boolean; "yes"/"no" stay text, as installs from before the booleans saved them.

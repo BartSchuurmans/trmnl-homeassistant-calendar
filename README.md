@@ -182,6 +182,10 @@ With the Home Assistant app you can also fill in **Home Assistant weather entity
 `weather.forecast_home`, for each day's forecast next to its day number (see
 [Weather](#weather)).
 
+Under **Screen Settings**, tick **Remove bleed margin?**: the calendar is made to run to
+the screen's edges, as it does on TRMNL.com (LaraPaper doesn't take that from the recipe
+when installing it).
+
 Add the recipe to the device's playlist (**Add to Playlist** on the recipe page).
 
 **Updating:** installing from the catalog again adds a second copy. To update in place
