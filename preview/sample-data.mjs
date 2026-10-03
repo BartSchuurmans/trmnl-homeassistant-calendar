@@ -9,14 +9,14 @@
 // calendar.family, calendar.mark and calendar.sara. Those files are HA's
 // /api/calendars/<entity> responses with every occurrence from the cycle's start to
 // SAMPLE_HA_END (a static server ignores ?start=&end=), so move that on before it passes.
-// sample-ha/worker.mjs is the better stand-in: it works them out from today, and answers
+// sample-server/worker.mjs is the better stand-in: it works them out from today, and answers
 // the weather forecast's POST too.
 //
 //   node sample-data.mjs write    regenerates docs/sample-ics/*.ics and docs/sample-ha/
 //   node sample-data.mjs check    fails when they differ from this file (ci.sh)
 //
 // Nothing here needs Node but the command line, so the stand-in Home Assistant on
-// Cloudflare Workers (preview/sample-ha/worker.mjs) imports it as well.
+// Cloudflare Workers (preview/sample-server/worker.mjs) imports it as well.
 
 // Week 0 of the cycle; the README screenshots are taken in it (Wednesday 30 September)
 const ANCHOR = '2026-09-28';
