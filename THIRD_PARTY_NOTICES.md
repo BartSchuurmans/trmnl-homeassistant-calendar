@@ -38,3 +38,11 @@ which also carry per-font details. BlockKie is by
 The image is built on [LaraPaper](https://github.com/usetrmnl/larapaper) (MIT), which
 is not modified here apart from the Inter stylesheet link removed from its screen
 template (see `larapaper/Dockerfile`).
+
+## Device frames in the README images
+
+The TRMNL X and TRMNL OG frames around the screenshots in `docs/preview*.png` are the
+bezel artwork from TRMNL's
+[`<trmnl-frame>` web component](https://github.com/usetrmnl/trmnl-component)
+(`preview/frame.mjs` fetches it at a pinned commit), Copyright (c) 2025 TRMNL, used
+under the [MIT license](https://github.com/usetrmnl/trmnl-component/blob/c72d9dc6a161d77a99d4f953c7ca5df2fc7278b7/LICENSE).
