@@ -108,7 +108,15 @@ async function png(file) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
-    if (!response.ok) throw new Error(`trmnlp PNG: ${response.status} ${await response.text()}`);
+    // A cold Firefox on a busy machine (CI runs the other renders alongside) can take longer
+    // to start than Selenium waits for its session (Net::ReadTimeout, a 500); the next
+    // request starts a new one
+    for (let retries = 2; response.status >= 500 && retries > 0; retries--) {
+      console.error(`trmnlp PNG: ${response.status}, retrying`);
+      await response.arrayBuffer();
+      response = await fetch(`${base}/render/${size}.png?${params}`);
+    }
+    if (!response.ok) throw new Error(`trmnlp PNG: ${response.status} ${(await response.text()).slice(0, 2000)}`);
     const image = Buffer.from(await response.arrayBuffer());
     fs.writeFileSync(file, image);
     // A blank screen (the Framework or FullCalendar didn't load) compresses to about 1 kB,

@@ -61,8 +61,8 @@ trmnlp_render() {
 trmnlp_render_variant() {
     name=$1 context=$2 body=$3 variant=$4
     shift 4
-    TRMNLP_VARIANT=$variant TRMNLP_PNG="$out/$name-trmnlp.png" node trmnlp.mjs "$context" "$body"
-    render_now "$name" --body "$body" "$@"
+    TRMNLP_VARIANT=$variant TRMNLP_PNG="$out/$name-trmnlp.png" node trmnlp.mjs "$context" "$body" &&
+        render_now "$name" --body "$body" "$@"
 }
 trmnlp=
 if command -v docker > /dev/null || [ -n "${CI:-}" ]; then
