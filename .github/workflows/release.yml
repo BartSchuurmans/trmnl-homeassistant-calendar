@@ -1,19 +1,23 @@
 name: Release
 
-# Pushing a tag like v1.2.0, or running this workflow from the Actions tab on main with
-# that version, runs the render checks and publishes a GitHub release
-# with the recipe ZIP (dist/rolling-month-calendar.zip), one per variant
-# (rolling-month-calendar-<variant>.zip) and their SHA-256. The asset names stay the same,
-# so the README can link to releases/latest/download/rolling-month-calendar.zip. Then it
-# uploads the TRMNL.com variants there (trmnl-com.yml). A manual run creates the tag
-# along with the release, on the commit it ran on, once the render checks pass. A tag
-# created with the workflow's token doesn't start the push trigger, so it runs once.
+# Merging a pull request labelled "release: patch", "release: minor" or "release: major"
+# into main releases the next version (from the latest v* tag); "release: none" or no label
+# releases nothing. Pushing a tag like v1.2.0, or running this workflow from the Actions
+# tab on main with that version, also works. A release runs the render checks and
+# publishes a GitHub release with the recipe ZIP (dist/rolling-month-calendar.zip), one
+# per variant (rolling-month-calendar-<variant>.zip) and their SHA-256. The asset names
+# stay the same, so the README can link to releases/latest/download/rolling-month-calendar.zip.
+# Then it uploads the TRMNL.com variants there (trmnl-com.yml). A merge or manual run
+# creates the tag along with the release, on the commit it ran on, once the render checks
+# pass. A tag created with the workflow's token doesn't start the push trigger, so it
+# runs once. release-label.yml asks recipe PRs for one of those labels.
 #
 # The Home Assistant app is released separately: Home Assistant offers an update
 # whenever `version` in larapaper/config.yaml changes on main.
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
     inputs:
@@ -31,19 +35,51 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - id: tag
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ inputs.version }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = push ]; then
+          case "$GITHUB_REF" in refs/tags/*)
             echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
             exit 0
-          fi
+          esac
           if [ "$GITHUB_REF" != refs/heads/main ]; then
             echo "::error::Run this workflow on main, not $GITHUB_REF_NAME"
             exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            # The merged pull request's "release: ..." label picks the part to bump
+            labels=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+              --jq '[.[] | select(.merged_at != null) | .labels[].name | select(startswith("release: "))] | unique | .[]')
+            if [ -z "$labels" ]; then
+              echo "No release label on the pull request merged in $GITHUB_SHA: nothing to release"
+              exit 0
+            fi
+            if [ "$(echo "$labels" | wc -l)" -gt 1 ]; then
+              echo "::error::The merged pull request has more than one release label: $(echo $labels)"
+              exit 1
+            fi
+            part=${labels#release: }
+            if [ "$part" = none ]; then
+              echo "Labelled release: none: nothing to release"
+              exit 0
+            fi
+            latest=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v" --paginate --jq '.[].ref | ltrimstr("refs/tags/")' \
+              | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+            if [ -z "$latest" ]; then echo "::error::No v* tag to count from"; exit 1; fi
+            IFS=. read -r major minor patch <<< "${latest#v}"
+            case "$part" in
+              major) VERSION="$((major + 1)).0.0" ;;
+              minor) VERSION="$major.$((minor + 1)).0" ;;
+              patch) VERSION="$major.$minor.$((patch + 1))" ;;
+              *) echo "::error::Unknown label 'release: $part'"; exit 1 ;;
+            esac
+            echo "$latest + $part"
           fi
           tag="v${VERSION#v}"
           if ! echo "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
@@ -59,6 +95,7 @@ jobs:
 
   render:
     needs: tag
+    if: needs.tag.outputs.tag != ''
     uses: ./.github/workflows/render.yml
 
   release:
@@ -85,13 +122,13 @@ jobs:
           sh scripts/build-variant.sh
           cd dist && for zip in rolling-month-calendar*.zip; do sha256sum "$zip" > "$zip.sha256" && cat "$zip.sha256"; done
 
-      # A pushed tag must exist; a manual run's tag is created here, on the commit it ran on
+      # A pushed tag must exist; a merge's or manual run's tag is created here, on the commit it ran on
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = push ]; then tag_option=--verify-tag; else tag_option="--target=$GITHUB_SHA"; fi
+          case "$GITHUB_REF" in refs/tags/*) tag_option=--verify-tag ;; *) tag_option="--target=$GITHUB_SHA" ;; esac
           gh release create "$TAG" dist/rolling-month-calendar*.zip dist/rolling-month-calendar*.zip.sha256 \
             "$tag_option" --title "$TAG" --generate-notes
 

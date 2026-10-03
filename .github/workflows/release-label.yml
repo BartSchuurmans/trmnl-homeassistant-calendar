@@ -1,0 +1,59 @@
+name: Release label
+
+# A pull request that changes the recipe needs one release label, which release.yml reads
+# when it's merged into main: "release: patch", "release: minor" or "release: major"
+# releases the next version of that part, "release: none" releases nothing. Change the
+# label any time before merging. Pull requests that don't touch the recipe may go without.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # to create the labels the first time
+      pull-requests: read
+    steps:
+      - name: Create the release labels
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          existing=$(gh label list --search 'release:' --json name --jq '.[].name')
+          create() { echo "$existing" | grep -qxF "$1" || gh label create "$1" --color "$2" --description "$3"; }
+          create 'release: major' b60205 'Merging releases the next major version'
+          create 'release: minor' fbca04 'Merging releases the next minor version'
+          create 'release: patch' 0e8a16 'Merging releases the next patch version'
+          create 'release: none' cfd3d7 'Merging releases nothing'
+
+      - name: Check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          labels=$(echo "$LABELS" | jq -r '.[] | select(startswith("release: "))')
+          count=$(echo "$labels" | grep -c . || true)
+          if [ "$count" -gt 1 ]; then
+            echo "::error::More than one release label: $(echo $labels)"
+            exit 1
+          fi
+          if [ "$count" = 1 ]; then
+            echo "Merging this releases: ${labels#release: }"
+            exit 0
+          fi
+          # what release.yml publishes: the recipe ZIPs and the TRMNL.com variants
+          recipe=$(gh pr diff "$PR" --name-only | grep -E '^(plugin/|scripts/build-(zip|variant)\.sh$)' || true)
+          if [ -n "$recipe" ]; then
+            echo "::error::This changes the recipe; add a release label (release: patch, minor, major or none). Changed: $(echo $recipe)"
+            exit 1
+          fi
+          echo "No release label; nothing in the recipe changes"

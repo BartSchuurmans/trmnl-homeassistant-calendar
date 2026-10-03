@@ -57,7 +57,7 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   `e2e/out/`. `e2e/larapaper.php` runs inside the container through LaraPaper's own
   services. `--local <larapaper checkout>` runs it without Docker. `node e2e/ingress.mjs`
   (after it) drives the web UI in Chromium through a fake Home Assistant ingress.
-- CI: `.github/workflows/render.yml` (recipe), `trmnl-com.yml` (uploads the TRMNL.com
+- CI: `.github/workflows/render.yml` (recipe), `release.yml` and `release-label.yml` (see Releasing), `trmnl-com.yml` (uploads the TRMNL.com
   variants on a release, compares TRMNL.com with the latest release weekly) and `app.yml` (builds and smoke-tests
   the Home Assistant app, then runs the end-to-end test; on main it publishes the image).
 
@@ -187,9 +187,14 @@ dates with `getUTC*`.
 
 ## Releasing
 
-- Recipe: tag `vX.Y.Z` on main and push the tag, or run the Release workflow on main
-  from the Actions tab with that version (it creates the tag with the release, after the
-  render suite passes). `release.yml` reruns the render suite and publishes a GitHub
+- Recipe: merging a PR labelled `release: patch`, `release: minor` or `release: major`
+  into main releases the next version from the latest tag; `release: none` or no label
+  releases nothing. `release-label.yml` fails PRs that change `plugin/` or the build
+  scripts without one, so give every PR you open that touches them the label its change
+  calls for (new setting or feature: minor; fix: patch; docs/tests only: none). By hand:
+  push a tag `vX.Y.Z` on main, or run the Release workflow on main from the Actions tab
+  with that version. A merge or manual run creates the tag with the release, after the
+  render suite passes. `release.yml` reruns the render suite and publishes a GitHub
   release with `rolling-month-calendar.zip` (+ `.sha256`). The ZIP is
   reproducible (`build-zip.sh` dates it by the last `plugin/src` commit). Every render
   run also uploads the ZIP as an artifact.
