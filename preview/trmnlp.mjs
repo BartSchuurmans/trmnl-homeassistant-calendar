@@ -7,22 +7,25 @@
 //   TRMNLP_VARIANT=trmnl-com-merge node trmnlp.mjs ...    a variant in plugin/ instead, put
 //                                                   together as
 //                                                   scripts/build-variant.sh does
+//   TRMNLP_PNG=<file> node trmnlp.mjs ...           also trmnlp's own PNG (see png() below)
 //   node trmnlp.mjs --pull                          only fetches the image, if missing
 //   node trmnlp.mjs --lint                          runs `trmnlp lint` (see lint() below)
 //
 // Needs Docker (the trmnl/trmnlp image). The context's custom fields and payload go into
 // .trmnlp.yml, so trmnlp hands the payload over the TRMNL way: its keys at the top level,
 // several calendars as IDX_0, IDX_1, ... and no `data`. trmnlp's own polling can't reach
-// the sample URLs and is left to fail (it only warns). Its PNGs need trmnl.com, so the
-// screenshot is left to render.mjs, which serves the framework locally.
+// the sample URLs and is left to fail (it only warns). The screenshot is render.mjs's, with
+// the framework served locally, so it compares with the other renders; TRMNLP_PNG adds
+// trmnlp's own, which loads the framework from trmnl.com.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import net from 'node:net';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import * as yaml from 'js-yaml';
 
-const IMAGE = 'trmnl/trmnlp:v0.15.0';
+const IMAGE = 'trmnl/trmnlp:v0.16.0';
 // `trmnlp lint` findings that don't apply to this recipe
 // Rule IDs (as `trmnlp lint` prints them, e.g. no_opacity) of findings that don't apply
 // here, each with why. Empty since trmnlp 0.15.0 counts only real style attributes in its
@@ -79,7 +82,51 @@ const start = open ? open.index + open[0].length : -1;
 const end = html.lastIndexOf('</div>', html.lastIndexOf('</body>'));
 if (start < 0 || end < start) throw new Error('unexpected trmnlp output');
 fs.writeFileSync(bodyFile, html.slice(start, end));
+if (process.env.TRMNLP_PNG) await png(process.env.TRMNLP_PNG);
 fs.rmSync(project, { recursive: true, force: true });
+
+// TRMNLP_PNG=<file>: also trmnlp's own PNG of the view, a TRMNL X at TRMNL.com's default
+// (regular) scale, from `trmnlp serve`, which renders as TRMNL's converter does (Framework
+// from trmnl.com, FullCalendar from jsDelivr, TRMNL's ready signals and grey levels).
+// `trmnlp build --png` can't: it renders only the default 800x480 screen.
+async function png(file) {
+  const run = (...a) => execFileSync('docker', a, { encoding: 'utf8' }).trim();
+  // TRMNLP_DOCKER_ARGS: extra `docker run` options, e.g. --network=host behind a proxy
+  const extra = (process.env.TRMNLP_DOCKER_ARGS || '').split(' ').filter(Boolean);
+  const port = await freePort();
+  const id = run('run', '--detach', '--rm', '--user', `${process.getuid()}:${process.getgid()}`, ...extra,
+    ...(extra.includes('--network=host') ? [] : ['--publish', `127.0.0.1:${port}:${port}`]),
+    '--volume', `${project}:/plugin`, IMAGE, 'serve', '--port', String(port));
+  try {
+    const base = `http://127.0.0.1:${port}`;
+    const params = new URLSearchParams({ screen_classes: 'screen screen--4bit screen--v2 screen--lg',
+      width: 1872, height: 1404, color_depth: 4, model: 'v2', bit_depth: 4 });
+    let response;
+    for (let tries = 0; ; tries++) {
+      try { response = await fetch(`${base}/render/${size}.png?${params}`); break; } catch (error) {
+        if (tries > 60) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+    if (!response.ok) throw new Error(`trmnlp PNG: ${response.status} ${await response.text()}`);
+    const image = Buffer.from(await response.arrayBuffer());
+    fs.writeFileSync(file, image);
+    // A blank screen (the Framework or FullCalendar didn't load) compresses to about 1 kB,
+    // a calendar to well over 20 kB
+    if (image.length < 20000) throw new Error(`trmnlp PNG ${file} looks blank (${image.length} bytes)`);
+  } finally {
+    try { run('stop', id); } catch { /* already gone */ }
+  }
+}
+
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer().once('error', reject).listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      server.close(() => resolve(port));
+    });
+  });
+}
 
 // `trmnlp lint` (TRMNL's best-practice checks) on plugin/src (LaraPaper, polling) and on
 // every variant as scripts/build-variant.sh builds it (e.g. TRMNL.com: merge.liquid in front
