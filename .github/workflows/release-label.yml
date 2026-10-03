@@ -38,9 +38,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        # The labels as they are now, not as the event saw them: a label added right after
+        # opening the PR (or before a re-run) otherwise leaves this run failing.
         run: |
-          labels=$(echo "$LABELS" | jq -r '.[] | select(startswith("release: "))')
+          labels=$(gh pr view "$PR" --json labels --jq '.labels[].name | select(startswith("release: "))')
           count=$(echo "$labels" | grep -c . || true)
           if [ "$count" -gt 1 ]; then
             echo "::error::More than one release label: $(echo $labels)"
