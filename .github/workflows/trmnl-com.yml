@@ -36,10 +36,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - variant: trmnl-com
-            plugin_id_var: TRMNL_PLUGIN_ID
-          - variant: trmnl-com-ha
-            plugin_id_var: TRMNL_PLUGIN_ID_HA
+          - variant: trmnl-com-merge
+            plugin_id_var: TRMNL_PLUGIN_ID_MERGE
+          - variant: trmnl-com-polling
+            plugin_id_var: TRMNL_PLUGIN_ID_POLLING
     env:
       TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
       TRMNL_PLUGIN_ID: ${{ vars[matrix.plugin_id_var] }}
@@ -57,18 +57,24 @@ jobs:
           if [ -z "$tag" ]; then echo "::error::no release tag yet"; exit 1; fi
           git checkout --quiet "$tag"
           echo "Comparing with $tag"
+          # a variant added or renamed since that release has nothing to compare yet
+          if [ ! -d "plugin/$VARIANT" ]; then
+            echo "::notice::$VARIANT is not in $tag yet, skipped until the next release"
+            echo "SKIP=true" >> "$GITHUB_ENV"
+          fi
 
       - uses: actions/setup-node@v7
         with:
           node-version: 22
 
       - name: Build
+        if: env.SKIP != 'true'
         run: |
           (cd preview && npm ci)
           sh scripts/build-variant.sh "$VARIANT"
 
       - name: Not configured
-        if: env.TRMNL_API_KEY == '' || env.TRMNL_PLUGIN_ID == ''
+        if: env.SKIP != 'true' && (env.TRMNL_API_KEY == '' || env.TRMNL_PLUGIN_ID == '')
         run: |
           echo "::warning::$VARIANT skipped, set the TRMNL_API_KEY secret and the ${{ matrix.plugin_id_var }} variable"
 
@@ -83,7 +89,7 @@ jobs:
             "$TRMNLP_IMAGE" push --force --id "$TRMNL_PLUGIN_ID"
 
       - name: Compare with TRMNL.com
-        if: env.TRMNL_API_KEY != '' && env.TRMNL_PLUGIN_ID != ''
+        if: env.SKIP != 'true' && env.TRMNL_API_KEY != '' && env.TRMNL_PLUGIN_ID != ''
         run: |
           project="$RUNNER_TEMP/pull"
           mkdir -p "$project/src"

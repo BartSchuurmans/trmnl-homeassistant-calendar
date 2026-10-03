@@ -18,15 +18,15 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   `node preview/sample-data.mjs write`; TRMNL.com's marketplace preview polls those feeds
   from main, and `ci.sh` checks they're in step; `docs/sample-ha/` has them as static
   Home Assistant `/api/calendars/<entity>` responses up to `SAMPLE_HA_END`, a stand-in
-  Home Assistant for trying `plugin/trmnl-com-ha/`).
+  Home Assistant for trying `plugin/trmnl-com-polling/`).
 - `larapaper/` + `repository.yaml` — Home Assistant app: official LaraPaper image plus
   bundled TRMNL framework, fonts and FullCalendar (`assets.txt`, pinned by SHA-256).
 - `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
   in-container helper.
-- `plugin/<variant>/` (now `trmnl-com/` and `trmnl-com-ha/`, see `plugin/README.md`) — the
+- `plugin/<variant>/` (now `trmnl-com-merge/` and `trmnl-com-polling/`, see `plugin/README.md`) — the
   recipe for another channel: its own `settings.yml` and `*.liquid` put in front of
-  `src/shared.liquid`. `trmnl-com/`: TRMNL.com, Plugin Merge strategy, `merge.liquid`.
-  `trmnl-com-ha/`: TRMNL.com polling a public Home Assistant with a token (no ICS), plus
+  `src/shared.liquid`. `trmnl-com-merge/`: TRMNL.com, Plugin Merge strategy, `merge.liquid`.
+  `trmnl-com-polling/`: TRMNL.com polling a public Home Assistant with a token (no ICS), plus
   `transform.js`, a TRMNL.com serverless function that adds the weather. Never edit the
   markup on TRMNL.com; releases upload it.
 - `scripts/build-zip.sh` — builds `dist/rolling-month-calendar.zip` for LaraPaper's recipe import;
@@ -111,7 +111,7 @@ days from "now" did in the hour after midnight; PHP-only wording like `"today -7
 comes out as text in Ruby. Don't use `T` in date formats there (PHP treats it as a
 timezone). HA accepts date-only `start`/`end`. Ruby Liquid renders a block holding only whitespace
 (`{% unless forloop.last %}` + line break) as nothing, so a line break between URLs sits
-next to output (see `plugin/trmnl-com-ha/settings.yml`). LaraPaper's importer turns every `=` in
+next to output (see `plugin/trmnl-com-polling/settings.yml`). LaraPaper's importer turns every `=` in
 `polling_headers` into `:`, so the header's Liquid can't use `=`, `==` or `assign`.
 
 **ICS feeds.** Set `ics_urls` and they replace the HA entities (URL, no token). LaraPaper
@@ -121,7 +121,7 @@ midnight-to-midnight timestamps (no all-day flag). `fromIcal` in `shared.liquid`
 to HA's shape, and the grid stops at the last week the feed covers. `render.mjs --ics`
 fakes that shape; `e2e/fake-ha.mjs` serves real feeds.
 
-**TRMNL calendar plugins.** Only on TRMNL.com (`plugin/trmnl-com/`, Plugin Merge):
+**TRMNL calendar plugins.** Only on TRMNL.com (`plugin/trmnl-com-merge/`, Plugin Merge):
 "Calendar" dropdowns store the merged data's name (`caldav_<id>`), which `merge.liquid`
 looks up with `{{ [name] }}`; the data is `{events: [...]}` with
 `start_full`/`end_full`/`all_day` (`fromNative` in `shared.liquid`). keepsuit can't parse

@@ -21,6 +21,6 @@ can't parse that lookup; `render.mjs --merge` renders with it.
 
 This folder holds only what differs from `../src`: `settings.yml` (Plugin Merge, framework
 3.3.1, bleed margin removed, its form fields, the recipe page's `recipe_overview`) and `merge.liquid`, which goes in front of
-the shared markup. `scripts/build-variant.sh trmnl-com` builds the plugin, and releases
+the shared markup. `scripts/build-variant.sh trmnl-com-merge` builds the plugin, and releases
 upload it to TRMNL.com; see [the variants overview](../README.md). Don't edit the plugin
 on TRMNL.com itself.

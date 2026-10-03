@@ -71,7 +71,7 @@ For the weather next to the day numbers, fill in **Home Assistant weather entity
 [Weather](#weather)).
 
 To try it before connecting your own Home Assistant, point it at the sample calendars in
-this repository instead ([how](plugin/trmnl-com-ha/README.md#trying-it-without-your-own-home-assistant)).
+this repository instead ([how](plugin/trmnl-com-polling/README.md#trying-it-without-your-own-home-assistant)).
 
 ## Self-hosted with LaraPaper
 
@@ -394,10 +394,10 @@ the changes in detail.
   the TRMNL framework. LaraPaper installs it from the
   [TRMNL recipe catalog](https://bnussbau.github.io/trmnl-recipe-catalog/); each release
   also has it as `rolling-month-calendar.zip`.
-- **The TRMNL.com recipe** (`plugin/trmnl-com/`): the same markup with the Plugin Merge
+- **The TRMNL.com Plugin Merge recipe** (`plugin/trmnl-com-merge/`): the same markup with the Plugin Merge
   strategy, built from `plugin/src` and uploaded to TRMNL.com on each release. See
   [plugin/README.md](plugin/README.md).
-- **The TRMNL.com Home Assistant recipe** (`plugin/trmnl-com-ha/`): the same markup polling
+- **The TRMNL.com Home Assistant recipe** (`plugin/trmnl-com-polling/`): the same markup polling
   Home Assistant from TRMNL.com, plus a serverless function (`transform.js`) that fetches
   the weather forecast, built and released the same way.
 - **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
@@ -413,8 +413,8 @@ the changes in detail.
 | `plugin/src/settings.yml` | Recipe settings: polling URL, auth header, custom fields |
 | `plugin/src/full.liquid`, `half_horizontal.liquid`, `half_vertical.liquid`, `quadrant.liquid` | The views: each prints the calendar from `shared.liquid` |
 | `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA / TRMNL plugin event mapping) and the markup (fork of `_full_month.html.erb`) |
-| `plugin/trmnl-com/` | The TRMNL.com variant: its settings and `merge.liquid` |
-| `plugin/trmnl-com-ha/` | The TRMNL.com Home Assistant variant: its settings and serverless function (`transform.js`) |
+| `plugin/trmnl-com-merge/` | The TRMNL.com Plugin Merge variant: its settings and `merge.liquid` |
+| `plugin/trmnl-com-polling/` | The TRMNL.com polling variant (Home Assistant): its settings and serverless function (`transform.js`) |
 | `preview/` | Local renderer and CI render checks |
 | `preview/sample-data.mjs`, `docs/sample-ics/`, `docs/sample-ha/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview and as a stand-in Home Assistant |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |

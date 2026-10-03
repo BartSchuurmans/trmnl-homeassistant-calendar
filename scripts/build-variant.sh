@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Build a variant of the recipe (a folder in plugin/ next to src, e.g. trmnl-com) from the
+# Build a variant of the recipe (a folder in plugin/ next to src, e.g. trmnl-com-merge) from the
 # repo sources, so there is one copy of the markup to maintain (see plugin/README.md):
 #
 #   dist/<variant>/src/                         a trmnlp project: the variant's settings.yml,
@@ -36,7 +36,7 @@ for variant in "$@"; do
     mkdir -p "$out"
 
     cp "$dir/settings.yml" "$out/settings.yml"
-    # the variant's own Liquid (e.g. trmnl-com/merge.liquid) goes in front of the shared markup
+    # the variant's own Liquid (e.g. trmnl-com-merge/merge.liquid) goes in front of the shared markup
     {
         find "$dir" -maxdepth 1 -name '*.liquid' | LC_ALL=C sort | while read -r file; do cat "$file"; done
         cat "$root/plugin/src/shared.liquid"

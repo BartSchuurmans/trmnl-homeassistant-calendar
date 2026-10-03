@@ -348,7 +348,7 @@
     }
 
     // TRMNL's native calendar plugins (Google, Outlook, Apple, ...), as TRMNL.com's Plugin
-    // Merge hands them over (plugin/trmnl-com/merge.liquid): parsed events with start_full/end_full (a date for all-day events, else a time with offset;
+    // Merge hands them over (plugin/trmnl-com-merge/merge.liquid): parsed events with start_full/end_full (a date for all-day events, else a time with offset;
     // usetrmnl/plugins lib/google_calendar/google_calendar.rb#event_hash).
     function fromNative(ev) {
       if (!ev || typeof ev !== 'object' || !ev.start_full) return null;
@@ -833,7 +833,7 @@
     "IDX_0": {{ IDX_0 | json }}, "IDX_1": {{ IDX_1 | json }}, "IDX_2": {{ IDX_2 | json }}, "IDX_3": {{ IDX_3 | json }}, "IDX_4": {{ IDX_4 | json }},
     "IDX_5": {{ IDX_5 | json }}, "IDX_6": {{ IDX_6 | json }}, "IDX_7": {{ IDX_7 | json }}, "IDX_8": {{ IDX_8 | json }}, "IDX_9": {{ IDX_9 | json }}
 }{% endcapture %}{% endunless %}{% endif %}
-{% comment %} TRMNL.com's Plugin Merge dropdowns, collected by plugin/trmnl-com/merge.liquid {% endcomment %}
+{% comment %} TRMNL.com's Plugin Merge dropdowns, collected by plugin/trmnl-com-merge/merge.liquid {% endcomment %}
 {% if merge_sources %}{% assign source = "merge" %}{% assign events_json = merge_json %}{% endif %}
 
 <div class="layout layout--col layout--stretch">
