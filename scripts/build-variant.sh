@@ -4,8 +4,9 @@
 #
 #   dist/<variant>/src/                         a trmnlp project: the variant's settings.yml,
 #                                               shared.liquid = the variant's *.liquid (in
-#                                               name order) + plugin/src/shared.liquid, and
-#                                               plugin/src's views as-is
+#                                               name order) + plugin/src/shared.liquid,
+#                                               plugin/src's views as-is, and the variant's
+#                                               transform.* if it has one
 #   dist/rolling-month-calendar-<variant>.zip   the same files, for TRMNL's "Import" or
 #                                               `trmnlp push` (.github/workflows/trmnl-com.yml)
 #
@@ -40,6 +41,11 @@ for variant in "$@"; do
         find "$dir" -maxdepth 1 -name '*.liquid' | LC_ALL=C sort | while read -r file; do cat "$file"; done
         cat "$root/plugin/src/shared.liquid"
     } > "$out/shared.liquid"
+    # its serverless function (TRMNL.com only), if it has one: trmnlp push uploads it and
+    # sets the language from the extension
+    for file in "$dir"/transform.*; do
+        [ -f "$file" ] && cp "$file" "$out/"
+    done
     for view in full half_horizontal half_vertical quadrant; do
         cp "$root/plugin/src/$view.liquid" "$out/$view.liquid"
     done

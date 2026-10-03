@@ -10,7 +10,8 @@
 //                                            Run by ci.sh.
 //   node variants.mjs diff <variant> <dir>   a trmnlp project pulled from TRMNL.com
 //                                            (`trmnlp pull`) against dist/<variant>/src:
-//                                            markup, form fields and the settings we set
+//                                            markup, serverless function, form fields and
+//                                            the settings we set
 //                                            (bar the encrypted ones TRMNL keeps back).
 //                                            Run by .github/workflows/trmnl-com.yml.
 import fs from 'node:fs';
@@ -30,12 +31,13 @@ const VARIANTS = {
       weather_entity: 'needs the LaraPaper (local) app\'s Home Assistant proxy; replaced by the weather_plugin dropdown',
     },
     own: /^(calendar_\d+|weather_plugin)$/,
+    differs: {
+      name: 'its own recipe on TRMNL.com, named after its data source (TRMNL\'s calendar plugins)',
+    },
   },
   'trmnl-com-ha': {
     leftOut: {
       ics_urls: 'TRMNL.com polls JSON only; an .ics feed fails as "Malformed JSON"',
-      weather_entity: 'Home Assistant gives forecasts only to a POST and calendars only to a GET, and TRMNL.com polls every URL with one verb',
-      weather_temperatures: 'no weather (see weather_entity)',
     },
     own: /^$/,
     differs: {
@@ -120,7 +122,8 @@ function check() {
 
 function diff(variant, pulled) {
   const built = path.join(root, 'dist', variant, 'src');
-  for (const file of fs.readdirSync(built).filter((f) => f.endsWith('.liquid'))) {
+  // the markup, and the serverless function (transform.js) if the variant has one
+  for (const file of fs.readdirSync(built).filter((f) => f.endsWith('.liquid') || /^transform\.\w+$/.test(f))) {
     const ours = fs.readFileSync(path.join(built, file), 'utf8');
     const theirs = path.join(pulled, file);
     // TRMNL stores markup with CRLF line ends when it was edited in the browser

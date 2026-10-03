@@ -77,6 +77,15 @@ spawn variants node variants.mjs check
 # docs/sample-ics (TRMNL.com's marketplace preview) in step with the sample calendars
 spawn sample-ics node sample-data.mjs check
 
+# TRMNL.com's serverless function (plugin/trmnl-com-ha/transform.js) against the fake Home
+# Assistant of e2e/, and the weather it adds on the screen
+transform_render() {
+    node transforms.mjs "$out/$1.json"
+    render_now "$1" --data "$out/$1.json" --set calendars=calendar.family,calendar.work \
+        --set weather_entity=weather.forecast_home --set weather_temperatures=high_low --expect-events
+}
+spawn transform-ha-x transform_render transform-ha-x
+
 # The contexts for the PHP and trmnlp renders, first so those can start early
 render liquidjs-x --set calendar_colors=black,-,gray-65 --dump-context "$out/context.json"
 context=$last

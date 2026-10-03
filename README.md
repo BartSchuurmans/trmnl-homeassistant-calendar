@@ -31,8 +31,8 @@ for anyone who wants to change it.
      of its own, shorter view;
    - keep it in a playlist, or its events stop refreshing. It doesn't have to show:
      hiding it in the playlist is fine.
-2. **Install the recipe**: find **Rolling Month Calendar** among TRMNL's recipes and
-   install it.
+2. **Install the recipe**: find **Rolling Month Calendar (TRMNL calendars)** among
+   TRMNL's recipes and install it.
 3. **Pick your calendars** in its **Calendar** dropdowns, up to four. The dropdowns list
    all your plugins, so choose the calendar ones. Set the other [settings](#settings)
    as you like.
@@ -67,8 +67,8 @@ instead.
    `calendar.`). Set the other [settings](#settings) as you like.
 4. **Add it to your playlist.**
 
-This edition has no weather: Home Assistant gives forecasts only to a POST service call
-and calendars only to a GET, and TRMNL.com fetches all of a recipe's URLs the same way.
+For the weather next to the day numbers, fill in **Home Assistant weather entity** (see
+[Weather](#weather)).
 
 To try it before connecting your own Home Assistant, point it at the sample calendars in
 this repository instead ([how](plugin/trmnl-com-ha/README.md#trying-it-without-your-own-home-assistant)).
@@ -212,8 +212,8 @@ the high, or the high and low with **Weather temperatures**. Where the line runs
 room (next to a week number or a month name, say) the low is left out, then the high,
 and narrow views (half and quadrant mashups) show only the icon.
 
-**On TRMNL.com**, pick a weather plugin in the **Weather** dropdown, and keep that plugin
-in a playlist (hidden is fine) so it keeps refreshing:
+**On TRMNL.com with TRMNL calendars**, pick a weather plugin in the **Weather** dropdown,
+and keep that plugin in a playlist (hidden is fine) so it keeps refreshing:
 
 - TRMNL's own **Weather** plugin: today and tomorrow only, as that plugin shares no more.
 - The **Daily Weather** recipe (by Daniel Sitnik): about a week from
@@ -222,6 +222,10 @@ in a playlist (hidden is fine) so it keeps refreshing:
 
 Any other recipe that polls Open-Meteo's daily `weather_code`, `temperature_2m_max` and
 `temperature_2m_min` works as well.
+
+**On TRMNL.com with Home Assistant**, set **Home Assistant weather entity**. The recipe's
+serverless function on TRMNL.com asks your Home Assistant for that entity's forecast,
+with the same token as the calendars.
 
 **With LaraPaper**, it takes the LaraPaper (local) app: set **Home Assistant weather
 entity**, and the forecast comes from that entity. It works with ICS feeds as well as
@@ -244,7 +248,7 @@ a Home Assistant URL of your own (Docker Compose).
 
 Where the events and the weather come from is the only difference between the two:
 TRMNL.com has the **Calendar** and **Weather** dropdowns, its Home Assistant edition the
-**Home Assistant** fields (no weather), LaraPaper the **ICS feed URLs** or **Home
+**Home Assistant** fields, LaraPaper the **ICS feed URLs** or **Home
 Assistant** fields (see the setup above). Everything else is the same.
 
 The form groups them in this order. On/off settings are toggles.
@@ -394,7 +398,8 @@ the changes in detail.
   strategy, built from `plugin/src` and uploaded to TRMNL.com on each release. See
   [plugin/README.md](plugin/README.md).
 - **The TRMNL.com Home Assistant recipe** (`plugin/trmnl-com-ha/`): the same markup polling
-  Home Assistant from TRMNL.com, built and released the same way.
+  Home Assistant from TRMNL.com, plus a serverless function (`transform.js`) that fetches
+  the weather forecast, built and released the same way.
 - **LaraPaper (local)** (`larapaper/`, `repository.yaml`): a Home Assistant app that runs
   the official LaraPaper image with the TRMNL framework, its fonts and FullCalendar built
   in, so rendering a screen needs no internet access. See
@@ -409,7 +414,7 @@ the changes in detail.
 | `plugin/src/full.liquid`, `half_horizontal.liquid`, `half_vertical.liquid`, `quadrant.liquid` | The views: each prints the calendar from `shared.liquid` |
 | `plugin/src/shared.liquid` | CSS + JS (fork of `_common.html.erb` + the ICS / HA / TRMNL plugin event mapping) and the markup (fork of `_full_month.html.erb`) |
 | `plugin/trmnl-com/` | The TRMNL.com variant: its settings and `merge.liquid` |
-| `plugin/trmnl-com-ha/` | The TRMNL.com Home Assistant variant: its settings |
+| `plugin/trmnl-com-ha/` | The TRMNL.com Home Assistant variant: its settings and serverless function (`transform.js`) |
 | `preview/` | Local renderer and CI render checks |
 | `preview/sample-data.mjs`, `docs/sample-ics/`, `docs/sample-ha/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview and as a stand-in Home Assistant |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
