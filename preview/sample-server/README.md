@@ -1,4 +1,4 @@
-# Stand-in Home Assistant
+# Sample server
 
 `worker.mjs` is a fake Home Assistant on Cloudflare Workers with the sample calendars of
 `../sample-data.mjs` (six weeks that repeat) and a daily forecast, for trying the
@@ -25,9 +25,9 @@ entity** `weather.forecast_home`.
 Cloudflare builds and deploys it from main through its Git integration, with
 `wrangler.jsonc` in this folder; nothing about it is stored in GitHub. Set up once in
 the Cloudflare dashboard: Workers & Pages → Create → Import a repository, pick this
-repository, set the root directory to `preview/sample-ha`, keep the deploy command
+repository, set the root directory to `preview/sample-server`, keep the deploy command
 `npx wrangler deploy`, and limit builds to the `main` branch. It serves at
-`https://rolling-month-calendar-sample-ha.<account subdomain>.workers.dev`. The free
+`https://trmnl-rolling-month-calendar-sample-server.<account subdomain>.workers.dev`. The free
 plan's 100,000 requests a day are far more than a few test plugins polling every 15
 minutes need.
 

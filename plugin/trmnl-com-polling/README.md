@@ -33,7 +33,7 @@ overview](../README.md). Don't edit the plugin on TRMNL.com itself.
 
 ## Trying it without your own Home Assistant
 
-[`preview/sample-ha/`](../../preview/sample-ha/README.md) is a stand-in Home Assistant on
+[`preview/sample-server/`](../../preview/sample-server/README.md) is a stand-in Home Assistant on
 Cloudflare Workers with the sample calendars (the six-week cycle of
 `preview/sample-data.mjs`) and a forecast for `weather.forecast_home`: set **Home
 Assistant URL** to its workers.dev URL, any text as the token, `calendar.family`,

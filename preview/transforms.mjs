@@ -1,6 +1,6 @@
 // Checks the TRMNL.com variants' serverless functions (plugin/<variant>/transform.js)
 // against the fake Home Assistant of the end-to-end test (e2e/fake-ha.mjs), and against
-// the stand-in on Cloudflare Workers (sample-ha/worker.mjs, served here by Node), run the way
+// the stand-in on Cloudflare Workers (sample-server/worker.mjs, served here by Node), run the way
 // TRMNL.com and trmnlp run them: a Node process with the payload on stdin, the file's
 // code, then run(input), awaited.
 //
@@ -16,7 +16,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import { startFakeHa, TOKEN, FORECAST_DAYS } from '../e2e/fake-ha.mjs';
-import worker from './sample-ha/worker.mjs';
+import worker from './sample-server/worker.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const code = fs.readFileSync(path.join(here, '..', 'plugin', 'trmnl-com-polling', 'transform.js'), 'utf8');

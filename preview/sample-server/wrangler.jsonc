@@ -1,7 +1,7 @@
 // The stand-in Home Assistant (worker.mjs). Cloudflare's Git integration deploys it from
 // main with `npx wrangler deploy` in this folder; see README.md.
 {
-  "name": "rolling-month-calendar-sample-ha",
+  "name": "trmnl-rolling-month-calendar-sample-server",
   "main": "worker.mjs",
   "compatibility_date": "2026-10-01",
   // sample-data.mjs imports node:fs etc. for its command line only

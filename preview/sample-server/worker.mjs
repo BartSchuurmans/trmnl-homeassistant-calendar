@@ -33,7 +33,7 @@ export default {
 
     if (!url.pathname.startsWith('/api/')) {
       return new Response('Stand-in Home Assistant for the Rolling Month Calendar recipe: '
-        + 'https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/tree/main/preview/sample-ha\n',
+        + 'https://github.com/BartSchuurmans/trmnl-rolling-month-calendar/tree/main/preview/sample-server\n',
       { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
     if (!/^Bearer \S/.test(request.headers.get('Authorization') || '')) return json(401, { message: '401: Unauthorized' });
