@@ -13,13 +13,6 @@
 # On/off fields default to 'true'/'false' as text, as in plugin/trmnl-com-merge/settings.yml.
 # preview/variants.mjs checks that the settings this and plugin/src both have match.
 name: Rolling Month Calendar (Home Assistant)
-# The text on the public recipe page (see plugin/trmnl-com-merge/settings.yml).
-recipe_overview: |-
-  Rolling Month Calendar (Home Assistant) shows the calendars of your Home Assistant on a month grid that always starts at the current week, so the days ahead stay on screen and you never look at a month that is half over. It fits as many whole weeks as your screen has room for, usually five or six. On busy weeks it shows fewer weeks rather than cutting days off, or ends a full day with "+N more" if you prefer.
-
-  Events come from any Home Assistant calendar entity: Local Calendar, Google, CalDAV, iCloud, Office 365 and the rest. List as many as you like and they share one grid. TRMNL fetches them from Home Assistant every refresh, so Home Assistant has to be reachable from the internet, through Home Assistant Cloud or your own domain, with a long-lived access token. Name a weather entity as well and the days ahead show its forecast next to the day number.
-
-  Give each calendar its own color and a prefix such as "W:" so you can tell them apart. Start the week on Sunday, Monday or Saturday, and choose 24-hour or AM/PM times, week numbers, shaded weekends, faded past events and hiding events by keyword. Besides the full screen it has half and quadrant layouts, so it fits in a mashup next to your other plugins. It is built for the TRMNL X and also renders on the OG.
 refresh_interval: 15
 strategy: polling
 polling_verb: get

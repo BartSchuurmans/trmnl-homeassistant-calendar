@@ -133,7 +133,7 @@ function diff(variant, pulled) {
   }
   const ours = load(path.join(built, 'settings.yml'));
   const live = load(path.join(pulled, 'settings.yml')) || {};
-  // TRMNL keeps text settings (recipe_overview) with CRLF line ends too
+  // TRMNL keeps multi-line text settings with CRLF line ends too
   const text = (value) => String(value ?? '').replace(/\r\n/g, '\n').trimEnd();
   for (const key of Object.keys(ours).filter((k) => k !== 'custom_fields')) {
     // TRMNL stores polling headers and body encrypted and `trmnlp pull` leaves them out
