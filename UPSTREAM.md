@@ -49,8 +49,11 @@ treats its native plugins as source-available and is fine with them being remixe
   with a bold title; events from a coloured calendar have bold titles too. Single-day all-day events differ from upstream (which fills them
   too): they are drawn like timed events, with the bar and no time.
   Bands that go on in another week have a pointed end on that side (upstream: square),
-  and a timed event over several weeks shows only its start time in its first week and
-  only its end time in its last (FullCalendar shows the whole range in every week).
+  and a timed event over several days shows its title on one line between its start time
+  (at the band's left end) and its end time (at the right end), each under its own day;
+  over several weeks, the start time is in its first week and the end time in its last
+  (FullCalendar shows the whole range, below the title, in every week). Narrow views keep
+  the start time below the title.
   Titles differ too: every title, of any kind of event, wraps over at most two lines and
   then ends in an ellipsis, where upstream wraps timed titles in full.
   Grid lines are thin grey (dotted on 1-/2-bit), headers are centred and bold with the

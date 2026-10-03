@@ -95,6 +95,11 @@
   }
   .mono-event--narrow .mono-event-title { -webkit-line-clamp: 3; overflow-wrap: break-word; }
   .mono-event-time { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* a multi-day timed event: start time, title and end time on one line (see eventContent) */
+  .mono-event-row { display: flex; align-items: baseline; gap: 0.4em; min-width: 0; }
+  .mono-event-row > .mono-event-title { order: 0; flex: 0 1 auto; min-width: 0; }
+  .mono-event-row > .mono-event-time { flex: none; }
+  .mono-event-time--end { margin-left: auto; padding-left: 0.4em; }
 
   /* timed (list-item) events: a bar on the left, the time below in grey */
   .mono-event--bar { align-items: stretch; gap: calc(4px * var(--mono-u)); margin-inline: calc(3px * var(--mono-u)); }
@@ -228,23 +233,29 @@
     function escapeHtml(text) {
       return String(text).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
     }
-    // A timed event over several weeks has a band in each: the first shows when it
-    // starts ("14:00 –"), the last when it ends ("– 11:00"), the ones between no time.
-    // Cut from FullCalendar's own range text, so the separator is the locale's.
+    // A timed event over several days is a band like an all-day one, on one line: the
+    // start time at its left end, the end time at its right end, each under the day it
+    // falls on. Over several weeks, the first week's band has the start time and the
+    // last week's the end time; the pointed ends show where it goes on. Narrow bands
+    // keep the time below the title, as only the start time fits there.
+    function isMultiDay(event) {
+      if (event.allDay || !event.end) return false;
+      return event.start.toISOString().slice(0, 10) !== new Date(event.end.valueOf() - 1).toISOString().slice(0, 10);
+    }
     function eventContent(info) {
-      var text = info.timeText;
-      if (!text || info.event.allDay || (info.isStart && info.isEnd)) return true;
+      var calendar = info.view.calendar;
+      if (!isMultiDay(info.event) || info.isNarrow || calendar.getOption('displayEventTime') === false) return true;
       // the format as given (the view's own option is already compiled), else dayGrid's default
-      var fmt = info.view.calendar.getOption('eventTimeFormat') || { hour: 'numeric', minute: '2-digit', omitZeroMinute: true, meridiem: 'narrow' };
-      var start = info.view.calendar.formatDate(info.event.start, fmt);
-      var end = info.event.end ? info.view.calendar.formatDate(info.event.end, fmt) : '';
-      var hasEnd = end && text !== start && text.slice(-end.length) === end;
-      if (info.isStart) text = hasEnd ? text.slice(0, -end.length).trim() : text;
-      else if (info.isEnd && hasEnd) text = text.indexOf(start) === 0 ? text.slice(start.length).trim() : '\u2013 ' + end;
-      else text = '';
+      var fmt = calendar.getOption('eventTimeFormat') || { hour: 'numeric', minute: '2-digit', omitZeroMinute: true, meridiem: 'narrow' };
+      var start = info.isStart ? calendar.formatDate(info.event.start, fmt) : '';
+      var end = info.isEnd && calendar.getOption('displayEventEnd') !== false ? calendar.formatDate(info.event.end, fmt) : '';
+      function time(text, extra) {
+        return text ? '<span class="' + escapeHtml(join(info.timeClass, extra)) + '">' + escapeHtml(text) + '</span>' : '';
+      }
       return {
-        html: (text ? '<div class="' + escapeHtml(info.timeClass) + '">' + escapeHtml(text) + '</div>' : '') +
-          '<div class="' + escapeHtml(info.titleClass) + '">' + (info.event.title ? escapeHtml(info.event.title) : '&nbsp;') + '</div>'
+        html: '<div class="mono-event-row">' + time(start) +
+          '<div class="' + escapeHtml(info.titleClass) + '">' + (info.event.title ? escapeHtml(info.event.title) : '&nbsp;') + '</div>' +
+          time(end, 'mono-event-time--end') + '</div>'
       };
     }
     var dayRow = {
