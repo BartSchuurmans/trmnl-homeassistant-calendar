@@ -365,7 +365,10 @@
       if (!ev || typeof ev !== 'object' || !ev.start_full) return null;
       if (String(ev.status || '').toLowerCase() === 'cancelled') return null;
       var start = String(ev.start_full), end = ev.end_full ? String(ev.end_full) : null;
-      var allDay = ev.all_day === true || DATE_ONLY.test(start);
+      // the CalDAV plugin flags a timed event over several days all_day too, but keeps its
+      // times: an all-day event is one that starts and ends at midnight
+      var midnight = function(t) { return DATE_ONLY.test(t) || /T00:00(:00(\.0+)?)?(Z|[+-]\d\d:?\d\d)?$/.test(t); };
+      var allDay = DATE_ONLY.test(start) || (ev.all_day === true && midnight(start) && (!end || midnight(end)));
       return {
         start: allDay ? { date: start.slice(0, 10) } : { dateTime: start },
         end: end ? (allDay ? { date: end.slice(0, 10) } : { dateTime: end }) : null,

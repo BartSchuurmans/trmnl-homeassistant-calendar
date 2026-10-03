@@ -160,7 +160,9 @@ function toNative(calendar) {
   const at = (t) => t.dateTime || t.date;
   const events = calendar.data.map((e) => ({
     summary: e.summary || 'Busy', description: e.description || '', status: 'confirmed',
-    date_time: at(e.start), all_day: !e.start.dateTime, location: e.location || null,
+    // TRMNL's CalDAV plugin flags a timed event over several days all_day as well
+    date_time: at(e.start), all_day: !e.start.dateTime || at(e.start).slice(0, 10) !== at(e.end).slice(0, 10),
+    location: e.location || null,
     start_full: at(e.start), end_full: at(e.end),
   }));
   return { data: { events } };
