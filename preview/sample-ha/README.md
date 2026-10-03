@@ -27,7 +27,7 @@ Cloudflare builds and deploys it from main through its Git integration, with
 the Cloudflare dashboard: Workers & Pages → Create → Import a repository, pick this
 repository, set the root directory to `preview/sample-ha`, keep the deploy command
 `npx wrangler deploy`, and limit builds to the `main` branch. It serves at
-`https://rolling-month-calendar-sample-ha.<account subdomain>.workers.dev`. The free
+`https://trmnl-rolling-month-calendar-sample-ha.<account subdomain>.workers.dev`. The free
 plan's 100,000 requests a day are far more than a few test plugins polling every 15
 minutes need.
 
