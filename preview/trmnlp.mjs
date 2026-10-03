@@ -59,7 +59,10 @@ if (variant) {
   fs.copyFileSync(path.join(plugin, variant, 'settings.yml'), path.join(project, 'src', 'settings.yml'));
   fs.writeFileSync(path.join(project, 'src', 'shared.liquid'),
     own.map((f) => fs.readFileSync(path.join(plugin, variant, f), 'utf8')).join('')
-    + fs.readFileSync(path.join(plugin, 'src', 'shared.liquid'), 'utf8'));
+    + fs.readFileSync(path.join(plugin, 'src', 'shared.liquid'), 'utf8'));  // its serverless function, which trmnlp runs on the payload as TRMNL.com does
+  for (const f of fs.readdirSync(path.join(plugin, variant)).filter((f) => /^transform\.\w+$/.test(f))) {
+    fs.copyFileSync(path.join(plugin, variant, f), path.join(project, 'src', f));
+  }
 }
 fs.writeFileSync(path.join(project, '.trmnlp.yml'), yaml.dump({
   watch: false,

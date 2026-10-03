@@ -10,12 +10,16 @@ another place to publish it. A variant has only what differs:
 - optional `*.liquid` — put in front of `src/shared.liquid` (in name order), for data
   handling `src/` can't hold. `trmnl-com/merge.liquid` is one: LaraPaper's Liquid can't
   parse its lookup.
+- optional `transform.js` — a TRMNL.com serverless function: runs after polling (Polling
+  and Webhook strategies only) and returns the template's data. `trmnl-com-ha/transform.js`
+  fetches the weather. LaraPaper has nothing like it, so its output must be a shape
+  `src/shared.liquid` already reads.
 
 | Variant | Where | Data |
 |---|---|---|
 | `src/` | LaraPaper | ICS feeds, Home Assistant (polling) |
 | [`trmnl-com/`](trmnl-com/README.md) | TRMNL.com | TRMNL calendar and weather plugins (Plugin Merge) |
-| [`trmnl-com-ha/`](trmnl-com-ha/README.md) | TRMNL.com | Home Assistant calendar entities (polling, public URL + token) |
+| [`trmnl-com-ha/`](trmnl-com-ha/README.md) | TRMNL.com | Home Assistant calendar entities (polling, public URL + token) and weather (serverless function) |
 
 `scripts/build-variant.sh [variant...]` builds each variant into `dist/<variant>/src` (a
 trmnlp project) and `dist/rolling-month-calendar-<variant>.zip`. Lint (`trmnlp lint`)
