@@ -54,7 +54,8 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
 - `node preview/variants.mjs check` (in `ci.sh`) — each variant's `settings.yml` in step
   with `plugin/src/settings.yml`. A new setting goes in every variant, or in that variant's
   `leftOut` in `VARIANTS` there.
-- `sh preview/docs-images.sh` regenerates the README screenshots in `docs/`.
+- `sh preview/docs-images.sh` regenerates the README screenshots in `docs/`, each in
+  TRMNL's device frame (`preview/frame.mjs`, the SVG from usetrmnl/trmnl-component).
 - `node e2e/run.mjs` — end-to-end: imports `dist/rolling-month-calendar.zip` into a running app
   container (`app`, started as in `app.yml` with `--add-host
   homeassistant:host-gateway`), polls the fake HA in `e2e/fake-ha.mjs`, fetches the
