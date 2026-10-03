@@ -26,8 +26,9 @@ const TZID = 'Europe/Amsterdam';
 const SAMPLE_HA_END = '2028-01-03';
 const DAYS = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
 
-// week: week of the cycle (0-5); every: repeats every so many weeks (a divisor of six)
-const timed = (week, day, from, to, summary, every = CYCLE) => ({ week, day: DAYS[day], from, to, summary, every });
+// week: week of the cycle (0-5); every: repeats every so many weeks (a divisor of six);
+// nights: a timed event that ends that many days after it starts
+const timed = (week, day, from, to, summary, every = CYCLE, nights = 0) => ({ week, day: DAYS[day], from, to, summary, every, nights });
 const allDay = (week, day, days, summary, every = CYCLE) => ({ week, day: DAYS[day], days, summary, every });
 
 export const CALENDARS = {
@@ -35,7 +36,7 @@ export const CALENDARS = {
     timed(0, 'Mon', '18:30', '19:30', 'Swimming lessons', 1),
     allDay(0, 'Thu', 1, 'Bin day', 2),
     timed(0, 'Fri', '19:00', '21:00', 'Dinner with Anna & Tom'),
-    allDay(0, 'Sat', 2, 'Weekend in Antwerp'),
+    timed(0, 'Sat', '10:00', '16:00', 'Weekend in Antwerp', CYCLE, 1),
     timed(1, 'Wed', '15:00', '16:00', 'Parent-teacher meeting'),
     allDay(1, 'Sat', 1, 'Birthday Oma'),
     timed(1, 'Sat', '16:00', '19:00', 'Birthday party'),
@@ -86,15 +87,15 @@ function haEvents(name, from, to, zone) {
     const step = e.every * 7 * DAY_MS, start = first(e);
     const out = [];
     for (let t = start + Math.floor((from - start) / step) * step; t < to; t += step) {
-      if (t + (e.days || 1) * DAY_MS > from) out.push(t);
+      if (t + (e.days || e.nights + 1) * DAY_MS > from) out.push(t);
     }
     return out;
   };
   return list.flatMap((e) => occurrences(e).map((t) => {
-    const date = ymd(t);
+    const date = ymd(t), endDate = ymd(t + (e.nights || 0) * DAY_MS);
     const at = e.days ? { start: { date }, end: { date: ymd(t + e.days * DAY_MS) } } : {
       start: { dateTime: `${date}T${e.from}:00${offset(date, zone)}` },
-      end: { dateTime: `${date}T${e.to}:00${offset(date, zone)}` },
+      end: { dateTime: `${endDate}T${e.to}:00${offset(endDate, zone)}` },
     };
     return { ...at, summary: e.summary, description: null, location: null, uid: `${name}-${list.indexOf(e)}-${date}`,
       recurrence_id: null, rrule: null };
@@ -180,7 +181,7 @@ export function sampleIcs(name) {
     return [
       'BEGIN:VEVENT', `UID:${name}-${i}@rolling-month-calendar.sample`, `DTSTAMP:${compact(ANCHOR)}T000000Z`,
       ...(e.days ? [`DTSTART;VALUE=DATE:${date}`, `DTEND;VALUE=DATE:${compact(ymd(first(e) + e.days * DAY_MS))}`]
-        : [`DTSTART;TZID=${TZID}:${date}T${compact(e.from)}00`, `DTEND;TZID=${TZID}:${date}T${compact(e.to)}00`]),
+        : [`DTSTART;TZID=${TZID}:${date}T${compact(e.from)}00`, `DTEND;TZID=${TZID}:${compact(ymd(first(e) + e.nights * DAY_MS))}T${compact(e.to)}00`]),
       `RRULE:FREQ=WEEKLY;INTERVAL=${e.every}`,
       ...(e.summary ? [`SUMMARY:${escape(e.summary)}`] : []),
       'END:VEVENT',
