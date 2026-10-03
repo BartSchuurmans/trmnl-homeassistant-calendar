@@ -94,7 +94,10 @@ async function png(file) {
   // TRMNLP_DOCKER_ARGS: extra `docker run` options, e.g. --network=host behind a proxy
   const extra = (process.env.TRMNLP_DOCKER_ARGS || '').split(' ').filter(Boolean);
   const port = await freePort();
-  const id = run('run', '--detach', '--rm', '--user', `${process.getuid()}:${process.getgid()}`, ...extra,
+  // A user the image doesn't know has HOME=/, which it can't write, and Firefox then never
+  // starts (Selenium gives up: Net::ReadTimeout, a 500)
+  const id = run('run', '--detach', '--rm', '--user', `${process.getuid()}:${process.getgid()}`,
+    '--env', 'HOME=/tmp', ...extra,
     ...(extra.includes('--network=host') ? [] : ['--publish', `127.0.0.1:${port}:${port}`]),
     '--volume', `${project}:/plugin`, IMAGE, 'serve', '--port', String(port));
   try {
@@ -107,14 +110,6 @@ async function png(file) {
         if (tries > 60) throw error;
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
-    }
-    // A cold Firefox on a busy machine (CI runs the other renders alongside) can take longer
-    // to start than Selenium waits for its session (Net::ReadTimeout, a 500); the next
-    // request starts a new one
-    for (let retries = 2; response.status >= 500 && retries > 0; retries--) {
-      console.error(`trmnlp PNG: ${response.status}, retrying`);
-      await response.arrayBuffer();
-      response = await fetch(`${base}/render/${size}.png?${params}`);
     }
     if (!response.ok) throw new Error(`trmnlp PNG: ${response.status} ${(await response.text()).slice(0, 2000)}`);
     const image = Buffer.from(await response.arrayBuffer());
