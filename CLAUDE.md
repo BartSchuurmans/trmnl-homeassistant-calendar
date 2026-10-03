@@ -18,7 +18,9 @@ plugin; see README.md for setup and UPSTREAM.md for what differs from upstream.
   `node preview/sample-data.mjs write`; TRMNL.com's marketplace preview polls those feeds
   from main, and `ci.sh` checks they're in step; `docs/sample-ha/` has them as static
   Home Assistant `/api/calendars/<entity>` responses up to `SAMPLE_HA_END`, a stand-in
-  Home Assistant for trying `plugin/trmnl-com-polling/`).
+  Home Assistant for trying `plugin/trmnl-com-polling/`; `preview/sample-ha/worker.mjs`
+  is the better one, on Cloudflare Workers, deployed from main by Cloudflare: data from
+  today, plus the weather forecast's POST).
 - `larapaper/` + `repository.yaml` — Home Assistant app: official LaraPaper image plus
   bundled TRMNL framework, fonts and FullCalendar (`assets.txt`, pinned by SHA-256).
 - `e2e/` — end-to-end test against the app container: fake Home Assistant, driver,
