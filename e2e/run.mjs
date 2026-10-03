@@ -5,7 +5,8 @@
 // Needs a running app container (see .github/workflows/app.yml) that reaches this
 // machine as http://homeassistant:8123 (docker run --add-host homeassistant:host-gateway),
 // with its calendar proxy pointed there (-e SUPERVISOR_TOKEN=e2e-supervisor-token
-// -e HA_API_URL=http://homeassistant:8123/api).
+// -e HA_API_URL=http://homeassistant:8123/api) and its background pre-render off
+// (-e LARAPAPER_LOCAL_PRERENDER=0).
 // Imports the recipe ZIP into LaraPaper, points it at the fake HA (entities and ICS
 // feeds), then fetches the
 // screen the way a TRMNL X does (GET /api/display) and checks what was polled and
@@ -13,11 +14,13 @@
 //
 // --local <larapaper dir> runs the helper with the host's PHP against a LaraPaper
 // checkout instead of docker exec (for working on this script).
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { FEEDS, FORECAST_DAYS, startFakeHa, SUPERVISOR_TOKEN, TOKEN } from './fake-ha.mjs';
 
+const execFileAsync = promisify(execFile);
 const dir = path.dirname(new URL(import.meta.url).pathname);
 const opt = { container: 'app', url: 'http://localhost:4567', zip: path.join(dir, '../dist/rolling-month-calendar.zip'),
   local: null, ha: 'http://homeassistant:8123', tz: 'Europe/Amsterdam' };
@@ -50,6 +53,13 @@ if (opt.local) {
   zip = '/tmp/e2e/rolling-month-calendar.zip';
 }
 const php = (...args) => JSON.parse(helper(...args));
+// Runs the app's pre-render script (larapaper/prerender/prerender.php) once, resolves to its
+// output. Not sync like the helper: it polls the fake HA, which runs in this process.
+const prerender = async (...args) => (await (opt.local
+  ? execFileAsync('php', [path.join(dir, '../larapaper/prerender/prerender.php'), ...args],
+    { env: { ...process.env, LARAPAPER_DIR: opt.local }, encoding: 'utf8' })
+  : execFileAsync('docker', ['exec', '-u', 'www-data', '-w', '/var/www/html', opt.container,
+    'php', '/opt/larapaper-local/prerender.php', ...args], { encoding: 'utf8' }))).stdout;
 
 // YYYY-MM-DD of today + n days in the app's time zone (what PHP's "today" means there)
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: opt.tz }).format(new Date());
@@ -150,6 +160,30 @@ try {
     }
     results[s.name] = state.image;
   }
+
+  // The app renders screens ahead of time (larapaper/prerender/prerender.php, an s6
+  // service that the CI container runs with LARAPAPER_LOCAL_PRERENDER=0, so it can't
+  // race the scenarios above): run it once by hand, then the device gets that screen
+  // without LaraPaper polling or rendering again.
+  console.log('\n== prerender');
+  php('configure', '{}');
+  const due = await prerender('--dry-run');
+  check(/due: /.test(due), `a recipe without a screen is due (${due.trim()})`);
+  const pollsBefore = requests.length;
+  const rendered = await prerender();
+  console.log(rendered.split('\n').filter((l) => l.includes('prerender:')).join('\n'));
+  check(/rendered /.test(rendered) && requests.length > pollsBefore, 'pre-render polls and renders the recipe');
+  const pre = php('check');
+  check(!!pre.plugin_image && pre.device_image === null, 'pre-render stores the screen, not yet on the device');
+  check(!/rendered |due: /.test(await prerender()), 'a fresh screen is not rendered again');
+  const pollsAfter = requests.length;
+  const shown = await (await fetch(`${opt.url}/api/display`, {
+    headers: { 'access-token': setup.api_key, id: 'E2:E2:E2:E2:E2:E2', 'fw-version': '1.6.0' } })).json();
+  const post = php('check');
+  check(requests.length === pollsAfter && post.plugin_image === pre.plugin_image,
+    `/api/display neither polls nor renders (${requests.length - pollsAfter} polls)`);
+  check(post.device_image === pre.plugin_image && shown.image_url?.includes(pre.plugin_image),
+    `device gets the pre-rendered screen (${shown.image_url})`);
 
   console.log('\n== compare');
   const full = results['two-calendars']?.dark_ratio ?? 0;

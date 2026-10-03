@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.43.1-6
+
+- Screens are rendered ahead of time. LaraPaper renders a recipe only when the TRMNL
+  asks for its screen, and the TRMNL gives up after 15 seconds, so on a slower Home
+  Assistant machine every refresh could fail with "read Timeout". The app now renders
+  each recipe in a device's playlists shortly before it would go out of date, so the
+  TRMNL gets a ready screen and refreshes (including the button) are quick. The new
+  **Render screens ahead of time** option (on by default) turns this off.
+
 ## 0.43.1-5
 
 - Opening the web UI from Home Assistant no longer shows "405 Method Not Allowed":

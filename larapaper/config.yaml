@@ -1,5 +1,5 @@
 name: LaraPaper (local)
-version: "0.43.1-5"
+version: "0.43.1-6"
 slug: larapaper_local
 description: >-
   TRMNL BYOS server (LaraPaper) that renders screens without internet access:
@@ -27,6 +27,8 @@ ports_description:
 options:
   app_url: ""
   registration_enabled: true
+  prerender: true
 schema:
   app_url: url
   registration_enabled: bool
+  prerender: bool

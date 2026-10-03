@@ -166,6 +166,16 @@ framework's `/fonts/` (nginx `sub_filter`), the recipe preview's assets
 (`larapaper/ingress/ingress.js`) and APP_URL screen links
 (`larapaper/ingress/IngressServiceProvider.php`).
 
+**Pre-rendering.** LaraPaper renders only inside the device's GET `/api/display` (when
+the recipe's data is older than its refresh interval), and the TRMNL firmware gives that
+request 15 s. So the app runs `larapaper/prerender/prerender.php` once a minute (s6
+service `larapaper-local-prerender` in `larapaper/rootfs/etc/s6-overlay/`): it renders
+each polling recipe in a device's playlists 2 minutes before it goes stale, through
+LaraPaper's own services, without setting the device's screen. The app option `prerender`
+turns it off, as does `LARAPAPER_LOCAL_PRERENDER=0`, which wins (CI sets it, and
+`e2e/run.mjs` runs the script by hand). It doesn't change LaraPaper's
+code; LaraPaper bugs still go upstream.
+
 **FullCalendar 7 and the Mono theme.** v7 has no semantic `.fc-*` classes (they are
 hashed); everything is styled through class hooks (`dayCellClass`, `listItemEventClass`,
 `rowEventInnerClass`, ...). `window.trmnlMonoTheme` in `shared.liquid` is a theme plugin

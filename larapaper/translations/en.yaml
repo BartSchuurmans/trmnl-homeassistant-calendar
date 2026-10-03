@@ -8,3 +8,9 @@ configuration:
   registration_enabled:
     name: Allow registration
     description: Turn off after creating your account.
+  prerender:
+    name: Render screens ahead of time
+    description: >-
+      Render each recipe shortly before it goes out of date, so the TRMNL gets a ready
+      screen. Off, LaraPaper renders while the TRMNL waits, which can take longer than
+      the 15 seconds it waits for.
