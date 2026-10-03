@@ -17,7 +17,8 @@ image with these additions:
   TRMNL asks for its screen, and the TRMNL gives up after 15 seconds, which a render
   on a Home Assistant machine can take. The app renders each polling recipe in a
   device's playlists shortly before its refresh interval runs out, so the TRMNL gets a
-  ready screen. Mashups are still rendered when the TRMNL asks.
+  ready screen. Mashups are still rendered when the TRMNL asks. The **Render screens
+  ahead of time** option turns this off.
 
 Installing or updating the app downloads a prebuilt image
 (`ghcr.io/bartschuurmans/larapaper-local`, amd64 and aarch64), which needs internet.

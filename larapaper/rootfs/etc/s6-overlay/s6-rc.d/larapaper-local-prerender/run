@@ -1,8 +1,11 @@
 #!/command/with-contenv sh
 # Renders recipe screens before the TRMNL asks for them (see prerender.php), once a
-# minute: s6 starts this again after it exits. LARAPAPER_LOCAL_PRERENDER=0 turns it off
-# (the end-to-end test runs it by hand).
-if [ "${LARAPAPER_LOCAL_PRERENDER:-1}" = 0 ]; then
+# minute: s6 starts this again after it exits. Off with the app's "prerender" option, or
+# LARAPAPER_LOCAL_PRERENDER=0 (the end-to-end test runs it by hand), which wins.
+# shellcheck disable=SC2016 # PHP code, not shell expansions
+enabled="${LARAPAPER_LOCAL_PRERENDER:-$(php -r '$o = json_decode(@file_get_contents($argv[1]), true) ?: [];
+    echo ($o["prerender"] ?? true) ? "1" : "0";' "${DATA_DIR:-/data}/options.json")}"
+if [ "$enabled" = 0 ]; then
     exec sleep infinity
 fi
 cd /var/www/html || exit 1
