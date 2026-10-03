@@ -90,9 +90,11 @@ jobs:
           # homeassistant:8123 is the fake Home Assistant of the end-to-end test; the
           # calendar proxy goes there too, with the token the Supervisor would provide
           # the ingress port is published for e2e/ingress.mjs, which plays Home Assistant
-          # (Home Assistant itself reaches it over its own network, as 172.30.32.2)
+          # (Home Assistant itself reaches it over its own network, as 172.30.32.2). The
+          # end-to-end test runs the pre-render itself, so the background one is off.
           docker run -d --name app -p 4567:8080 -p 127.0.0.1:8099:8099 -e TZ=Europe/Amsterdam \
             -e SUPERVISOR_TOKEN=e2e-supervisor-token -e HA_API_URL=http://homeassistant:8123/api \
+            -e LARAPAPER_LOCAL_PRERENDER=0 \
             -e HA_INGRESS_PROXY=172.16.0.0/12 \
             --add-host homeassistant:host-gateway -v "$RUNNER_TEMP/data:/data" larapaper-local:ci
           for i in $(seq 1 90); do

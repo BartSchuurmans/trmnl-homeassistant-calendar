@@ -1,0 +1,16 @@
+#!/command/with-contenv sh
+# Renders recipe screens before the TRMNL asks for them (see prerender.php), once a
+# minute: s6 starts this again after it exits. LARAPAPER_LOCAL_PRERENDER=0 turns it off
+# (the end-to-end test runs it by hand).
+if [ "${LARAPAPER_LOCAL_PRERENDER:-1}" = 0 ]; then
+    exec sleep infinity
+fi
+cd /var/www/html || exit 1
+# As www-data, like PHP-FPM: files it creates (screens, a first laravel.log) must stay
+# writable for the web app. The container itself runs as root (see the Dockerfile).
+if [ "$(id -u)" = 0 ]; then
+    /command/s6-setuidgid www-data php /opt/larapaper-local/prerender.php
+else
+    php /opt/larapaper-local/prerender.php
+fi
+exec sleep 60

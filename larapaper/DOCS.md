@@ -13,6 +13,11 @@ image with these additions:
 - The calendar recipe reads Home Assistant through `http://127.0.0.1:8124`, which
   forwards calendar requests and daily weather forecasts (and nothing else) to Home
   Assistant with the app's own access. It is only reachable from inside the app.
+- Recipe screens are rendered ahead of time. LaraPaper itself only renders when the
+  TRMNL asks for its screen, and the TRMNL gives up after 15 seconds, which a render
+  on a Home Assistant machine can take. The app renders each polling recipe in a
+  device's playlists shortly before its refresh interval runs out, so the TRMNL gets a
+  ready screen. Mashups are still rendered when the TRMNL asks.
 
 Installing or updating the app downloads a prebuilt image
 (`ghcr.io/bartschuurmans/larapaper-local`, amd64 and aarch64), which needs internet.
