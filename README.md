@@ -416,7 +416,7 @@ the changes in detail.
 | `plugin/trmnl-com-merge/` | The TRMNL.com Plugin Merge variant: its settings and `merge.liquid` |
 | `plugin/trmnl-com-polling/` | The TRMNL.com polling variant (Home Assistant): its settings and serverless function (`transform.js`) |
 | `preview/` | Local renderer and CI render checks |
-| `preview/sample-data.mjs`, `docs/sample-ics/`, `docs/sample-ha/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview and as a stand-in Home Assistant |
+| `preview/sample-data.mjs`, `docs/sample-ics/`, `docs/sample-ha/`, `preview/sample-ha/` | The sample calendars: six weeks that repeat, drawn in the screenshots and published as ICS feeds for TRMNL.com's marketplace preview and as a stand-in Home Assistant (static files, and a Cloudflare Worker that adds the weather) |
 | `scripts/build-zip.sh` | Packages `plugin/src` for import into LaraPaper (attached to each release) |
 | `scripts/build-variant.sh` | Builds the variants, such as the TRMNL.com recipe |
 | `larapaper/`, `repository.yaml` | The LaraPaper (local) Home Assistant app |

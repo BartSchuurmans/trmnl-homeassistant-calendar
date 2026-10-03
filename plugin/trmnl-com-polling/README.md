@@ -33,8 +33,15 @@ overview](../README.md). Don't edit the plugin on TRMNL.com itself.
 
 ## Trying it without your own Home Assistant
 
-`docs/sample-ha/` stands in for a Home Assistant with the sample calendars (the six-week
-cycle of `preview/sample-data.mjs`, which writes it). Set **Home Assistant URL** to
+[`preview/sample-ha/`](../../preview/sample-ha/README.md) is a stand-in Home Assistant on
+Cloudflare Workers with the sample calendars (the six-week cycle of
+`preview/sample-data.mjs`) and a forecast for `weather.forecast_home`: set **Home
+Assistant URL** to its workers.dev URL, any text as the token, `calendar.family`,
+`calendar.mark`, `calendar.sara` as the entities and `weather.forecast_home` as the
+weather entity.
+
+Without it, `docs/sample-ha/` serves the same calendars as static files, but no
+weather. Set **Home Assistant URL** to
 `https://cdn.jsdelivr.net/gh/BartSchuurmans/trmnl-rolling-month-calendar@main/docs/sample-ha`,
 any text as the token, and `calendar.family`, `calendar.mark`, `calendar.sara` as the
 entities. jsDelivr ignores the `?start=&end=` window and the token, so each file holds

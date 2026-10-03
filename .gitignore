@@ -4,3 +4,4 @@ preview/out/
 .env
 vendor/
 e2e/out/
+.wrangler/

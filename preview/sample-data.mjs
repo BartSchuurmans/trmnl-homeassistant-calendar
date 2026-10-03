@@ -9,12 +9,14 @@
 // calendar.family, calendar.mark and calendar.sara. Those files are HA's
 // /api/calendars/<entity> responses with every occurrence from the cycle's start to
 // SAMPLE_HA_END (a static server ignores ?start=&end=), so move that on before it passes.
+// sample-ha/worker.mjs is the better stand-in: it works them out from today, and answers
+// the weather forecast's POST too.
 //
 //   node sample-data.mjs write    regenerates docs/sample-ics/*.ics and docs/sample-ha/
 //   node sample-data.mjs check    fails when they differ from this file (ci.sh)
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+//
+// Nothing here needs Node but the command line, so the stand-in Home Assistant on
+// Cloudflare Workers (preview/sample-ha/worker.mjs) imports it as well.
 
 // Week 0 of the cycle; the README screenshots are taken in it (Wednesday 30 September)
 const ANCHOR = '2026-09-28';
@@ -113,6 +115,12 @@ export function sampleHa(name) {
   return `[\n${events.map((e) => JSON.stringify(e)).join(',\n')}\n]\n`;
 }
 
+// HA's /api/calendars/calendar.<name>?start=&end= (dates, YYYY-MM-DD) in Amsterdam
+// time, as the stand-in on Cloudflare Workers answers it; null for an unknown calendar
+export function sampleHaRange(name, start, end) {
+  return Object.hasOwn(CALENDARS, name) ? haEvents(name, Date.parse(`${start}T00:00:00Z`), Date.parse(`${end}T00:00:00Z`), TZID) : null;
+}
+
 // A weather entity's daily forecast as the LaraPaper (local) app's proxy hands it over
 // (Home Assistant's weather.get_forecasts response): ten days from `today`, each dated
 // at noon UTC, cycling through every condition the recipe draws.
@@ -190,7 +198,10 @@ export function sampleIcs(name) {
   ].join('\r\n');
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const { fileURLToPath } = globalThis.process?.argv?.[1] ? await import('node:url') : {};
+if (fileURLToPath && process.argv[1] === fileURLToPath(import.meta.url)) {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
   const docs = path.join(path.dirname(fileURLToPath(import.meta.url)), '../docs');
   const mode = process.argv[2];
   if (mode !== 'write' && mode !== 'check') {
