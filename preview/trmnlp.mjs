@@ -33,6 +33,10 @@ const IMAGE = 'trmnl/trmnlp:v0.16.0';
 const LINT_ALLOWED = [];
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+// Our user in the container. One the image doesn't know (CI's) has HOME=/, which it can't
+// write: trmnlp then can't keep the transform's output for the render (no events), and
+// Firefox never starts (Net::ReadTimeout)
+const user = ['--user', `${process.getuid()}:${process.getgid()}`, '--env', 'HOME=/tmp'];
 const [contextFile, bodyFile, size = 'full'] = process.argv.slice(2);
 if (contextFile === '--pull') {
   try {
@@ -71,7 +75,7 @@ fs.writeFileSync(path.join(project, '.trmnlp.yml'), yaml.dump({
   variables: Array.isArray(payload) ? { data: payload } : payload,
 }));
 
-execFileSync('docker', ['run', '--rm', '--user', `${process.getuid()}:${process.getgid()}`,
+execFileSync('docker', ['run', '--rm', ...user,
   '--volume', `${project}:/plugin`, IMAGE, 'build'], { stdio: 'inherit' });
 
 // The view as trmnlp renders it: everything inside <div class="screen">
@@ -94,10 +98,7 @@ async function png(file) {
   // TRMNLP_DOCKER_ARGS: extra `docker run` options, e.g. --network=host behind a proxy
   const extra = (process.env.TRMNLP_DOCKER_ARGS || '').split(' ').filter(Boolean);
   const port = await freePort();
-  // A user the image doesn't know has HOME=/, which it can't write, and Firefox then never
-  // starts (Selenium gives up: Net::ReadTimeout, a 500)
-  const id = run('run', '--detach', '--rm', '--user', `${process.getuid()}:${process.getgid()}`,
-    '--env', 'HOME=/tmp', ...extra,
+  const id = run('run', '--detach', '--rm', ...user, ...extra,
     ...(extra.includes('--network=host') ? [] : ['--publish', `127.0.0.1:${port}:${port}`]),
     '--volume', `${project}:/plugin`, IMAGE, 'serve', '--port', String(port));
   try {
@@ -150,7 +151,7 @@ function lint() {
       custom_fields: Object.fromEntries(fields.filter((field) => field.field_type !== 'author_bio')
         .map((field) => [field.keyname, String(field.default ?? 'x')])),
     }));
-    const run = spawnSync('docker', ['run', '--rm', '--user', `${process.getuid()}:${process.getgid()}`,
+    const run = spawnSync('docker', ['run', '--rm', ...user,
       '--volume', `${dir}:/plugin`, IMAGE, 'lint', '--format', 'json'], { encoding: 'utf8' });
     fs.rmSync(dir, { recursive: true, force: true });
     let report = null;
