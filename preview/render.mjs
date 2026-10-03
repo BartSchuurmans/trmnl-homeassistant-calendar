@@ -34,6 +34,9 @@
 // device's: LaraPaper's TRMNL X is xxlarge, a TRMNL.com device the scale its owner picked
 // (regular by default).
 //
+// --no-bleed adds screen--no-bleed, as TRMNL.com and trmnlp do for a recipe with
+// no_screen_padding: 'yes' (the TRMNL.com variants); LaraPaper's recipe doesn't set it.
+//
 // Like LaraPaper's image stage (bnussbau/epaper-pipeline-php), the screenshot is
 // reduced to the device's grey levels: 4-bit is always Floyd–Steinberg dithered,
 // 1-/2-bit only when the page contains <img class="image-dither">. --raw skips this.
@@ -76,6 +79,7 @@ let merge = false;
 let mergeWeather = null;
 let expectEvents = false;
 let scale = null;
+let noBleed = false;
 let now = new Date();
 let out = path.join(outDir, 'preview.png');
 let timeZone = process.env.TZ_NAME || Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -96,8 +100,10 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--merge-weather') { merge = true; mergeWeather = args[++i]; }
   else if (args[i] === '--expect-events') expectEvents = true;
   else if (args[i] === '--scale') scale = args[++i];
+  else if (args[i] === '--no-bleed') noBleed = true;
 }
 const device = DEVICES[deviceName];
+if (device && noBleed) device.classes += ' screen--no-bleed';
 if (device && scale) device.classes = device.classes.replace(/ screen--scale-\S+|$/, ` screen--scale-${scale}`);
 if (!device) throw new Error(`unknown device ${deviceName}`);
 
