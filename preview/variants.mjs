@@ -12,7 +12,8 @@
 //                                            (`trmnlp pull`) against dist/<variant>/src:
 //                                            markup, serverless function, form fields and
 //                                            the settings we set
-//                                            (bar the encrypted ones TRMNL keeps back).
+//                                            (bar the ones TRMNL keeps back: encrypted
+//                                            ones, and the recipe overview).
 //                                            Run by .github/workflows/trmnl-com.yml.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -55,6 +56,9 @@ const OWN_TEXT = ['about'];
 const SHARED_SETTINGS = ['name', 'refresh_interval', 'framework_version'];
 // Settings TRMNL keeps encrypted, which `trmnlp pull` doesn't return
 const SECRET_SETTINGS = ['polling_headers', 'polling_body'];
+// Settings `trmnlp pull` stopped returning (seen 2026-10-03): the recipe page still shows the
+// overview as "About", but the plugin's form has no field for it any more
+const UNRETURNED_SETTINGS = ['recipe_overview'];
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const load = (file) => yaml.load(fs.readFileSync(file, 'utf8'));
@@ -139,6 +143,7 @@ function diff(variant, pulled) {
     // TRMNL stores polling headers and body encrypted and `trmnlp pull` leaves them out
     // (null); the plugin's own page only says "[set]", so they can't be compared
     if (SECRET_SETTINGS.includes(key) && live[key] == null) continue;
+    if (UNRETURNED_SETTINGS.includes(key) && live[key] == null) continue;
     if (text(ours[key]) !== text(live[key])) errors.push(`settings ${key}: ${JSON.stringify(live[key])} on TRMNL.com, ${JSON.stringify(ours[key])} here`);
   }
   if (!same(live.custom_fields, ours.custom_fields)) {
